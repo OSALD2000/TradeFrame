@@ -36,13 +36,16 @@ GitHub Actions execution remains unverified.
 
 ## 2. Capture feasibility
 
-Implement one chart capture with preview and cancellation. Then connect a global
-shortcut, handling registration failures and user permission decisions visibly.
+Implement one chart capture with preview and cancellation, controlled through
+a small floating bar as requested by the owner. Mouse controls take priority;
+no global shortcut is required for this step. Shortcuts may be considered later.
 
-Acceptance: capture and cancel work on the development Sway/Wayland desktop;
+Implementation exists; native acceptance remains open. Use [CAPTURE](CAPTURE.md).
+Acceptance: the floating bar, capture, and cancel work on the development Sway/Wayland desktop;
 test Windows and macOS separately and record limitations. Do not assume that
-screen selection or permission dialogs can be skipped. Choose a supported
-fallback if a compositor cannot register shortcuts.
+screen selection or permission dialogs can be skipped. Document necessary
+compositor rules for floating windows explicitly rather than promising universal
+always-on-top behavior.
 
 ## 3. First saved setup
 

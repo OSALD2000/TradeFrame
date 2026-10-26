@@ -9,20 +9,26 @@ not require that desktop setup or Obsidian.
 The reason for this boundary is recorded in the
 [local-first decision](adr/0001-local-first-journal.md).
 
-The renderer currently shows a static journal empty state. Capture, setup
-records, persistence, and imports are not implemented. Intended behavior and
+The renderer supports a capture toolbar, source selection, and an in-memory
+screenshot preview. Setup records, persistence, and imports are not implemented.
+Native capture and window behavior remain unverified on real target desktops.
+Intended behavior and
 milestone acceptance live in [ROADMAP](ROADMAP.md); visual rules live in
 [DESIGN](DESIGN.md), and canonical domain terms live in [GLOSSARY](../GLOSSARY.md).
 
 ## Implemented boundaries
 
-- `electron/main.ts` owns the native window and application lifecycle. It loads
+- `electron/main.ts` owns the journal/capture windows and application lifecycle. It loads
   the compiled local UI, enables sandbox/context isolation, disables renderer
   Node integration, and blocks new windows and navigation away from the app.
-- `src/` contains the React renderer and CSS. It currently has no native bridge
-  and no access to journal files or other user data.
-- `tests/main.test.cjs` exercises compiled main-process behavior with an Electron
-  test double. It is not a real desktop launch or a renderer test.
+- `electron/preload.ts` exposes named capture commands and a state subscription;
+  the main process validates the calling window, main frame, local URL, and
+  selected source. No raw IPC, filesystem API, or privileged event reaches the UI.
+- `src/` contains the React journal, capture bar, and CSS. It receives temporary
+  screenshot images through the bridge; it has no journal file access.
+- `tests/main.test.cjs` exercises compiled main-process capture and preload
+  behavior with Electron doubles and synthetic images. It is not a real desktop
+  launch, renderer test, or native capture test.
 - Build output belongs in the ignored output directories; edit source files.
 
 ## Development facts
@@ -31,6 +37,10 @@ Read `package.json` for executable commands. The full check builds before
 testing because the main-process test consumes compiled output. The browser
 development preview shows only the renderer; the desktop start also launches
 Electron. These are different verification environments.
+
+See [CAPTURE](CAPTURE.md) before changing capture/window behavior or performing
+native verification. Screenshots are memory-only; closing the journal clears
+them. The floating bar is controlled by mouse; no global shortcut is registered.
 
 ## Known verification limits
 

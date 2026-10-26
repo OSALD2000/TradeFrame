@@ -1,7 +1,10 @@
 import { createRoot } from 'react-dom/client';
 import './styles.css';
+import { useCapture } from './capture';
+import { CaptureBar } from './CaptureBar';
 
 function App() {
+  const { state, api, run, error } = useCapture();
   return (
     <div className="workspace">
       <a className="skip-link" href="#journal">Skip to journal</a>
@@ -41,7 +44,7 @@ function App() {
                 <h1>Trading journal</h1>
                 <p>A clear view of every decision.</p>
               </div>
-              <button className="capture-button" disabled aria-describedby="capture-status">
+              <button className="capture-button" disabled={!api || state.busy} onClick={() => api && run(api.openBar)} aria-describedby={!state.preview && !state.sources.length ? "capture-status" : undefined}>
                 <span aria-hidden="true">＋</span> Capture chart
               </button>
             </header>
@@ -49,7 +52,29 @@ function App() {
               <h2>All setups <span>0</span></h2>
               <span>Newest first</span>
             </div>
-            <section className="empty-state" aria-labelledby="empty-title">
+            {error && <p className="capture-error" role="alert">{error}</p>}
+            {state.sources.length > 0 ? (
+              <section className="source-picker" aria-labelledby="source-title">
+                <div className="preview-heading"><div><h2 id="source-title">Choose your capture</h2><p>These are snapshots from the moment you clicked Screenshot.</p></div>
+                  <button className="secondary-button" onClick={() => api && run(api.discard)}>Cancel selection</button>
+                </div>
+                <div className="source-grid">{state.sources.map((source) => (
+                  <button className="source-option" key={source.id} onClick={() => api && run(() => api.chooseSource(source.id))}>
+                    <img src={source.image} alt="" /><span>{source.name}</span>
+                  </button>
+                ))}</div>
+              </section>
+            ) : state.preview ? (
+              <section className="capture-preview" aria-labelledby="preview-title">
+                <div className="preview-heading"><div><h2 id="preview-title">Screenshot preview</h2><p>{state.preview.name}</p></div><span className="preview-badge">Not saved</span></div>
+                <img className="preview-image" src={state.preview.image} alt={`Captured chart from ${state.preview.name}`} />
+                <div className="preview-actions">
+                  <button className="capture-button" onClick={() => api && run(api.openBar)}>Retake screenshot</button>
+                  <button className="secondary-button" onClick={() => api && run(api.discard)}>Discard</button>
+                </div>
+                <p className="preview-note">This preview stays in memory only. Setup notes and saving are coming next.</p>
+              </section>
+            ) : <section className="empty-state" aria-labelledby="empty-title">
               <div className="capture-frame" aria-hidden="true">
                 <svg viewBox="0 0 168 112" fill="none">
                   <path className="frame-corners" d="M34 32V20h18m64 0h18v12M34 80v12h18m64 0h18V80" />
@@ -60,8 +85,8 @@ function App() {
               </div>
               <h2 id="empty-title">Your next setup starts here.</h2>
               <p>Keep the chart, the reasoning, and the outcome together.<br className="desktop-break" /> Build a record you can learn from.</p>
-              <p className="capture-status" id="capture-status">Chart capture is coming next. No entries can be created yet.</p>
-            </section>
+              <p className="capture-status" id="capture-status">{api ? 'Open the capture bar to take a screenshot. Setup notes and saving are coming next.' : 'Open the desktop app to capture charts. This browser view is a preview only.'}</p>
+            </section>}
             <footer className="journal-footer"><span>No setups yet</span><span>Capture the chart. Remember the trade.</span></footer>
           </main>
           <aside className="inspector" aria-labelledby="details-title">
@@ -89,4 +114,5 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<App />);
+const isCaptureBar = new URLSearchParams(window.location.search).get('view') === 'capture';
+createRoot(document.getElementById('root')!).render(isCaptureBar ? <CaptureBar /> : <App />);

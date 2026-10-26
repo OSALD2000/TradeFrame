@@ -26,17 +26,21 @@ Secondary research:
 | --- | --- | --- | --- |
 | Canvas #08090a, surfaces #0f1011 / #161718 | Linear | Background / nested surfaces | Quiet depth without decorative shadows |
 | Borders #23252a | Linear | Structural edges | Separate navigation, journal, and detail pane |
-| Accent #e4f222 | Linear | Single primary action only | Reserve for capture once implemented; disabled capture stays neutral |
+| Accent #e4f222 | Linear | Single primary action only | Capture in the journal/bar; retake in preview; disabled actions stay neutral |
 | Sans-serif UI, medium weights | Linear | Interface typography | Compact scan-friendly labels; system fallback until a font is bundled |
 | Brighter secondary text #a0a5ae | Accessibility adaptation | Readable supporting copy | Improve small-text contrast on the dark canvas |
 | Navigation / journal / detail layout | User-approved product proposal | Desktop workflow | Browse setups while retaining chart context |
 | Context -> Entry -> Outcome | Personal journaling workflow | Review sequence | Connect screenshots to stages of a trade |
-| Empty state, no synthetic trade records | Current product scope | Honest state | Capture and persistence are not implemented |
+| Empty state, no synthetic trade records | Current product scope | Honest state | A transient capture is not a saved setup |
+| Compact draggable capture bar | Owner's recorder-tool request | Mouse-operated capture controls | Capture without shortcuts or keeping the journal visible |
 
 Media: real chart screenshots when capture exists. The current empty-state glyph
 is a simple code-native candlestick/frame symbol, not a chart or performance claim.
 On narrow windows the inspector moves below the journal instead of squeezing it.
-No new native APIs, permissions, storage, or dependencies are needed for this change.
+The capture bar uses the same surfaces, control radii, and primary-action accent.
+Candidate source thumbnails and the preview are real user-triggered snapshots,
+not fabricated trading examples. Source selection and preview occupy the central
+journal area; the detail pane remains reserved for future setup records.
 
 ## Verification
 

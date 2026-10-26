@@ -8,9 +8,10 @@ Setup dokumentieren und weitertraden. [English](README.md)
 
 ## Aktueller Stand
 
-Das Grundgeruest besteht aus einem Electron-Fenster, einem React-Startbildschirm,
-TypeScript, einem Test fuer den Fensterstart und Build-Pruefungen fuer drei Systeme.
-**Screenshot-Aufnahme, Eintraege und Speicherung sind noch nicht implementiert.**
+Die App hat eine schwebende Aufnahmeleiste, Bildschirm-/Fensterauswahl und eine
+Screenshot-Vorschau mit Wiederholen und Verwerfen im Arbeitsspeicher.
+**Setup-Eintraege und Speicherung sind noch nicht implementiert.** Native
+Aufnahme und schwebendes Fenster muessen noch praktisch getestet werden.
 Die Zielplattformen sind noch keine praktisch geprueften Desktop-Releases.
 
 ## Entwickeln
@@ -45,8 +46,19 @@ Ein erfolgreicher Build ersetzt keinen echten Desktop-Start.
 - `.github/workflows/check.yml`: Build-Pruefungen fuer drei Betriebssysteme.
 
 Die Oberflaeche hat keinen Node.js-Zugriff. Context Isolation und Sandbox sind
-aktiv; externe Navigation und neue Fenster werden blockiert. Eine native
-Schnittstelle ergaenzen wir erst, wenn eine Funktion sie braucht.
+aktiv; externe Navigation und neue Fenster werden blockiert. Eine schmale
+Preload-Schnittstelle stellt Aufnahmebefehle bereit; der Hauptprozess prueft
+Aufrufer und Quellenauswahl.
+
+## Aufnahme ausprobieren
+
+**Capture chart** oeffnet die schwebende Leiste. Dort **Screenshot** anklicken,
+gegebenenfalls Bildschirm/Fenster auswaehlen und die Vorschau pruefen.
+**Retake screenshot** fuehrt zur Leiste zurueck, **Discard** verwirft das Bild.
+Noch wird nichts gespeichert; Tastenkombinationen sind nicht erforderlich.
+
+Die [Aufnahmenotizen](docs/CAPTURE.md) enthalten die Sway-Regel zum Schweben,
+Berechtigungen, Aufloesungsgrenzen und manuelle Abnahmeschritte.
 
 Die erste nutzbare Version soll Chart-Screenshots und Setup-Notizen als Markdown
 mit Bildern in einem waehlbaren Ordner speichern. Obsidian bleibt optional.

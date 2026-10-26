@@ -8,9 +8,10 @@ and return to trading. [Deutsch](README.de.md)
 
 ## Current stage
 
-The foundation includes an Electron window, a React start screen, TypeScript,
-a startup isolation test, and build checks for three operating systems.
-**Chart capture, entries, and persistence are not implemented yet.**
+The app includes a floating capture bar, screen/window source selection, and
+an in-memory screenshot preview with retake/discard controls.
+**Setup entries and persistence are not implemented yet.** Native capture and
+floating-window behavior still need real desktop testing.
 Target platforms are not yet verified desktop releases.
 
 ## Develop
@@ -45,8 +46,17 @@ replace a real desktop launch.
 - `.github/workflows/check.yml`: Windows, macOS, and Linux build checks.
 
 The UI has no Node.js access. The renderer uses context isolation and sandboxing;
-external navigation and new windows are blocked. There is no preload bridge
-until a feature actually needs native operations.
+external navigation and new windows are blocked. A narrow preload bridge exposes
+capture commands; the main process validates callers and source selection.
+
+## Try capture
+
+Click **Capture chart**, then **Screenshot** on the floating bar. Choose the
+screen/window if prompted and inspect the preview. **Retake screenshot** returns
+to the bar; **Discard** clears the preview. Nothing is saved yet.
+
+See [capture notes](docs/CAPTURE.md) for the Sway floating rule, permissions,
+snapshot resolution limits, and manual acceptance checks. No shortcut is needed.
 
 ## Direction
 
