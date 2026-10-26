@@ -56,3 +56,6 @@ Bestehende Journale werden vom Grundgeruest weder eingelesen noch veraendert.
 Naechste Arbeiten stehen in der [Roadmap](docs/ROADMAP.md). Installer, Signierung,
 Updates, Cloud, Broker-Anbindung und KI folgen hier noch nicht.
 Eine Lizenz wurde noch nicht ausgewaehlt.
+
+Die abgestimmte Linear-Designrichtung und Referenzen stehen in den
+[Designnotizen](docs/DESIGN.md).

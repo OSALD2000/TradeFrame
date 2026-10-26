@@ -55,5 +55,6 @@ as Markdown plus images in a user-selected folder. Obsidian is optional.
 Existing journals are not imported or modified by this foundation.
 
 Read the [roadmap](docs/ROADMAP.md) before starting the next milestone.
+The approved visual direction and reference roles are in the [design notes](docs/DESIGN.md).
 There are no installers, signing, automatic updates, cloud accounts, broker
 connections, or AI features in this milestone. No license has been selected yet.
