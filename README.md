@@ -31,10 +31,10 @@ npm start
   run `npm run build` first. This does not replace a real desktop launch.
 - `npm run check`: typecheck, build, and run the startup test.
 
-The initial setup environment could not reach the npm registry. No complete
-installation or lockfile is available yet. After a successful `npm install`,
-review and commit `package-lock.json` and switch CI to `npm ci`.
-Do not treat the initial cache-based build as a verified Electron 45 launch.
+The current dependency and verification status is maintained in
+[CONTEXT](docs/CONTEXT.md). The owner-generated lockfile still needs review and
+adoption, followed by the switch to `npm ci` in CI. A successful build does not
+replace a real desktop launch.
 
 ## Structure
 
@@ -56,5 +56,8 @@ Existing journals are not imported or modified by this foundation.
 
 Read the [roadmap](docs/ROADMAP.md) before starting the next milestone.
 The approved visual direction and reference roles are in the [design notes](docs/DESIGN.md).
+Coding agents start with [AGENTS.md](AGENTS.md); product terminology is defined
+in [GLOSSARY.md](GLOSSARY.md). Future Dropbox, Obsidian, and OneNote integrations
+are backlog ideas, not implemented features.
 There are no installers, signing, automatic updates, cloud accounts, broker
 connections, or AI features in this milestone. No license has been selected yet.

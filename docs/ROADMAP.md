@@ -29,9 +29,10 @@ Acceptance:
 - `npm start` opens the desktop window in a normal graphical session.
 - No existing journal files are read or written.
 
-Still open: fresh dependency install, lockfile, and a real Electron 45 launch.
-The setup environment only allowed a cache-based build with older Electron types.
-CI has been configured but has not been run or verified on GitHub.
+Implementation and verification facts are maintained in [CONTEXT](CONTEXT.md).
+Remaining acceptance work: review/adopt the owner-generated lockfile, switch
+CI to `npm ci`, and explicitly record a successful native desktop launch.
+GitHub Actions execution remains unverified.
 
 ## 2. Capture feasibility
 
@@ -71,3 +72,8 @@ before publishing binaries. Check package availability and application naming.
 
 Statistics, imports, chart annotations, AI reviews, broker integration, and sync.
 Each milestone is agreed and reviewed separately. No release date is promised.
+
+Integration candidates requested by the owner: **Dropbox, Obsidian, and OneNote**.
+These are backlog ideas; authentication, data access, sync direction, conflicts,
+and transport/API choices are not designed or authorized yet. Read the
+[local-first decision](adr/0001-local-first-journal.md) before planning them.

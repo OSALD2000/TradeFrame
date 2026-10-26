@@ -31,11 +31,10 @@ npm start
   vorher `npm run build` ausfuehren. Das ersetzt keinen echten Desktop-Start.
 - `npm run check`: Typpruefung, Build und Starttest ausfuehren.
 
-Beim ersten Setup war die npm-Registry nicht erreichbar. Eine vollstaendige
-Installation und Lockdatei stehen deshalb noch aus. Nach erfolgreichem
-`npm install` die `package-lock.json` pruefen und committen sowie CI auf
-`npm ci` umstellen. Der erste Build mit Cache-Paketen bestaetigt keinen
-funktionierenden Start unter Electron 45.
+Der aktuelle Installations- und Pruefstatus steht in
+[CONTEXT](docs/CONTEXT.md). Die vom Nutzer erzeugte Lockdatei muss noch geprueft
+und uebernommen werden; anschliessend ist CI auf `npm ci` umzustellen.
+Ein erfolgreicher Build ersetzt keinen echten Desktop-Start.
 
 ## Aufbau und weitere Schritte
 
@@ -59,3 +58,7 @@ Eine Lizenz wurde noch nicht ausgewaehlt.
 
 Die abgestimmte Linear-Designrichtung und Referenzen stehen in den
 [Designnotizen](docs/DESIGN.md).
+
+Coding-Agenten beginnen mit [AGENTS.md](AGENTS.md); die Fachbegriffe stehen im
+[Glossar](GLOSSARY.md). Dropbox, Obsidian und OneNote sind Ideen fuer spaetere
+Integrationen und noch nicht implementiert.
