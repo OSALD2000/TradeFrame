@@ -1,0 +1,58 @@
+# TradeFrame
+
+Capture the chart. Remember the trade.
+
+Eine lokale Trading-Journal-App fuer Windows, macOS und Linux.
+Die Idee stammt aus einem eigenen Eww-/Sway-Workflow: Chart aufnehmen,
+Setup dokumentieren und weitertraden. [English](README.md)
+
+## Aktueller Stand
+
+Das Grundgeruest besteht aus einem Electron-Fenster, einem React-Startbildschirm,
+TypeScript, einem Test fuer den Fensterstart und Build-Pruefungen fuer drei Systeme.
+**Screenshot-Aufnahme, Eintraege und Speicherung sind noch nicht implementiert.**
+Die Zielplattformen sind noch keine praktisch geprueften Desktop-Releases.
+
+## Entwickeln
+
+Node.js 24 LTS ab 24.15.0 und npm verwenden. Unter Linux wird eine grafische
+Sitzung mit den von Electron benoetigten Systembibliotheken vorausgesetzt.
+
+```sh
+npm install
+npm run check
+npm start
+```
+
+- `npm start`: App bauen und als Desktop-Fenster starten.
+- `npm run dev`: Oberflaeche im Browser ansehen; das ist nicht die Desktop-App.
+- `npm run typecheck`: TypeScript fuer Oberflaeche und Electron pruefen.
+- `npm test`: kompilierten Fensterstart mit einem Electron-Testdouble pruefen;
+  vorher `npm run build` ausfuehren. Das ersetzt keinen echten Desktop-Start.
+- `npm run check`: Typpruefung, Build und Starttest ausfuehren.
+
+Beim ersten Setup war die npm-Registry nicht erreichbar. Eine vollstaendige
+Installation und Lockdatei stehen deshalb noch aus. Nach erfolgreichem
+`npm install` die `package-lock.json` pruefen und committen sowie CI auf
+`npm ci` umstellen. Der erste Build mit Cache-Paketen bestaetigt keinen
+funktionierenden Start unter Electron 45.
+
+## Aufbau und weitere Schritte
+
+- `electron/main.ts`: Desktop-Fenster und Lebenszyklus.
+- `src/`: React-Oberflaeche und Styles.
+- `tests/`: Fensterstart mit Electron-Testdouble.
+- `docs/ROADMAP.md`: Umfang, Meilensteine und Abnahmekriterien.
+- `.github/workflows/check.yml`: Build-Pruefungen fuer drei Betriebssysteme.
+
+Die Oberflaeche hat keinen Node.js-Zugriff. Context Isolation und Sandbox sind
+aktiv; externe Navigation und neue Fenster werden blockiert. Eine native
+Schnittstelle ergaenzen wir erst, wenn eine Funktion sie braucht.
+
+Die erste nutzbare Version soll Chart-Screenshots und Setup-Notizen als Markdown
+mit Bildern in einem waehlbaren Ordner speichern. Obsidian bleibt optional.
+Bestehende Journale werden vom Grundgeruest weder eingelesen noch veraendert.
+
+Naechste Arbeiten stehen in der [Roadmap](docs/ROADMAP.md). Installer, Signierung,
+Updates, Cloud, Broker-Anbindung und KI folgen hier noch nicht.
+Eine Lizenz wurde noch nicht ausgewaehlt.

@@ -1,0 +1,45 @@
+:root {
+  font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+  color: #243b53;
+  background: #f4f7fb;
+  font-synthesis: none;
+  line-height: 1.6;
+  --muted: #52677e;
+  --accent: #355cb0;
+  --line: #d4dfed;
+  --surface: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: inherit; }
+.workspace { min-height: 100vh; display: flex; flex-direction: column; }
+.app-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 40px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.brand { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 650; text-decoration: none; }
+.brand-mark { color: var(--accent); font-size: 30px; line-height: 1; }
+.workspace-label, .entry-count, footer { color: var(--muted); font-size: 14px; }
+main { width: min(100%, 1040px); margin: 0 auto; padding: 32px 40px; flex: 1; }
+.journal-heading { display: flex; align-items: baseline; gap: 16px; }
+h1 { font-size: 23px; font-weight: 600; margin: 0; }
+.empty-state { text-align: center; padding: 36px 16px 48px; }
+.frame { width: 240px; max-width: 100%; stroke: var(--accent); stroke-width: 2; margin-bottom: 12px; }
+.candle { stroke-width: 6; }
+h2 { font-size: clamp(27px, 4vw, 38px); font-weight: 600; letter-spacing: -1px; line-height: 1.25; margin: 0 0 16px; }
+.empty-state > p { max-width: 420px; margin: 0 auto; color: var(--muted); font-size: 17px; }
+.development-note { margin: 28px auto; max-width: 420px; font-size: 14px; color: var(--muted); }
+.status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 6px; }
+details { text-align: left; max-width: 420px; margin: 0 auto; border-top: 1px solid var(--line); padding-top: 18px; font-size: 14px; }
+summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+ol { color: var(--muted); padding-left: 22px; }
+li + li { margin-top: 10px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; }
+footer { border-top: 1px solid var(--line); padding: 16px 40px; }
+@media (max-width: 600px) {
+  .app-header { padding: 18px 22px; }
+  .workspace-label { display: none; }
+  main { padding: 26px 22px; }
+  .empty-state { padding: 22px 0; }
+  footer { padding: 16px 22px; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { color: #e0e8f5; background: #182436; --muted: #b0bed0; --accent: #a3bcff; --line: #35475f; --surface: #1e2d42; }
+}

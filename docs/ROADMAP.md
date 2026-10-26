@@ -1,0 +1,73 @@
+# TradeFrame roadmap
+
+## Product
+
+A desktop trading journal for people who want to record a chart and their
+reasoning without interrupting their trading workflow.
+
+Core flow: shortcut -> screenshot -> setup details -> local save -> later review.
+Target: Windows, macOS, and Linux. A build passing on an OS does not verify
+screen capture, shortcuts, permissions, or installer behavior on that OS.
+
+## Decisions for the foundation
+
+- Electron, React, and TypeScript; no backend service.
+- Local files, with Markdown plus images planned for the first usable release.
+- Obsidian is optional. No dependency on Sway, Eww, rofi, or a particular broker.
+- English UI and commits; English and German READMEs.
+- Reuse the personal journal's workflow, not its hard-coded paths or private data.
+- Start with one repository and a small UI. Add native bridges only as needed.
+
+## 1. Foundation (current)
+
+Deliverables: safe desktop window, honest empty state, developer commands,
+startup test, bilingual READMEs, CI build matrix, and this roadmap.
+
+Acceptance:
+- Fresh `npm install` succeeds and produces a reviewed lockfile.
+- `npm run check` passes with the declared dependencies.
+- `npm start` opens the desktop window in a normal graphical session.
+- No existing journal files are read or written.
+
+Still open: fresh dependency install, lockfile, and a real Electron 45 launch.
+The setup environment only allowed a cache-based build with older Electron types.
+CI has been configured but has not been run or verified on GitHub.
+
+## 2. Capture feasibility
+
+Implement one chart capture with preview and cancellation. Then connect a global
+shortcut, handling registration failures and user permission decisions visibly.
+
+Acceptance: capture and cancel work on the development Sway/Wayland desktop;
+test Windows and macOS separately and record limitations. Do not assume that
+screen selection or permission dialogs can be skipped. Choose a supported
+fallback if a compositor cannot register shortcuts.
+
+## 3. First saved setup
+
+Choose a journal folder. Capture an image and enter live/backtest, symbol,
+direction, model, timeframe, optional New York entry time, and a note.
+Confirm the exact fields and file schema before implementation.
+
+Acceptance: Markdown and image survive restart; invalid input is rejected;
+existing files cannot be silently overwritten; failures preserve user input.
+Test using synthetic setups in temporary folders.
+
+## 4. Follow a setup
+
+Add later screenshots to an existing setup; record outcome and optional R.
+
+Acceptance: the user can choose the correct setup, track multiple timeframes,
+and update a trade without losing existing text or images.
+
+## 5. First usable release
+
+Journal list, entry details, basic settings, documented demo, and installers.
+Verify installation, permissions, capture, shortcuts, and persistence on each
+claimed platform. Decide licensing, signing/notarization, and release process
+before publishing binaries. Check package availability and application naming.
+
+## Later, only after deciding the need
+
+Statistics, imports, chart annotations, AI reviews, broker integration, and sync.
+Each milestone is agreed and reviewed separately. No release date is promised.
