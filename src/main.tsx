@@ -84,27 +84,12 @@ function App() {
               <p>Keep the chart, the reasoning, and the outcome together.<br className="desktop-break" /> Build a record you can learn from.</p>
               <p className="capture-status" id="capture-status">{api ? 'Capture a chart, add setup details, then save to your journal folder.' : 'Open the desktop app to capture and save setups. This browser view is a preview only.'}</p>
             </section>}
+            {state.preview && <section className="setup-details" hidden={state.sources.length > 0} aria-labelledby="details-title">
+              <h2 id="details-title">Setup details</h2>
+              <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} />
+            </section>}
             <footer className="journal-footer"><span>Saved setups stay in your chosen folder</span><span>Capture the chart. Remember the trade.</span></footer>
           </main>
-          <aside className="inspector" aria-labelledby="details-title">
-            <h2 id="details-title">Setup details</h2>
-            {state.preview ? <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} /> : <div className="inspector-empty">
-              <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                <rect x="6" y="4" width="20" height="24" rx="3" />
-                <path d="M11 11h10m-10 5h10m-10 5h6" />
-              </svg>
-              <h3>The full picture</h3>
-              <p>Capture a chart to add setup details and save it locally.</p>
-            </div>}
-            <div className="review-sequence">
-              <h3>From context to outcome</h3>
-              <ol>
-                <li><span className="step-dot" aria-hidden="true" /><div><strong>Context</strong><p>The bigger picture before entry.</p></div></li>
-                <li><span className="step-dot" aria-hidden="true" /><div><strong>Entry</strong><p>The setup and your reasoning.</p></div></li>
-                <li><span className="step-dot" aria-hidden="true" /><div><strong>Outcome</strong><p>What happened. What you learned.</p></div></li>
-              </ol>
-            </div>
-          </aside>
         </div>
       </div>
     </div>

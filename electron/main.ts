@@ -56,7 +56,7 @@ async function openBar() {
       frame: false,
       alwaysOnTop: true,
       show: false,
-      backgroundColor: '#0f1011',
+      backgroundColor: '#060606',
       webPreferences: { preload, nodeIntegration: false, contextIsolation: true, sandbox: true },
     });
     bar = window;
@@ -180,7 +180,7 @@ function createWindow() {
   const window = new BrowserWindow({
     title: 'TradeFrame', width: 1120, height: 760, minWidth: 640, minHeight: 480,
     icon,
-    show: false, backgroundColor: '#08090a',
+    show: false, backgroundColor: '#000000',
     webPreferences: { preload, nodeIntegration: false, contextIsolation: true, sandbox: true },
   });
   journal = window;

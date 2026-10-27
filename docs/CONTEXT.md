@@ -40,7 +40,8 @@ milestone acceptance live in [ROADMAP](ROADMAP.md); visual rules live in
   screenshot images through the bridge; it has no direct journal file access.
 - `electron/journal.ts` validates setup fields and creates exclusive per-setup
   Markdown/PNG files. The main process owns the folder picker and save lifecycle.
-  `src/SetupForm.tsx` retains the draft during save errors/cancellation.
+  `src/SetupForm.tsx` follows the preview at full journal width and retains the
+  draft during save errors/cancellation and source selection.
 - `tests/main.test.cjs` exercises compiled main-process capture and preload
   behavior with Electron doubles and synthetic images. It is not a real desktop
   launch, renderer test, or native capture test.

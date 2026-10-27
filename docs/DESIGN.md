@@ -1,6 +1,8 @@
 # TradeFrame visual direction
 
 Approved direction: Linear-inspired desktop workspace, 26 October 2026.
+27 October 2026 owner revision: deeper black surfaces and setup fields below
+the image, using the full journal width instead of a narrow inspector.
 Research method: Refero Design skill; public Refero Styles pages. Refero MCP
 was unavailable. These are interpreted website styles, not official brand guides
 or evidence of in-app workflows. No source assets or components were copied.
@@ -24,18 +26,17 @@ Secondary research:
 
 | Decision | Source | Role preserved | Reason |
 | --- | --- | --- | --- |
-| Canvas #08090a, surfaces #0f1011 / #161718 | Linear | Background / nested surfaces | Quiet depth without decorative shadows |
-| Borders #23252a | Linear | Structural edges | Separate navigation, journal, and detail pane |
-| Accent #e4f222 | Linear | Single primary action only | Capture in the journal/bar; retake in preview; disabled actions stay neutral |
+| Canvas #000000, surfaces #060606 / #101010 | Owner's darker revision of the Linear reference | Background / nested surfaces | Blacker canvas with restrained separation and readable text |
+| Borders #202020 | Owner's darker revision | Structural edges | Separate navigation, preview, fields, and controls |
+| Accent #e4f222 | Linear | Single primary action only | Capture before a preview; Save setup with a preview; disabled actions stay neutral |
 | Sans-serif UI, medium weights | Linear | Interface typography | Compact scan-friendly labels; system fallback until a font is bundled |
 | Brighter secondary text #a0a5ae | Accessibility adaptation | Readable supporting copy | Improve small-text contrast on the dark canvas |
-| Navigation / journal / detail layout | User-approved product proposal | Desktop workflow | Browse setups while retaining chart context |
-| Context -> Entry -> Outcome | Personal journaling workflow | Review sequence | Connect screenshots to stages of a trade |
+| Navigation / full-width journal / details below image | Owner's layout revision | Desktop workflow | More room for the chart and setup fields |
 | Empty state, no synthetic trade records | Current product scope | Honest state | A transient capture is not a saved setup |
 | Compact draggable capture bar | Owner's recorder-tool request | Mouse-operated capture controls | Capture without shortcuts; journal stays visible as requested on 27 October 2026 |
 | Capture action switches to Close capture bar while open | Owner's explicit-close request, 27 October 2026 | Existing journal action | Keep controls available across screenshots and allow closing from either window |
 | App icon: two candles inside capture corners on a dark tile | Owner's icon request; existing TradeFrame frame/candle motif | App identity, separate from action-color roles | Recognizable mark at small desktop sizes; one acid accent candle |
-| Setup form in the existing inspector | Approved save fields and existing journal/detail layout | Supporting detail pane | Keep the selected chart visible while entering its reasoning; inspector moves below on narrow windows |
+| Setup form below the preview with adaptive field columns | Owner's request for more input space | Setup details following the image | Fields share available width; notes span the row; narrow windows stack fields |
 | Save setup becomes the primary action with a preview | Existing single-primary-action rule | Accent reserved for the next action | Retake and capture controls become neutral while setup details are available |
 
 ## App icon
@@ -50,11 +51,13 @@ and one acid yellow-green; legible at 24px, no text, arrows, glow, or 3D."
 
 Media: real chart screenshots when capture exists. The current empty-state glyph
 is a simple code-native candlestick/frame symbol, not a chart or performance claim.
-On narrow windows the inspector moves below the journal instead of squeezing it.
+The setup form follows the preview at every window size. Its fields use as
+many 220px-minimum columns as fit, falling to one column on narrow windows.
+The form stays mounted but hidden during source selection to preserve its draft.
 The capture bar uses the same surfaces, control radii, and primary-action accent.
 Candidate source thumbnails and the preview are real user-triggered snapshots,
 not fabricated trading examples. Source selection and preview occupy the central
-journal area; the detail pane remains reserved for future setup records.
+journal area; there is no separate inspector column.
 
 ## Verification
 

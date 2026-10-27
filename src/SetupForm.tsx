@@ -35,7 +35,7 @@ export function SetupForm({ api, busy, choosing }: { api: CaptureAPI | undefined
         <label>Model<input name="model" required maxLength={120} placeholder="Your setup model" /></label>
         <label>Timeframe<input name="timeframe" required maxLength={40} placeholder="e.g. 5m" /></label>
         <label>Entry time · New York (optional)<input name="entryTimeNewYork" type="datetime-local" /></label>
-        <label>Note (optional)<textarea name="note" rows={5} maxLength={20000} placeholder="What made this setup interesting?" /></label>
+        <label className="setup-note">Note (optional)<textarea name="note" rows={5} maxLength={20000} placeholder="What made this setup interesting?" /></label>
         <button className="capture-button" type="submit" disabled={choosing}>{saving ? 'Saving…' : 'Save setup…'}</button>
       </fieldset>
       <p className="preview-note">Choose a folder when saving. Each save creates a new setup.md and chart.png in its own folder.</p>

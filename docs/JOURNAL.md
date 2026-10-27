@@ -6,7 +6,7 @@ This is an explicit save of the current selected screenshot, not autosave.
 ## Save flow
 
 1. Capture and select a screenshot.
-2. In Setup details, enter mode (live/backtest), symbol, direction (long/short),
+2. In Setup details below the image, enter mode (live/backtest), symbol, direction (long/short),
    model, timeframe, optional New York entry date/time, and optional note.
 3. Click **Save setup…** and choose a journal folder with the native picker.
 4. A new `setup-<UTC timestamp>-<random suffix>` directory contains `setup.md`
