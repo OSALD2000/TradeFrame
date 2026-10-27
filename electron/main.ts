@@ -67,7 +67,6 @@ async function openBar() {
       throw new Error('The capture bar could not open. Restart TradeFrame and try again.');
     }
   }
-  journal?.hide();
   bar?.show();
 }
 
@@ -76,10 +75,9 @@ async function takeScreenshot() {
   const owner = journal;
   state = { ...state, busy: true, sources: [], error: null };
   publish();
-  journal?.hide();
   bar?.hide();
   try {
-    // Allow the compositor to remove TradeFrame before collecting screen images.
+    // Allow the compositor to remove the capture bar before collecting screen images.
     await new Promise((resolve) => setTimeout(resolve, 300));
     // shortcut: cap snapshots at 2560x1440; revisit native-resolution capture before release.
     const sources = await desktopCapturer.getSources({

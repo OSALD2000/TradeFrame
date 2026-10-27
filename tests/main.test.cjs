@@ -76,11 +76,13 @@ test('startup loads only local UI with isolation and blocks navigation/new windo
   assert.equal(app.quitCalled, true);
 });
 
-test('floating controls hide both windows for capture and return a transient preview', async () => {
+test('capture keeps the journal visible and hides only the bar before returning a transient preview', async () => {
   const { windows, invoke } = await boot(async (windows) => {
-    assert.ok(windows.every((w) => !w.visible), 'TradeFrame is hidden before capture');
+    assert.equal(windows[0].visible, true, 'The journal stays visible during source selection');
+    assert.equal(windows[1].visible, false, 'The capture bar is hidden before capture');
     return [source('window:99:1', 'TradeFrame'), source('screen:0:0')];
   });
+  windows[0].emit('ready-to-show');
   await invoke('capture:open-bar');
   const [journal, bar] = windows;
   assert.equal(bar.options.title, 'TradeFrame Capture');
@@ -90,16 +92,18 @@ test('floating controls hide both windows for capture and return a transient pre
   assert.equal(titlePreserved, true);
   assert.equal(bar.options.webPreferences.sandbox, true);
   assert.equal(bar.visible, true);
-  assert.equal(journal.visible, false);
+  assert.equal(journal.visible, true);
   await invoke('capture:screenshot', bar);
   const state = await invoke('capture:state');
   assert.equal(state.preview.id, 'screen:0:0');
   assert.equal(state.sources.length, 0);
   assert.equal(state.busy, false);
   assert.equal(journal.visible, true);
+  assert.equal(bar.visible, false);
   await invoke('capture:discard');
   assert.equal((await invoke('capture:state')).preview, null);
   await invoke('capture:open-bar');
+  assert.equal(journal.visible, true, 'Retaking keeps the journal visible');
   bar.close();
   assert.equal(journal.visible, true);
 });

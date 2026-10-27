@@ -2,10 +2,11 @@
 
 ## Implemented flow
 
-1. Click **Capture chart** in the desktop journal. The main window hides and a
+1. Click **Capture chart** in the desktop journal. The main window stays visible and a
    compact, draggable **TradeFrame Capture** bar opens.
-2. Click **Screenshot** on the bar. TradeFrame hides both windows, waits briefly
-   for the compositor, then requests screen/window snapshots from Electron.
+2. Click **Screenshot** on the bar. TradeFrame hides only the capture bar, waits
+   briefly for the compositor, then requests screen/window snapshots from Electron.
+   The journal stays visible, including while the operating system's source picker is open.
 3. On PipeWire, the operating system may prompt for a screen/window. If only one
    image is returned, it becomes the preview directly. When multiple sources
    are returned, choose a snapshot in the journal.
@@ -26,7 +27,9 @@ The prototype uses `desktopCapturer.getSources()` thumbnails as snapshots,
 requesting 2560x1440. Returned sizes depend on the platform; native-resolution
 capture is not guaranteed. Empty images and TradeFrame's own window sources are
 excluded. A compositor delay reduces the chance of recording the capture bar,
-but native tests must verify the actual screenshot contents.
+but native tests must verify the actual screenshot contents. A full-screen
+snapshot can include the visible journal. Choose the chart window or move the
+journal out of the captured area when it should not appear in the image.
 
 The bar requests always-on-top behavior. On Wayland, window placement and
 stacking are controlled by the compositor; Electron cannot guarantee them.
@@ -55,9 +58,12 @@ The app and agent do not edit desktop configuration automatically.
 Use a synthetic chart/test window without personal or employer data.
 
 - Launch with `npm start`; open the bar and verify it is usable above the chart.
+- Confirm the journal stays visible when opening the bar, taking a screenshot,
+  and selecting a source in the operating system's picker.
 - Drag it, click Journal, reopen it, and use × to return without capturing.
-- Take a screen and a window snapshot. Confirm neither TradeFrame window is in
-  the image and the preview is legible. Note any returned resolution limit.
+- Take a screen and a window snapshot. Confirm the capture bar is absent and
+  the preview is legible. A visible journal may appear in a screen snapshot;
+  verify that choosing the chart window excludes it. Note any resolution limit.
 - If several sources appear, select one; repeat and cancel selection. The
   earlier preview must survive cancellation.
 - Retake and deny/cancel OS access. The journal must return; an earlier preview

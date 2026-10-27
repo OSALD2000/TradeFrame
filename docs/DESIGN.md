@@ -32,7 +32,7 @@ Secondary research:
 | Navigation / journal / detail layout | User-approved product proposal | Desktop workflow | Browse setups while retaining chart context |
 | Context -> Entry -> Outcome | Personal journaling workflow | Review sequence | Connect screenshots to stages of a trade |
 | Empty state, no synthetic trade records | Current product scope | Honest state | A transient capture is not a saved setup |
-| Compact draggable capture bar | Owner's recorder-tool request | Mouse-operated capture controls | Capture without shortcuts or keeping the journal visible |
+| Compact draggable capture bar | Owner's recorder-tool request | Mouse-operated capture controls | Capture without shortcuts; journal stays visible as requested on 27 October 2026 |
 
 Media: real chart screenshots when capture exists. The current empty-state glyph
 is a simple code-native candlestick/frame symbol, not a chart or performance claim.

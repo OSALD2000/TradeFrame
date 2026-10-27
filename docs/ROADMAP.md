@@ -31,7 +31,8 @@ Acceptance:
 
 Implementation and verification facts are maintained in [CONTEXT](CONTEXT.md).
 Remaining acceptance work: review/adopt the owner-generated lockfile, switch
-CI to `npm ci`, and explicitly record a successful native desktop launch.
+CI to `npm ci`. The owner confirmed a successful native desktop launch on
+27 October 2026; capture acceptance remains separate.
 GitHub Actions execution remains unverified.
 
 ## 2. Capture feasibility
