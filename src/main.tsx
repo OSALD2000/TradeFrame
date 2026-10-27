@@ -44,8 +44,8 @@ function App() {
                 <h1>Trading journal</h1>
                 <p>A clear view of every decision.</p>
               </div>
-              <button className="capture-button" disabled={!api || state.busy} onClick={() => api && run(api.openBar)} aria-describedby={!state.preview && !state.sources.length ? "capture-status" : undefined}>
-                <span aria-hidden="true">＋</span> Capture chart
+              <button className="capture-button" disabled={!api || state.busy} onClick={() => api && run(state.barOpen ? api.showJournal : api.openBar)} aria-expanded={state.barOpen} aria-describedby={!state.preview && !state.sources.length ? "capture-status" : undefined}>
+                <span aria-hidden="true">{state.barOpen ? '×' : '＋'}</span> {state.barOpen ? 'Close capture bar' : 'Capture chart'}
               </button>
             </header>
             <div className="list-header">

@@ -6,7 +6,7 @@ declare global {
 }
 
 export function useCapture() {
-  const [state, setState] = useState<CaptureState>({ busy: false, sources: [], preview: null, error: null });
+  const [state, setState] = useState<CaptureState>({ barOpen: false, busy: false, sources: [], preview: null, error: null });
   const api = window.capture;
   const [actionError, setActionError] = useState<string | null>(null);
   useEffect(() => {

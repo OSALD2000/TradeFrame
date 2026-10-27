@@ -9,7 +9,7 @@ const uiFile = path.join(__dirname, '../dist/index.html');
 const preload = path.join(__dirname, 'preload.js');
 let journal: BrowserWindow | null = null;
 let bar: BrowserWindow | null = null;
-let state: CaptureState = { busy: false, sources: [], preview: null, error: null };
+let state: CaptureState = { barOpen: false, busy: false, sources: [], preview: null, error: null };
 
 function protectWindow(window: BrowserWindow) {
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
@@ -33,8 +33,10 @@ function publish() {
 }
 
 function showJournal() {
+  state.barOpen = false;
   bar?.hide();
   journal?.show();
+  publish();
 }
 
 async function openBar() {
@@ -58,6 +60,8 @@ async function openBar() {
     protectWindow(window);
     window.on('closed', () => {
       bar = null;
+      state.barOpen = false;
+      publish();
       journal?.show();
     });
     try {
@@ -68,6 +72,8 @@ async function openBar() {
     }
   }
   bar?.show();
+  state.barOpen = true;
+  publish();
 }
 
 async function takeScreenshot() {
@@ -101,7 +107,8 @@ async function takeScreenshot() {
     if (journal === owner) {
       state.busy = false;
       publish();
-      showJournal();
+      journal?.show();
+      if (state.barOpen) bar?.show();
     }
   }
 }
@@ -130,7 +137,7 @@ function registerCapture() {
     publish();
   });
   ipcMain.handle('capture:journal', (event) => {
-    assertSender(event, bar);
+    assertSender(event);
     if (!state.busy) showJournal();
   });
 }
@@ -147,7 +154,7 @@ function createWindow() {
   window.on('closed', () => {
     journal = null;
     bar?.close();
-    state = { busy: false, sources: [], preview: null, error: null };
+    state = { barOpen: false, busy: false, sources: [], preview: null, error: null };
   });
   window.loadFile(uiFile).catch((error: Error) => {
     dialog.showErrorBox('TradeFrame could not start', error.message);
@@ -164,7 +171,7 @@ app.whenReady().then(() => {
   createWindow();
   app.on('activate', () => {
     if (!journal) createWindow();
-    else if (!state.busy) showJournal();
+    else if (!state.busy) journal.show();
   });
 }).catch((error: Error) => {
   dialog.showErrorBox('TradeFrame could not start', error.message);

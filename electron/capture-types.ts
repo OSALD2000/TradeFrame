@@ -1,6 +1,7 @@
 export type CaptureSource = { id: string; name: string; image: string };
 
 export type CaptureState = {
+  barOpen: boolean;
   busy: boolean;
   sources: CaptureSource[];
   preview: CaptureSource | null;

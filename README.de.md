@@ -55,6 +55,8 @@ Aufrufer und Quellenauswahl.
 **Capture chart** oeffnet die schwebende Leiste. Dort **Screenshot** anklicken,
 gegebenenfalls Bildschirm/Fenster auswaehlen und die Vorschau pruefen.
 **Retake screenshot** fuehrt zur Leiste zurueck, **Discard** verwirft das Bild.
+Die Leiste bleibt nach Aufnahmen offen. **Close capture bar** im Journal oder
+**×** in der Leiste schliesst sie.
 Noch wird nichts gespeichert; Tastenkombinationen sind nicht erforderlich.
 
 Die [Aufnahmenotizen](docs/CAPTURE.md) enthalten die Sway-Regel zum Schweben,

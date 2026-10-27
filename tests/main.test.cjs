@@ -77,7 +77,7 @@ test('startup loads only local UI with isolation and blocks navigation/new windo
 });
 
 test('capture keeps the journal visible and hides only the bar before returning a transient preview', async () => {
-  const { windows, invoke } = await boot(async (windows) => {
+  const { windows, invoke, app } = await boot(async (windows) => {
     assert.equal(windows[0].visible, true, 'The journal stays visible during source selection');
     assert.equal(windows[1].visible, false, 'The capture bar is hidden before capture');
     return [source('window:99:1', 'TradeFrame'), source('screen:0:0')];
@@ -92,6 +92,7 @@ test('capture keeps the journal visible and hides only the bar before returning 
   assert.equal(titlePreserved, true);
   assert.equal(bar.options.webPreferences.sandbox, true);
   assert.equal(bar.visible, true);
+  assert.equal((await invoke('capture:state')).barOpen, true);
   assert.equal(journal.visible, true);
   await invoke('capture:screenshot', bar);
   const state = await invoke('capture:state');
@@ -99,12 +100,23 @@ test('capture keeps the journal visible and hides only the bar before returning 
   assert.equal(state.sources.length, 0);
   assert.equal(state.busy, false);
   assert.equal(journal.visible, true);
-  assert.equal(bar.visible, false);
+  assert.equal(bar.visible, true);
+  app.emit('activate');
+  assert.equal(bar.visible, true, 'Activating the app does not close the bar');
+  await invoke('capture:screenshot', bar);
+  assert.equal(bar.visible, true, 'Repeated screenshots keep the bar open');
+  await invoke('capture:journal');
+  assert.equal(bar.visible, false, 'The journal can explicitly close the bar');
+  assert.equal((await invoke('capture:state')).barOpen, false);
+  await invoke('capture:open-bar');
+  await invoke('capture:journal', bar);
+  assert.equal(bar.visible, false, 'The bar can explicitly close itself');
   await invoke('capture:discard');
   assert.equal((await invoke('capture:state')).preview, null);
   await invoke('capture:open-bar');
   assert.equal(journal.visible, true, 'Retaking keeps the journal visible');
   bar.close();
+  assert.equal((await invoke('capture:state')).barOpen, false);
   assert.equal(journal.visible, true);
 });
 
@@ -119,6 +131,7 @@ test('empty thumbnails restore the journal with an actionable error', async () =
   assert.equal(state.sources.length, 0);
   assert.match(state.error, /No screenshot/);
   assert.equal(windows[0].visible, true);
+  assert.equal(windows[1].visible, true);
 });
 
 test('source selection rejects stale ids and cancellation keeps the previous preview', async () => {
@@ -139,6 +152,7 @@ test('source selection rejects stale ids and cancellation keeps the previous pre
   await invoke('capture:screenshot', windows[1]);
   await invoke('capture:choose', windows[0], 'window:42:0');
   assert.equal((await invoke('capture:state')).preview.id, 'window:42:0');
+  assert.equal(windows[1].visible, true, 'Selecting a snapshot keeps the bar open');
 });
 
 test('permission failure restores the journal and preserves an earlier screenshot', async () => {
@@ -156,6 +170,7 @@ test('permission failure restores the journal and preserves an earlier screensho
   assert.match(state.error, /cancelled or screen access/);
   assert.equal(state.busy, false);
   assert.equal(windows[0].visible, true);
+  assert.equal(windows[1].visible, true);
 });
 
 test('IPC rejects unknown windows, subframes and remote pages', async () => {

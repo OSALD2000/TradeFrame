@@ -9,11 +9,14 @@
    The journal stays visible, including while the operating system's source picker is open.
 3. On PipeWire, the operating system may prompt for a screen/window. If only one
    image is returned, it becomes the preview directly. When multiple sources
-   are returned, choose a snapshot in the journal.
+   are returned, choose a snapshot in the journal. After each capture attempt,
+   the bar reappears and stays open for another screenshot, including after
+   cancellation or failure.
 4. **Cancel selection** preserves an earlier preview. **Discard** on a preview
    removes it. **Retake screenshot** returns to the floating controls; a failed
    or cancelled capture leaves the earlier preview intact.
-5. **Journal** or **×** on the bar returns to the journal without taking a shot.
+5. **Close capture bar** in the journal, or **Journal** / **×** on the bar, hides
+   the bar explicitly without discarding the preview. Closing the app closes it too.
 
 This is a single-snapshot prototype, not a recorder. Images and window titles
 stay in application memory; they are not saved or transmitted. All candidate
@@ -61,6 +64,10 @@ Use a synthetic chart/test window without personal or employer data.
 - Confirm the journal stays visible when opening the bar, taking a screenshot,
   and selecting a source in the operating system's picker.
 - Drag it, click Journal, reopen it, and use × to return without capturing.
+- After successful, cancelled, and failed captures, confirm the bar reappears.
+  Take another screenshot without reopening it; close it from the journal's
+  **Close capture bar** button and then from the bar's **×**. Both controls
+  must preserve the preview. Activating the app must not close the bar.
 - Take a screen and a window snapshot. Confirm the capture bar is absent and
   the preview is legible. A visible journal may appear in a screen snapshot;
   verify that choosing the chart window excludes it. Note any resolution limit.

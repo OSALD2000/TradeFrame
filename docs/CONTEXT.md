@@ -14,6 +14,9 @@ screenshot preview. Setup records, persistence, and imports are not implemented.
 The journal remains visible when the capture bar opens and during source
 selection/capture; only the bar is hidden for the snapshot. Screen snapshots
 can therefore include the journal.
+The bar reappears after each capture attempt and stays open until explicitly
+closed from the journal or the bar, or until the app closes. Its logical open
+state is shared with the renderer so the journal can offer a close action.
 Native capture and window behavior remain unverified on real target desktops.
 Intended behavior and
 milestone acceptance live in [ROADMAP](ROADMAP.md); visual rules live in

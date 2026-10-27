@@ -33,6 +33,7 @@ Secondary research:
 | Context -> Entry -> Outcome | Personal journaling workflow | Review sequence | Connect screenshots to stages of a trade |
 | Empty state, no synthetic trade records | Current product scope | Honest state | A transient capture is not a saved setup |
 | Compact draggable capture bar | Owner's recorder-tool request | Mouse-operated capture controls | Capture without shortcuts; journal stays visible as requested on 27 October 2026 |
+| Capture action switches to Close capture bar while open | Owner's explicit-close request, 27 October 2026 | Existing journal action | Keep controls available across screenshots and allow closing from either window |
 
 Media: real chart screenshots when capture exists. The current empty-state glyph
 is a simple code-native candlestick/frame symbol, not a chart or performance claim.

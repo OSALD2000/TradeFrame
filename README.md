@@ -53,7 +53,9 @@ capture commands; the main process validates callers and source selection.
 
 Click **Capture chart**, then **Screenshot** on the floating bar. Choose the
 screen/window if prompted and inspect the preview. **Retake screenshot** returns
-to the bar; **Discard** clears the preview. Nothing is saved yet.
+to the bar; **Discard** clears the preview. The bar stays open after captures;
+close it with **Close capture bar** in the journal or **×** on the bar.
+Nothing is saved yet.
 
 See [capture notes](docs/CAPTURE.md) for the Sway floating rule, permissions,
 snapshot resolution limits, and manual acceptance checks. No shortcut is needed.
