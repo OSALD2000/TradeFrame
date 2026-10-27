@@ -52,7 +52,10 @@ always-on-top behavior.
 
 Choose a journal folder. Capture an image and enter live/backtest, symbol,
 direction, model, timeframe, optional New York entry time, and a note.
-Confirm the exact fields and file schema before implementation.
+The owner approved these fields and `setup.md` + `chart.png` per new setup
+directory on 27 October 2026. Implementation and format: [JOURNAL](JOURNAL.md).
+Automated save/error checks pass; native form/dialog and restart acceptance
+remain open. Saved-setup browsing is a later step.
 
 Acceptance: Markdown and image survive restart; invalid input is rejected;
 existing files cannot be silently overwritten; failures preserve user input.

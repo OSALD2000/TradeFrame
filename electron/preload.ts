@@ -8,6 +8,7 @@ const capture: CaptureAPI = {
   chooseSource: (id) => ipcRenderer.invoke('capture:choose', id),
   discard: () => ipcRenderer.invoke('capture:discard'),
   showJournal: () => ipcRenderer.invoke('capture:journal'),
+  saveSetup: (input) => ipcRenderer.invoke('journal:save', input),
   onStateChange: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, state: CaptureState) => listener(state);
     ipcRenderer.on('capture:changed', handler);

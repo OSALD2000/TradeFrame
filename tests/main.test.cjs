@@ -10,7 +10,7 @@ const source = (id, name = 'Synthetic chart') => ({ id, name,
   thumbnail: { isEmpty: () => false, toDataURL: () => 'data:image/png;base64,synthetic' },
 });
 
-async function boot(capture = async () => [source('screen:0:0')]) {
+async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] })) {
   const app = new EventEmitter();
   app.setName = () => {};
   app.whenReady = () => Promise.resolve();
@@ -50,14 +50,14 @@ async function boot(capture = async () => [source('screen:0:0')]) {
   const electron = { app, BrowserWindow,
     desktopCapturer: { getSources: () => capture(windows) },
     ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
-    dialog: { showErrorBox: () => assert.fail('Unexpected startup error') },
+    dialog: { showErrorBox: () => assert.fail('Unexpected startup error'), showOpenDialog: selectFolder },
     Menu: { buildFromTemplate: (template) => template, setApplicationMenu: () => {} },
   };
   const dirname = path.resolve(__dirname, '../dist-electron');
   vm.runInNewContext(readFileSync(path.join(dirname, 'main.js'), 'utf8'), {
     exports: {}, __dirname: dirname, process: { platform: 'linux' },
     setTimeout: (callback) => queueMicrotask(callback),
-    require: (name) => name === 'electron' ? electron : require(name),
+    require: (name) => name === 'electron' ? electron : require(name.startsWith('./') ? path.join(dirname, name) : name),
   });
   await new Promise(setImmediate);
   const invoke = async (name, window = windows[0], ...args) => handlers.get(name)({
@@ -69,6 +69,7 @@ async function boot(capture = async () => [source('screen:0:0')]) {
 test('startup loads only local UI with isolation and blocks navigation/new windows', async () => {
   const { app, windows: [window] } = await boot();
   assert.equal(window.file, path.resolve(__dirname, '../dist/index.html'));
+  assert.equal(window.options.icon, path.resolve(__dirname, '../dist/tradeframe-icon.png'));
   assert.equal(window.visible, false);
   window.emit('ready-to-show');
   assert.equal(window.visible, true);
@@ -247,6 +248,8 @@ test('preload exposes named commands and strips event objects from subscriptions
   api.chooseSource('screen:0:0');
   assert.deepEqual(calls[0], ['capture:choose', 'screen:0:0']);
   assert.equal(api.invoke, undefined);
+  api.saveSetup({ symbol: 'Synthetic' });
+  assert.deepEqual(calls[1], ['journal:save', { symbol: 'Synthetic' }]);
   const received = [];
   const unsubscribe = api.onStateChange((...args) => received.push(args));
   const state = { preview: null };
@@ -254,4 +257,58 @@ test('preload exposes named commands and strips event objects from subscriptions
   assert.deepEqual(received, [[state]]);
   unsubscribe();
   assert.equal(ipcRenderer.listenerCount('capture:changed'), 0);
+});
+
+test('saving requires a journal screenshot and cancellation preserves it while blocking parallel capture', async () => {
+  let resolve;
+  const { windows, invoke } = await boot(undefined, () => new Promise((done) => { resolve = done; }));
+  const input = { mode: 'live', direction: 'long', symbol: 'TEST', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: '' };
+  await assert.rejects(invoke('journal:save', windows[0], input), /Choose a screenshot/);
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1]);
+  await assert.rejects(invoke('journal:save', windows[1], input), /Untrusted/);
+  await assert.rejects(invoke('journal:save', windows[0], { ...input, symbol: '' }), /Invalid symbol/);
+  const pending = invoke('journal:save', windows[0], input);
+  assert.equal((await invoke('capture:state')).busy, true);
+  await assert.rejects(invoke('journal:save', windows[0], input), /Choose a screenshot/);
+  await invoke('capture:discard');
+  resolve({ canceled: true, filePaths: [] });
+  assert.equal((await pending).status, 'cancelled');
+  assert.equal((await invoke('capture:state')).preview.id, 'screen:0:0');
+  assert.equal((await invoke('capture:state')).busy, false);
+});
+
+test('save failures preserve the preview and unlock the controls for retry', async () => {
+  const { windows, invoke } = await boot(undefined, async () => { throw new Error('Synthetic folder failure'); });
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1]);
+  await assert.rejects(invoke('journal:save', windows[0], {
+    mode: 'backtest', direction: 'short', symbol: 'TEST', model: 'Test', timeframe: '1h', entryTimeNewYork: '', note: '',
+  }), /Could not save/);
+  assert.equal((await invoke('capture:state')).preview.id, 'screen:0:0');
+  assert.equal((await invoke('capture:state')).busy, false);
+});
+
+test('journal save writes the selected native snapshot to the chosen folder', async (t) => {
+  const fs = require('node:fs/promises');
+  const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-ipc-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  const snapshot = source('screen:0:0');
+  snapshot.thumbnail.toDataURL = () => image;
+  const { windows, invoke } = await boot(async () => [snapshot], async (owner, options) => {
+    assert.equal(owner, windows[0]);
+    assert.ok(options.properties.includes('openDirectory'));
+    return { canceled: false, filePaths: [root] };
+  });
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1]);
+  const saved = await invoke('journal:save', windows[0], {
+    mode: 'live', direction: 'long', symbol: 'TEST', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: 'Synthetic',
+  });
+  assert.equal(saved.status, 'saved');
+  assert.equal(path.dirname(path.dirname(saved.path)), root);
+  assert.match(await fs.readFile(saved.path, 'utf8'), /Synthetic/);
+  assert.equal((await fs.readFile(path.join(path.dirname(saved.path), 'chart.png'))).toString('base64'), image.split(',')[1]);
+  assert.equal((await invoke('capture:state')).busy, false);
 });

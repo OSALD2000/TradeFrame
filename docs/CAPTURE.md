@@ -20,11 +20,12 @@
 5. **Close capture bar** in the journal, or **Journal** / **×** on the bar, hides
    the bar explicitly without discarding the preview. Closing the app closes it too.
 
-This is a single-snapshot prototype, not a recorder. Images and window titles
-stay in application memory; they are not saved or transmitted. All candidate
+This is a single-snapshot prototype, not a recorder. Captures and source titles
+stay in memory until explicit save; nothing is transmitted. All candidate
 snapshots are collected at capture time and discarded after selection. Closing
-the journal clears the preview; it is not a saved setup. There is no global
-shortcut, annotation, crop tool, setup form, or persistence yet.
+the journal clears the unsaved preview. To save the selected image and setup
+details locally, use [the journal save flow](JOURNAL.md). There is no global
+shortcut, annotation, or crop tool yet.
 
 ## Capture and platform limits
 
@@ -85,7 +86,8 @@ Use a synthetic chart/test window without personal or employer data.
   earlier preview must survive cancellation.
 - Retake and deny/cancel OS access. The journal must return; an earlier preview
   must remain. Permission prompts may be cached differently by each desktop.
-- Discard the preview; reopen the app and confirm nothing was persisted.
+- Discard an unsaved preview; reopen the app and confirm it is gone. Explicitly
+  saved Markdown/PNG files must remain unchanged by Discard or app closure.
 - Inspect the journal at desktop and minimum window sizes and the bar at its
   fixed size. Verify keyboard focus and actionable errors.
 

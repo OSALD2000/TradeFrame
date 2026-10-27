@@ -10,7 +10,9 @@ The reason for this boundary is recorded in the
 [local-first decision](adr/0001-local-first-journal.md).
 
 The renderer supports a capture toolbar, source selection, and an in-memory
-screenshot preview. Setup records, persistence, and imports are not implemented.
+screenshot preview. Setup details can be saved explicitly as Markdown plus PNG
+in a native-dialog-selected folder; see [JOURNAL](JOURNAL.md) for the format and
+recovery boundaries. Saved-setup browsing, imports and editing are not implemented.
 The journal remains visible when the capture bar opens and during source
 selection/capture; only the bar is made transparent for the snapshot. Screen snapshots
 can therefore include the journal.
@@ -35,10 +37,15 @@ milestone acceptance live in [ROADMAP](ROADMAP.md); visual rules live in
   the main process validates the calling window, main frame, local URL, and
   selected source. No raw IPC, filesystem API, or privileged event reaches the UI.
 - `src/` contains the React journal, capture bar, and CSS. It receives temporary
-  screenshot images through the bridge; it has no journal file access.
+  screenshot images through the bridge; it has no direct journal file access.
+- `electron/journal.ts` validates setup fields and creates exclusive per-setup
+  Markdown/PNG files. The main process owns the folder picker and save lifecycle.
+  `src/SetupForm.tsx` retains the draft during save errors/cancellation.
 - `tests/main.test.cjs` exercises compiled main-process capture and preload
   behavior with Electron doubles and synthetic images. It is not a real desktop
   launch, renderer test, or native capture test.
+- `tests/journal.test.cjs` covers validation, serialization, real temporary-file
+  saves, non-overwrite behavior, and cleanup after a simulated write failure.
 - Build output belongs in the ignored output directories; edit source files.
 
 ## Development facts

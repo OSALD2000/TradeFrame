@@ -3,10 +3,13 @@ import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { CaptureState } from './capture-types';
+import { validateSetup, writeSetup } from './journal';
+import type { SaveResult } from './capture-types';
 
 app.setName('TradeFrame');
 const uiFile = path.join(__dirname, '../dist/index.html');
 const preload = path.join(__dirname, 'preload.js');
+const icon = path.join(__dirname, '../dist/tradeframe-icon.png');
 let journal: BrowserWindow | null = null;
 let bar: BrowserWindow | null = null;
 let state: CaptureState = { barOpen: false, busy: false, sources: [], preview: null, error: null };
@@ -44,6 +47,7 @@ async function openBar() {
   if (!bar) {
     const window = new BrowserWindow({
       title: 'TradeFrame Capture',
+      icon,
       width: 440,
       height: 104,
       resizable: false,
@@ -117,6 +121,33 @@ async function takeScreenshot() {
 }
 
 function registerCapture() {
+  ipcMain.handle('journal:save', async (event, input: unknown): Promise<SaveResult> => {
+    assertSender(event, journal);
+    const owner = journal;
+    if (!owner || state.busy || !state.preview || state.sources.length) {
+      throw new Error('Choose a screenshot before saving');
+    }
+    const setup = validateSetup(input);
+    const image = state.preview.image;
+    state.busy = true;
+    publish();
+    try {
+      const selection = await dialog.showOpenDialog(owner, {
+        title: 'Choose journal folder', buttonLabel: 'Save setup here',
+        properties: ['openDirectory', 'createDirectory'],
+      });
+      if (selection.canceled || !selection.filePaths.length || journal !== owner) return { status: 'cancelled' };
+      const savedPath = await writeSetup(selection.filePaths[0], setup, image);
+      return { status: 'saved', path: savedPath };
+    } catch {
+      throw new Error('Could not save the setup. Check folder access and free space, then retry.');
+    } finally {
+      if (journal === owner) {
+        state.busy = false;
+        publish();
+      }
+    }
+  });
   ipcMain.handle('capture:state', (event) => { assertSender(event); return state; });
   ipcMain.handle('capture:open-bar', (event) => { assertSender(event, journal); return openBar(); });
   ipcMain.handle('capture:screenshot', (event) => {
@@ -148,6 +179,7 @@ function registerCapture() {
 function createWindow() {
   const window = new BrowserWindow({
     title: 'TradeFrame', width: 1120, height: 760, minWidth: 640, minHeight: 480,
+    icon,
     show: false, backgroundColor: '#08090a',
     webPreferences: { preload, nodeIntegration: false, contextIsolation: true, sandbox: true },
   });
@@ -166,6 +198,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  app.dock?.setIcon(icon);
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(process.platform === 'darwin' ? [{ role: 'appMenu' as const }] : []),
     { role: 'fileMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' },

@@ -9,8 +9,9 @@ and return to trading. [Deutsch](README.de.md)
 ## Current stage
 
 The app includes a floating capture bar, screen/window source selection, and
-an in-memory screenshot preview with retake/discard controls.
-**Setup entries and persistence are not implemented yet.** Native capture and
+an in-memory screenshot preview with retake/discard controls. Setup details can
+be saved as **Markdown plus PNG in a chosen local folder**. Saved-setup browsing
+and editing are not implemented yet. Native capture and
 floating-window behavior still need real desktop testing.
 Target platforms are not yet verified desktop releases.
 
@@ -28,9 +29,9 @@ npm start
 - `npm start`: build and launch the desktop app.
 - `npm run dev`: preview the UI in a browser; this is not the desktop app.
 - `npm run typecheck`: check the UI and Electron TypeScript.
-- `npm test`: test the compiled main process using an Electron test double;
+- `npm test`: test capture/save IPC with an Electron double and local saves in temporary folders;
   run `npm run build` first. This does not replace a real desktop launch.
-- `npm run check`: typecheck, build, and run the startup test.
+- `npm run check`: typecheck, build, and run the tests.
 
 The current dependency and verification status is maintained in
 [CONTEXT](docs/CONTEXT.md). The owner-generated lockfile still needs review and
@@ -41,13 +42,14 @@ replace a real desktop launch.
 
 - `electron/main.ts`: desktop window and lifecycle.
 - `src/`: React UI and local styles.
-- `tests/`: startup checks with an Electron test double.
+- `electron/journal.ts`: setup validation and local Markdown/PNG saves.
+- `tests/`: native-process doubles and temporary-file save checks.
 - `docs/ROADMAP.md`: scope, milestones, decisions, and acceptance criteria.
 - `.github/workflows/check.yml`: Windows, macOS, and Linux build checks.
 
 The UI has no Node.js access. The renderer uses context isolation and sandboxing;
 external navigation and new windows are blocked. A narrow preload bridge exposes
-capture commands; the main process validates callers and source selection.
+capture/save commands; the main process validates callers, setup fields and source selection.
 
 ## Try capture
 
@@ -55,16 +57,17 @@ Click **Capture chart**, then **Screenshot** on the floating bar. Choose the
 screen/window if prompted and inspect the preview. **Retake screenshot** returns
 to the bar; **Discard** clears the preview. The bar stays open after captures;
 close it with **Close capture bar** in the journal or **×** on the bar.
-Nothing is saved yet.
+To save, fill in **Setup details**, click **Save setup…**, and choose a folder.
+Each save creates a separate setup directory. Cancellation preserves the draft;
+unsaved drafts are lost when the app closes. See [local setup files](docs/JOURNAL.md).
 
 See [capture notes](docs/CAPTURE.md) for the Sway floating rule, permissions,
 snapshot resolution limits, and manual acceptance checks. No shortcut is needed.
 
 ## Direction
 
-The first usable release will capture chart screenshots and store setup notes
-as Markdown plus images in a user-selected folder. Obsidian is optional.
-Existing journals are not imported or modified by this foundation.
+The next steps add review and follow-up screenshots to saved setups. Obsidian
+remains optional. Existing journals are not imported or modified.
 
 Read the [roadmap](docs/ROADMAP.md) before starting the next milestone.
 The approved visual direction and reference roles are in the [design notes](docs/DESIGN.md).

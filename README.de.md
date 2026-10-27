@@ -10,7 +10,8 @@ Setup dokumentieren und weitertraden. [English](README.md)
 
 Die App hat eine schwebende Aufnahmeleiste, Bildschirm-/Fensterauswahl und eine
 Screenshot-Vorschau mit Wiederholen und Verwerfen im Arbeitsspeicher.
-**Setup-Eintraege und Speicherung sind noch nicht implementiert.** Native
+Setup-Details lassen sich als **Markdown plus PNG in einem gewaehlten lokalen
+Ordner speichern**. Anzeigen und Bearbeiten gespeicherter Setups fehlen noch. Native
 Aufnahme und schwebendes Fenster muessen noch praktisch getestet werden.
 Die Zielplattformen sind noch keine praktisch geprueften Desktop-Releases.
 
@@ -28,9 +29,9 @@ npm start
 - `npm start`: App bauen und als Desktop-Fenster starten.
 - `npm run dev`: Oberflaeche im Browser ansehen; das ist nicht die Desktop-App.
 - `npm run typecheck`: TypeScript fuer Oberflaeche und Electron pruefen.
-- `npm test`: kompilierten Fensterstart mit einem Electron-Testdouble pruefen;
+- `npm test`: Aufnahme-/Speicherbefehle mit Electron-Testdouble und lokale Dateien in Temp-Ordnern pruefen;
   vorher `npm run build` ausfuehren. Das ersetzt keinen echten Desktop-Start.
-- `npm run check`: Typpruefung, Build und Starttest ausfuehren.
+- `npm run check`: Typpruefung, Build und Tests ausfuehren.
 
 Der aktuelle Installations- und Pruefstatus steht in
 [CONTEXT](docs/CONTEXT.md). Die vom Nutzer erzeugte Lockdatei muss noch geprueft
@@ -41,14 +42,15 @@ Ein erfolgreicher Build ersetzt keinen echten Desktop-Start.
 
 - `electron/main.ts`: Desktop-Fenster und Lebenszyklus.
 - `src/`: React-Oberflaeche und Styles.
-- `tests/`: Fensterstart mit Electron-Testdouble.
+- `electron/journal.ts`: Eingabepruefung und lokale Markdown-/PNG-Speicherung.
+- `tests/`: Electron-Testdouble und Dateispeichertests in Temp-Ordnern.
 - `docs/ROADMAP.md`: Umfang, Meilensteine und Abnahmekriterien.
 - `.github/workflows/check.yml`: Build-Pruefungen fuer drei Betriebssysteme.
 
 Die Oberflaeche hat keinen Node.js-Zugriff. Context Isolation und Sandbox sind
 aktiv; externe Navigation und neue Fenster werden blockiert. Eine schmale
-Preload-Schnittstelle stellt Aufnahmebefehle bereit; der Hauptprozess prueft
-Aufrufer und Quellenauswahl.
+Preload-Schnittstelle stellt Aufnahme-/Speicherbefehle bereit; der Hauptprozess
+prueft Aufrufer, Setup-Felder und Quellenauswahl.
 
 ## Aufnahme ausprobieren
 
@@ -57,14 +59,17 @@ gegebenenfalls Bildschirm/Fenster auswaehlen und die Vorschau pruefen.
 **Retake screenshot** fuehrt zur Leiste zurueck, **Discard** verwirft das Bild.
 Die Leiste bleibt nach Aufnahmen offen. **Close capture bar** im Journal oder
 **×** in der Leiste schliesst sie.
-Noch wird nichts gespeichert; Tastenkombinationen sind nicht erforderlich.
+Zum Speichern **Setup details** ausfuellen, **Save setup…** anklicken und einen
+Ordner waehlen. Jeder Speichervorgang erzeugt einen eigenen Setup-Unterordner.
+Abbrechen erhaelt den Entwurf; ungespeicherte Entwuerfe gehen beim App-Schliessen
+verloren. Details: [lokale Setup-Dateien](docs/JOURNAL.md).
+Tastenkombinationen sind nicht erforderlich.
 
 Die [Aufnahmenotizen](docs/CAPTURE.md) enthalten die Sway-Regel zum Schweben,
 Berechtigungen, Aufloesungsgrenzen und manuelle Abnahmeschritte.
 
-Die erste nutzbare Version soll Chart-Screenshots und Setup-Notizen als Markdown
-mit Bildern in einem waehlbaren Ordner speichern. Obsidian bleibt optional.
-Bestehende Journale werden vom Grundgeruest weder eingelesen noch veraendert.
+Als Naechstes folgen Ansicht und Folge-Screenshots gespeicherter Setups.
+Obsidian bleibt optional. Bestehende Journale werden weder eingelesen noch veraendert.
 
 Naechste Arbeiten stehen in der [Roadmap](docs/ROADMAP.md). Installer, Signierung,
 Updates, Cloud, Broker-Anbindung und KI folgen hier noch nicht.

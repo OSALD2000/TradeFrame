@@ -34,6 +34,19 @@ Secondary research:
 | Empty state, no synthetic trade records | Current product scope | Honest state | A transient capture is not a saved setup |
 | Compact draggable capture bar | Owner's recorder-tool request | Mouse-operated capture controls | Capture without shortcuts; journal stays visible as requested on 27 October 2026 |
 | Capture action switches to Close capture bar while open | Owner's explicit-close request, 27 October 2026 | Existing journal action | Keep controls available across screenshots and allow closing from either window |
+| App icon: two candles inside capture corners on a dark tile | Owner's icon request; existing TradeFrame frame/candle motif | App identity, separate from action-color roles | Recognizable mark at small desktop sizes; one acid accent candle |
+| Setup form in the existing inspector | Approved save fields and existing journal/detail layout | Supporting detail pane | Keep the selected chart visible while entering its reasoning; inspector moves below on narrow windows |
+| Save setup becomes the primary action with a preview | Existing single-primary-action rule | Accent reserved for the next action | Retake and capture controls become neutral while setup details are available |
+
+## App icon
+
+`public/tradeframe-icon.png` is the generated master used by Electron windows,
+the macOS development dock, the browser favicon, and the journal brand.
+Vite copies it to `dist/`. Installer icons are a future packaging task.
+Generated with the built-in image tool on 27 October 2026. Prompt brief:
+"One flat TradeFrame desktop app icon: dark rounded tile, transparent outside,
+four off-white capture corners enclosing two thick candlesticks, one off-white
+and one acid yellow-green; legible at 24px, no text, arrows, glow, or 3D."
 
 Media: real chart screenshots when capture exists. The current empty-state glyph
 is a simple code-native candlestick/frame symbol, not a chart or performance claim.
