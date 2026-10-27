@@ -4,8 +4,10 @@
 
 1. Click **Capture chart** in the desktop journal. The main window stays visible and a
    compact, draggable **TradeFrame Capture** bar opens.
-2. Click **Screenshot** on the bar. TradeFrame hides only the capture bar, waits
-   briefly for the compositor, then requests screen/window snapshots from Electron.
+2. Click **Screenshot** on the bar. TradeFrame makes the capture bar transparent
+   and ignores mouse input there, waits briefly for the compositor, then requests
+   screen/window snapshots from Electron. The native bar remains mapped so it
+   retains its dragged position rather than being placed again by Wayland.
    The journal stays visible, including while the operating system's source picker is open.
 3. On PipeWire, the operating system may prompt for a screen/window. If only one
    image is returned, it becomes the preview directly. When multiple sources
@@ -36,6 +38,12 @@ journal out of the captured area when it should not appear in the image.
 
 The bar requests always-on-top behavior. On Wayland, window placement and
 stacking are controlled by the compositor; Electron cannot guarantee them.
+Capture uses Electron 45's opacity and input-region APIs instead of hide/show
+to preserve placement without reading or setting global Wayland coordinates.
+Verify on the actual compositor that transparency excludes the bar from images
+and that opacity and mouse input recover after success, cancellation, and error.
+Position is not persisted across app restarts; explicit close/reopen can still
+let the compositor place the bar again.
 On macOS screen-recording access needs user consent. Permission denial or portal
 cancellation restores the journal and offers a retry; no security protection is
 disabled. PipeWire may return only the source chosen in its system picker.
@@ -64,6 +72,8 @@ Use a synthetic chart/test window without personal or employer data.
 - Confirm the journal stays visible when opening the bar, taking a screenshot,
   and selecting a source in the operating system's picker.
 - Drag it, click Journal, reopen it, and use × to return without capturing.
+- Drag the bar away from the center, take repeated screenshots, and cancel or
+  deny a capture. Confirm it returns to the same spot and remains clickable.
 - After successful, cancelled, and failed captures, confirm the bar reappears.
   Take another screenshot without reopening it; close it from the journal's
   **Close capture bar** button and then from the bar's **×**. Both controls

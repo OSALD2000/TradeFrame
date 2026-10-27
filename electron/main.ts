@@ -81,9 +81,11 @@ async function takeScreenshot() {
   const owner = journal;
   state = { ...state, busy: true, sources: [], error: null };
   publish();
-  bar?.hide();
   try {
-    // Allow the compositor to remove the capture bar before collecting screen images.
+    // Keep the surface mapped so Wayland preserves its user-chosen position.
+    bar?.setIgnoreMouseEvents(true);
+    bar?.setOpacity(0);
+    // Allow the compositor to make the bar transparent before collecting images.
     await new Promise((resolve) => setTimeout(resolve, 300));
     // shortcut: cap snapshots at 2560x1440; revisit native-resolution capture before release.
     const sources = await desktopCapturer.getSources({
@@ -108,7 +110,8 @@ async function takeScreenshot() {
       state.busy = false;
       publish();
       journal?.show();
-      if (state.barOpen) bar?.show();
+      bar?.setOpacity(1);
+      bar?.setIgnoreMouseEvents(false);
     }
   }
 }

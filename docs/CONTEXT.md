@@ -12,11 +12,15 @@ The reason for this boundary is recorded in the
 The renderer supports a capture toolbar, source selection, and an in-memory
 screenshot preview. Setup records, persistence, and imports are not implemented.
 The journal remains visible when the capture bar opens and during source
-selection/capture; only the bar is hidden for the snapshot. Screen snapshots
+selection/capture; only the bar is made transparent for the snapshot. Screen snapshots
 can therefore include the journal.
 The bar reappears after each capture attempt and stays open until explicitly
 closed from the journal or the bar, or until the app closes. Its logical open
 state is shared with the renderer so the journal can offer a close action.
+During capture the bar stays mapped with opacity zero and mouse input ignored;
+restoring opacity/input avoids compositor repositioning from hide/show. Native
+acceptance of transparency and retained placement remains open. No position
+is saved across app restarts.
 Native capture and window behavior remain unverified on real target desktops.
 Intended behavior and
 milestone acceptance live in [ROADMAP](ROADMAP.md); visual rules live in
