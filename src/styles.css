@@ -122,6 +122,24 @@ button { font-family: inherit; }
 .setup-form input, .setup-form select, .setup-form textarea { width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--text); padding: 8px; font: inherit; font-size: 12px; color-scheme: dark; }
 .setup-form textarea { resize: vertical; }
 .setup-form input::placeholder, .setup-form textarea::placeholder { color: var(--muted); }
+.form-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin: 18px 0; }
+.form-controls label { flex: 1; min-width: min(100%, 220px); }
+.form-controls label, .schema-editor label { display: grid; gap: 6px; color: var(--secondary); font-size: 12px; }
+.form-controls select, .schema-editor input, .schema-editor select, .schema-editor textarea { min-width: 0; width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 9px; font: inherit; color-scheme: dark; }
+.setup-form select[multiple] { min-height: 100px; }
+.setup-form .check-label, .schema-editor .check-label { display: flex; align-items: center; gap: 9px; }
+.setup-form input[type=checkbox], .schema-editor input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--text); }
+.schema-editor { padding-top: 16px; border-top: 1px solid var(--border); }
+.schema-editor h3 { margin-bottom: 8px; font-size: 15px; font-weight: 500; }
+.editor-body { border: 0; padding: 0; margin: 20px 0; min-width: 0; }
+.field-editor { margin: 20px 0; padding: 16px; border: 1px solid var(--border); border-radius: 6px; min-width: 0; }
+.field-editor legend { padding: 0 6px; font-size: 12px; color: var(--text); }
+.editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 14px; align-items: end; }
+.editor-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.option-editor, .dependency-editor { margin-top: 18px; }
+.option-editor h4 { margin: 0 0 10px; font-size: 12px; font-weight: 500; }
+.option-editor .editor-grid { margin-bottom: 14px; }
+.setup-details .save-message { font-size: 12px; color: var(--secondary); margin-top: 12px; overflow-wrap: anywhere; }
 .setup-form .save-message { margin-top: 12px; overflow-wrap: anywhere; }
 .secondary-button:disabled { color: var(--muted); cursor: not-allowed; }
 @media (max-width: 520px) {

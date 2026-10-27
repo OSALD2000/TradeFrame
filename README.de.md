@@ -11,7 +11,11 @@ Setup dokumentieren und weitertraden. [English](README.md)
 Die App hat eine schwebende Aufnahmeleiste, Bildschirm-/Fensterauswahl und eine
 Screenshot-Vorschau mit Wiederholen und Verwerfen im Arbeitsspeicher.
 Setup-Details lassen sich als **Markdown plus PNG in einem gewaehlten lokalen
-Ordner speichern**. Anzeigen und Bearbeiten gespeicherter Setups fehlen noch. Native
+Ordner speichern**. Formulare sind frei konfigurierbar: Feldtypen, Pflichtfelder,
+Markdown-Schluessel, Tags, Auswahloptionen und abhaengige Eingaben.
+**SQLite speichert nur versionierte Formulardefinitionen; Antworten bleiben in Markdown.**
+Exportierte Setups koennen wieder geoeffnet werden; automatische Listen und
+Bearbeiten bestehender Dateien fehlen noch. Native
 Aufnahme und schwebendes Fenster muessen noch praktisch getestet werden.
 Die Zielplattformen sind noch keine praktisch geprueften Desktop-Releases.
 
@@ -43,14 +47,17 @@ Ein erfolgreicher Build ersetzt keinen echten Desktop-Start.
 - `electron/main.ts`: Desktop-Fenster und Lebenszyklus.
 - `src/`: React-Oberflaeche und Styles.
 - `electron/journal.ts`: Eingabepruefung und lokale Markdown-/PNG-Speicherung.
+- `electron/form-schema.ts`: typisierte Feldregeln und Markdown-Serialisierung/-Deserialisierung.
+- `electron/schema-store.ts`: unveraenderliche Formularrevisionen in lokalem SQLite.
 - `tests/`: Electron-Testdouble und Dateispeichertests in Temp-Ordnern.
 - `docs/ROADMAP.md`: Umfang, Meilensteine und Abnahmekriterien.
 - `.github/workflows/check.yml`: Build-Pruefungen fuer drei Betriebssysteme.
 
 Die Oberflaeche hat keinen Node.js-Zugriff. Context Isolation und Sandbox sind
 aktiv; externe Navigation und neue Fenster werden blockiert. Eine schmale
-Preload-Schnittstelle stellt Aufnahme-/Speicherbefehle bereit; der Hauptprozess
-prueft Aufrufer, Setup-Felder und Quellenauswahl.
+Preload-Schnittstelle stellt Aufnahme-/Formular-/Oeffnen-/Speicherbefehle bereit;
+der Hauptprozess prueft Aufrufer, Definitionen, typisierte Antworten, ausgewaehlte
+Dateien und Aufnahmequellen.
 
 ## Aufnahme ausprobieren
 
@@ -68,8 +75,23 @@ Tastenkombinationen sind nicht erforderlich.
 Die [Aufnahmenotizen](docs/CAPTURE.md) enthalten die Sway-Regel zum Schweben,
 Berechtigungen, Aufloesungsgrenzen und manuelle Abnahmeschritte.
 
+## Formulare anpassen
+
+Unter dem Screenshot **Edit form** oder **New form** waehlen. Jedes Feld hat
+eine stabile Identitaet, Label, Typ, Markdown-Schluessel, optionale Tags und
+eine optionale Sichtbarkeitsregel (anderes Feld gleich Wert). Auswahloptionen
+koennen eigene Tags haben. Ausgeblendete Antworten bleiben im Entwurf, landen
+aber nicht in gespeicherten Dateien. **Open setup…** oeffnet einen ausgewaehlten
+Export samt urspruenglicher Formularrevision und Bild.
+
+Definitionen liegen in der ignorierten `data/form-schemas.sqlite`; Antworten und
+Bilder werden dort nicht gespeichert. Markdown enthaelt Schema-Snapshot, typisierte
+Antworten und echte Tags. Formatgrenzen, alte Dateien und Erhaltungsregeln stehen
+in [JOURNAL](docs/JOURNAL.md). Es ist keine neue Datenbank-Abhaengigkeit erforderlich:
+genutzt wird das eingebaute SQLite von Node/Electron.
+
 Als Naechstes folgen Ansicht und Folge-Screenshots gespeicherter Setups.
-Obsidian bleibt optional. Bestehende Journale werden weder eingelesen noch veraendert.
+Obsidian bleibt optional. Bestehende Journale werden nicht automatisch durchsucht oder veraendert.
 
 Naechste Arbeiten stehen in der [Roadmap](docs/ROADMAP.md). Installer, Signierung,
 Updates, Cloud, Broker-Anbindung und KI folgen hier noch nicht.

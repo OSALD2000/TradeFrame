@@ -12,7 +12,11 @@ The reason for this boundary is recorded in the
 The renderer supports a capture toolbar, source selection, and an in-memory
 screenshot preview. Setup details can be saved explicitly as Markdown plus PNG
 in a native-dialog-selected folder; see [JOURNAL](JOURNAL.md) for the format and
-recovery boundaries. Saved-setup browsing, imports and editing are not implemented.
+recovery boundaries. Forms are configurable, versioned in project-local SQLite,
+and included as snapshots in Markdown. SQLite contains no setup answers/images.
+Explicit opening restores exported Markdown and its sibling PNG, including the
+original fixed-field format. Automatic browsing, scanning, and edit-in-place
+are not implemented.
 The journal remains visible when the capture bar opens and during source
 selection/capture; only the bar is made transparent for the snapshot. Screen snapshots
 can therefore include the journal.
@@ -33,20 +37,33 @@ milestone acceptance live in [ROADMAP](ROADMAP.md); visual rules live in
 - `electron/main.ts` owns the journal/capture windows and application lifecycle. It loads
   the compiled local UI, enables sandbox/context isolation, disables renderer
   Node integration, and blocks new windows and navigation away from the app.
-- `electron/preload.ts` exposes named capture commands and a state subscription;
+- `electron/preload.ts` exposes named capture, form, open/save commands and a state subscription;
   the main process validates the calling window, main frame, local URL, and
   selected source. No raw IPC, filesystem API, or privileged event reaches the UI.
 - `src/` contains the React journal, capture bar, and CSS. It receives temporary
   screenshot images through the bridge; it has no direct journal file access.
-- `electron/journal.ts` validates setup fields and creates exclusive per-setup
-  Markdown/PNG files. The main process owns the folder picker and save lifecycle.
+- `electron/journal.ts` validates setup fields, creates exclusive per-setup
+  Markdown/PNG files and reads explicitly selected setup files. The main process
+  owns native pickers, schema storage, and open/save lifecycle.
   `src/SetupForm.tsx` follows the preview at full journal width and retains the
   draft during save errors/cancellation and source selection.
+- `electron/form-schema.ts` is shared, platform-neutral validation, dependency
+  evaluation, and typed Markdown serialization/deserialization. It preserves
+  stable IDs, schema snapshots, field types and whitespace; hidden values are
+  excluded from export without mutating the draft.
+- `electron/schema-store.ts` owns append-only schema revisions in
+  `data/form-schemas.sqlite` using built-in `node:sqlite`. The DB is ignored by
+  Git; only definitions are stored. A store is created lazily and closed at quit.
+- `src/SchemaEditor.tsx` edits definitions, tags, choices and visibility rules;
+  `src/FieldInput.tsx` renders typed controls. No user-provided scripts execute.
 - `tests/main.test.cjs` exercises compiled main-process capture and preload
   behavior with Electron doubles and synthetic images. It is not a real desktop
   launch, renderer test, or native capture test.
 - `tests/journal.test.cjs` covers validation, serialization, real temporary-file
-  saves, non-overwrite behavior, and cleanup after a simulated write failure.
+  saves/reads, non-overwrite behavior, and cleanup after a simulated write failure.
+- Form-model/store tests cover typed round trips, dependency rules, old formats,
+  revision preservation, real SQLite reopen and stale edits. Server-rendered
+  controls check input representations; they do not replace native visual QA.
 - Build output belongs in the ignored output directories; edit source files.
 
 ## Development facts
@@ -57,7 +74,7 @@ development preview shows only the renderer; the desktop start also launches
 Electron. These are different verification environments.
 
 See [CAPTURE](CAPTURE.md) before changing capture/window behavior or performing
-native verification. Screenshots are memory-only; closing the journal clears
+native verification. Unsaved screenshots are memory-only; closing the journal clears
 them. The floating bar is controlled by mouse; no global shortcut is registered.
 
 ## Known verification limits

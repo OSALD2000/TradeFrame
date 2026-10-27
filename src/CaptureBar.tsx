@@ -12,7 +12,7 @@ export function CaptureBar() {
         <button className="bar-return" disabled={!api || state.busy} onClick={() => api && run(api.showJournal)} title="Return to journal">Journal</button>
         <button className="bar-close" aria-label="Close capture bar and return to journal" disabled={!api || state.busy} onClick={() => api && run(api.showJournal)}>×</button>
       </div>
-      <p className="bar-status" role={error ? 'alert' : 'status'}>{error || (state.busy ? 'Taking screenshot…' : 'Capture a chart, then choose a screen or window.')}</p>
+      <p className="bar-status" role={error ? 'alert' : 'status'}>{error || (state.busy ? 'Working…' : 'Capture a chart, then choose a screen or window.')}</p>
     </main>
   );
 }

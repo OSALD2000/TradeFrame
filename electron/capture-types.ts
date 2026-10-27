@@ -1,12 +1,5 @@
-export type SetupInput = {
-  mode: 'live' | 'backtest';
-  symbol: string;
-  direction: 'long' | 'short';
-  model: string;
-  timeframe: string;
-  entryTimeNewYork: string;
-  note: string;
-};
+import type { FormSchema, FormValues } from './form-schema';
+export type SetupInput = { schema: FormSchema; values: FormValues };
 
 export type SaveResult = { status: 'cancelled' } | { status: 'saved'; path: string };
 
@@ -28,5 +21,8 @@ export type CaptureAPI = {
   discard(): Promise<void>;
   showJournal(): Promise<void>;
   saveSetup(input: SetupInput): Promise<SaveResult>;
+  getSchemas(): Promise<FormSchema[]>;
+  saveSchema(schema: FormSchema): Promise<FormSchema>;
+  openSetup(): Promise<SetupInput | null>;
   onStateChange(listener: (state: CaptureState) => void): () => void;
 };

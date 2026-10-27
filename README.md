@@ -10,8 +10,11 @@ and return to trading. [Deutsch](README.de.md)
 
 The app includes a floating capture bar, screen/window source selection, and
 an in-memory screenshot preview with retake/discard controls. Setup details can
-be saved as **Markdown plus PNG in a chosen local folder**. Saved-setup browsing
-and editing are not implemented yet. Native capture and
+be saved as **Markdown plus PNG in a chosen local folder**. Forms are configurable:
+types, required fields, Markdown keys, tags, choices, and conditional inputs.
+**SQLite stores only versioned form definitions; setup answers stay in Markdown.**
+Exported setups can be opened again; automatic browsing and editing files in
+place are not implemented. Native capture and
 floating-window behavior still need real desktop testing.
 Target platforms are not yet verified desktop releases.
 
@@ -43,13 +46,16 @@ replace a real desktop launch.
 - `electron/main.ts`: desktop window and lifecycle.
 - `src/`: React UI and local styles.
 - `electron/journal.ts`: setup validation and local Markdown/PNG saves.
+- `electron/form-schema.ts`: typed form rules and Markdown serialization/deserialization.
+- `electron/schema-store.ts`: append-only form revisions in local SQLite.
 - `tests/`: native-process doubles and temporary-file save checks.
 - `docs/ROADMAP.md`: scope, milestones, decisions, and acceptance criteria.
 - `.github/workflows/check.yml`: Windows, macOS, and Linux build checks.
 
 The UI has no Node.js access. The renderer uses context isolation and sandboxing;
 external navigation and new windows are blocked. A narrow preload bridge exposes
-capture/save commands; the main process validates callers, setup fields and source selection.
+capture/form/open/save commands; the main process validates callers, definitions,
+typed answers, selected files and source selection.
 
 ## Try capture
 
@@ -64,10 +70,24 @@ unsaved drafts are lost when the app closes. See [local setup files](docs/JOURNA
 See [capture notes](docs/CAPTURE.md) for the Sway floating rule, permissions,
 snapshot resolution limits, and manual acceptance checks. No shortcut is needed.
 
+## Customize forms
+
+Use **Edit form** or **New form** below the screenshot. Each field has a stable
+identity, label, type, Markdown key, optional tags and an optional equality-based
+visibility rule. Choice options can add their own tags. Hidden answers remain in
+the draft but are excluded from saved files. **Open setup…** restores an explicitly
+selected exported setup, its original form revision, and its image.
+
+Definitions live in ignored `data/form-schemas.sqlite`; no setup answers or images
+are stored in the database. Markdown carries a schema snapshot, typed answers and
+literal tags. Read [local setup files](docs/JOURNAL.md) for format limits, legacy
+compatibility, validation and preservation behavior. No extra database dependency
+is needed: Node/Electron's built-in SQLite is used.
+
 ## Direction
 
 The next steps add review and follow-up screenshots to saved setups. Obsidian
-remains optional. Existing journals are not imported or modified.
+remains optional. Existing journals are not scanned or modified automatically.
 
 Read the [roadmap](docs/ROADMAP.md) before starting the next milestone.
 The approved visual direction and reference roles are in the [design notes](docs/DESIGN.md).

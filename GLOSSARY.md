@@ -18,3 +18,33 @@ _Avoid_: Setup as a synonym for an executed position.
 A decision not to open a position for a setup. It is neither a losing trade nor
 an open trade.
 _Avoid_: Loss, open trade.
+
+**Form schema**:
+A named definition of the fields used to document a setup, including their
+types, required values, and dependencies. A schema revision preserves the
+definition used for an earlier setup.
+_Avoid_: Setup as a synonym for the form definition.
+
+**Field definition**:
+The meaning and input rules of one item in a form schema. Its identity remains
+the same when its display label changes.
+_Avoid_: Label as a field's identity.
+
+**Setup values**:
+The answers entered for a particular setup using a particular schema revision.
+_Avoid_: Schema as a synonym for entered answers.
+
+**Markdown key**:
+The configured metadata name through which a field's answer appears in a setup
+document. It is distinct from the field's display label and stable identity.
+_Avoid_: Tag as a synonym for a metadata key.
+
+**Field tag**:
+A label contributed by an answered field or selected option to a setup's tags.
+_Avoid_: Field ID or Markdown key as synonyms for a tag.
+
+**Field dependency**:
+A rule that makes a field applicable only when another applicable field has a
+specified answer. Inapplicable answers remain draft information rather than
+part of the documented setup.
+_Avoid_: Formula for a visibility rule.

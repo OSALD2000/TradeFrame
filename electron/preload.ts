@@ -9,6 +9,9 @@ const capture: CaptureAPI = {
   discard: () => ipcRenderer.invoke('capture:discard'),
   showJournal: () => ipcRenderer.invoke('capture:journal'),
   saveSetup: (input) => ipcRenderer.invoke('journal:save', input),
+  getSchemas: () => ipcRenderer.invoke('forms:list'),
+  saveSchema: (schema) => ipcRenderer.invoke('forms:save', schema),
+  openSetup: () => ipcRenderer.invoke('journal:open'),
   onStateChange: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, state: CaptureState) => listener(state);
     ipcRenderer.on('capture:changed', handler);

@@ -38,6 +38,8 @@ Secondary research:
 | App icon: two candles inside capture corners on a dark tile | Owner's icon request; existing TradeFrame frame/candle motif | App identity, separate from action-color roles | Recognizable mark at small desktop sizes; one acid accent candle |
 | Setup form below the preview with adaptive field columns | Owner's request for more input space | Setup details following the image | Fields share available width; notes span the row; narrow windows stack fields |
 | Save setup becomes the primary action with a preview | Existing single-primary-action rule | Accent reserved for the next action | Retake and capture controls become neutral while setup details are available |
+| Inline form selector and explicit editor below the screenshot | Owner's configurable-input request and existing full-width form | Local setup customization | Edit fields, keys, tags, choices and dependencies without a narrow panel or new navigation |
+| Native typed inputs and one primary Save form revision action | Existing compact controls and accent discipline | Form definition editing | Keep labels, ordering and rules visible; validation errors stay beside the editor |
 
 ## App icon
 

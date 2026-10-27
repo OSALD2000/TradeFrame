@@ -84,10 +84,10 @@ function App() {
               <p>Keep the chart, the reasoning, and the outcome together.<br className="desktop-break" /> Build a record you can learn from.</p>
               <p className="capture-status" id="capture-status">{api ? 'Capture a chart, add setup details, then save to your journal folder.' : 'Open the desktop app to capture and save setups. This browser view is a preview only.'}</p>
             </section>}
-            {state.preview && <section className="setup-details" hidden={state.sources.length > 0} aria-labelledby="details-title">
+            <section className="setup-details" hidden={state.sources.length > 0} aria-labelledby="details-title">
               <h2 id="details-title">Setup details</h2>
-              <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} />
-            </section>}
+              <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} hasPreview={!!state.preview} />
+            </section>
             <footer className="journal-footer"><span>Saved setups stay in your chosen folder</span><span>Capture the chart. Remember the trade.</span></footer>
           </main>
         </div>

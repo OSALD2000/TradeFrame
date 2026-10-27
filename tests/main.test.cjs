@@ -5,6 +5,10 @@ const { EventEmitter } = require('node:events');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const vm = require('node:vm');
+const { DEFAULT_SCHEMA } = require('../dist-electron/form-schema.js');
+const setupInput = (values = {}) => ({ schema: DEFAULT_SCHEMA, values: {
+  mode: 'live', direction: 'long', symbol: 'TEST', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: '', ...values,
+} });
 
 const source = (id, name = 'Synthetic chart') => ({ id, name,
   thumbnail: { isEmpty: () => false, toDataURL: () => 'data:image/png;base64,synthetic' },
@@ -57,7 +61,9 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
   vm.runInNewContext(readFileSync(path.join(dirname, 'main.js'), 'utf8'), {
     exports: {}, __dirname: dirname, process: { platform: 'linux' },
     setTimeout: (callback) => queueMicrotask(callback),
-    require: (name) => name === 'electron' ? electron : require(name.startsWith('./') ? path.join(dirname, name) : name),
+    require: (name) => name === 'electron' ? electron : name === './schema-store'
+      ? { SchemaStore: class extends require('../dist-electron/schema-store.js').SchemaStore { constructor() { super(':memory:'); } } }
+      : require(name.startsWith('./') ? path.join(dirname, name) : name),
   });
   await new Promise(setImmediate);
   const invoke = async (name, window = windows[0], ...args) => handlers.get(name)({
@@ -250,6 +256,10 @@ test('preload exposes named commands and strips event objects from subscriptions
   assert.equal(api.invoke, undefined);
   api.saveSetup({ symbol: 'Synthetic' });
   assert.deepEqual(calls[1], ['journal:save', { symbol: 'Synthetic' }]);
+  api.getSchemas();
+  api.saveSchema(DEFAULT_SCHEMA);
+  api.openSetup();
+  assert.deepEqual(calls.slice(2), [['forms:list'], ['forms:save', DEFAULT_SCHEMA], ['journal:open']]);
   const received = [];
   const unsubscribe = api.onStateChange((...args) => received.push(args));
   const state = { preview: null };
@@ -262,12 +272,12 @@ test('preload exposes named commands and strips event objects from subscriptions
 test('saving requires a journal screenshot and cancellation preserves it while blocking parallel capture', async () => {
   let resolve;
   const { windows, invoke } = await boot(undefined, () => new Promise((done) => { resolve = done; }));
-  const input = { mode: 'live', direction: 'long', symbol: 'TEST', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: '' };
+  const input = setupInput();
   await assert.rejects(invoke('journal:save', windows[0], input), /Choose a screenshot/);
   await invoke('capture:open-bar');
   await invoke('capture:screenshot', windows[1]);
   await assert.rejects(invoke('journal:save', windows[1], input), /Untrusted/);
-  await assert.rejects(invoke('journal:save', windows[0], { ...input, symbol: '' }), /Invalid symbol/);
+  await assert.rejects(invoke('journal:save', windows[0], setupInput({ symbol: '' })), /Symbol/);
   const pending = invoke('journal:save', windows[0], input);
   assert.equal((await invoke('capture:state')).busy, true);
   await assert.rejects(invoke('journal:save', windows[0], input), /Choose a screenshot/);
@@ -282,9 +292,7 @@ test('save failures preserve the preview and unlock the controls for retry', asy
   const { windows, invoke } = await boot(undefined, async () => { throw new Error('Synthetic folder failure'); });
   await invoke('capture:open-bar');
   await invoke('capture:screenshot', windows[1]);
-  await assert.rejects(invoke('journal:save', windows[0], {
-    mode: 'backtest', direction: 'short', symbol: 'TEST', model: 'Test', timeframe: '1h', entryTimeNewYork: '', note: '',
-  }), /Could not save/);
+  await assert.rejects(invoke('journal:save', windows[0], setupInput({ mode: 'backtest', direction: 'short' })), /Could not save/);
   assert.equal((await invoke('capture:state')).preview.id, 'screen:0:0');
   assert.equal((await invoke('capture:state')).busy, false);
 });
@@ -303,12 +311,45 @@ test('journal save writes the selected native snapshot to the chosen folder', as
   });
   await invoke('capture:open-bar');
   await invoke('capture:screenshot', windows[1]);
-  const saved = await invoke('journal:save', windows[0], {
-    mode: 'live', direction: 'long', symbol: 'TEST', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: 'Synthetic',
-  });
+  const saved = await invoke('journal:save', windows[0], setupInput({ note: 'Synthetic' }));
   assert.equal(saved.status, 'saved');
   assert.equal(path.dirname(path.dirname(saved.path)), root);
   assert.match(await fs.readFile(saved.path, 'utf8'), /Synthetic/);
   assert.equal((await fs.readFile(path.join(path.dirname(saved.path), 'chart.png'))).toString('base64'), image.split(',')[1]);
   assert.equal((await invoke('capture:state')).busy, false);
+});
+
+test('schema commands validate the journal sender and preserve previous revisions', async () => {
+  const { windows, invoke, app } = await boot();
+  const initial = (await invoke('forms:list'))[0];
+  await invoke('capture:open-bar');
+  await assert.rejects(invoke('forms:list', windows[1]), /Untrusted/);
+  await assert.rejects(invoke('forms:save', windows[1], initial), /Untrusted/);
+  await assert.rejects(invoke('journal:open', windows[1]), /Untrusted/);
+  const saved = await invoke('forms:save', windows[0], { ...initial, name: 'Custom review' });
+  assert.equal(saved.revision, 2);
+  await assert.rejects(invoke('forms:save', windows[0], initial), /changed/);
+  assert.equal((await invoke('forms:list'))[0].name, 'Custom review');
+  app.emit('will-quit');
+});
+
+test('opening a setup restores its schema values and image without modifying the source', async (t) => {
+  const fs = require('node:fs/promises');
+  const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-open-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  const file = await require('../dist-electron/journal.js').writeSetup(root, setupInput({ note: 'Restore 🕯' }), image);
+  const original = await fs.readFile(file, 'utf8');
+  const { windows, invoke, app } = await boot(undefined, async (_, options) => {
+    assert.ok(options.properties.includes('openFile'));
+    return { canceled: false, filePaths: [file] };
+  });
+  const opened = await invoke('journal:open');
+  assert.equal(opened.values.note, 'Restore 🕯');
+  assert.equal(opened.schema.revision, 1);
+  assert.equal((await invoke('capture:state')).preview.image, image);
+  assert.equal((await invoke('capture:state')).busy, false);
+  assert.equal(await fs.readFile(file, 'utf8'), original);
+  assert.equal((await invoke('forms:list')).length, 1);
+  app.emit('will-quit');
 });

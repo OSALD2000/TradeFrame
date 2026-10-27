@@ -3,7 +3,8 @@ import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { CaptureState } from './capture-types';
-import { validateSetup, writeSetup } from './journal';
+import { validateSetup, writeSetup, readSetup } from './journal';
+import { SchemaStore } from './schema-store';
 import type { SaveResult } from './capture-types';
 
 app.setName('TradeFrame');
@@ -12,6 +13,10 @@ const preload = path.join(__dirname, 'preload.js');
 const icon = path.join(__dirname, '../dist/tradeframe-icon.png');
 let journal: BrowserWindow | null = null;
 let bar: BrowserWindow | null = null;
+let schemas: SchemaStore | null = null;
+function schemaStore() {
+  return schemas ??= new SchemaStore(path.join(__dirname, '../data/form-schemas.sqlite'));
+}
 let state: CaptureState = { barOpen: false, busy: false, sources: [], preview: null, error: null };
 
 function protectWindow(window: BrowserWindow) {
@@ -121,6 +126,32 @@ async function takeScreenshot() {
 }
 
 function registerCapture() {
+  ipcMain.handle('forms:list', (event) => { assertSender(event, journal); return schemaStore().list(); });
+  ipcMain.handle('forms:save', (event, input: unknown) => {
+    assertSender(event, journal);
+    if (state.busy) throw new Error('Wait for the current operation to finish');
+    return schemaStore().save(input);
+  });
+  ipcMain.handle('journal:open', async (event) => {
+    assertSender(event, journal);
+    const owner = journal;
+    if (!owner || state.busy) throw new Error('Wait for the current operation to finish');
+    state.busy = true;
+    publish();
+    try {
+      const selection = await dialog.showOpenDialog(owner, {
+        title: 'Open TradeFrame setup', properties: ['openFile'], filters: [{ name: 'Markdown setup', extensions: ['md'] }],
+      });
+      if (selection.canceled || !selection.filePaths.length || journal !== owner) return null;
+      const loaded = await readSetup(selection.filePaths[0]);
+      if (journal !== owner) return null;
+      schemaStore().remember(loaded.schema);
+      state = { ...state, sources: [], preview: { id: 'opened-setup', name: 'Opened setup', image: loaded.image }, error: null };
+      return { schema: loaded.schema, values: loaded.values };
+    } finally {
+      if (journal === owner) { state.busy = false; publish(); }
+    }
+  });
   ipcMain.handle('journal:save', async (event, input: unknown): Promise<SaveResult> => {
     assertSender(event, journal);
     const owner = journal;
@@ -128,6 +159,7 @@ function registerCapture() {
       throw new Error('Choose a screenshot before saving');
     }
     const setup = validateSetup(input);
+    schemaStore().remember(setup.schema);
     const image = state.preview.image;
     state.busy = true;
     publish();
@@ -217,3 +249,4 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+app.on('will-quit', () => { schemas?.close(); schemas = null; });

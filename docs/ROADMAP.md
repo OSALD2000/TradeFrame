@@ -54,8 +54,12 @@ Choose a journal folder. Capture an image and enter live/backtest, symbol,
 direction, model, timeframe, optional New York entry time, and a note.
 The owner approved these fields and `setup.md` + `chart.png` per new setup
 directory on 27 October 2026. Implementation and format: [JOURNAL](JOURNAL.md).
-Automated save/error checks pass; native form/dialog and restart acceptance
-remain open. Saved-setup browsing is a later step.
+The owner additionally approved SQLite for form definitions only, configurable
+keys and tags, and equality-based dependent fields. Hidden answers stay in the
+draft but are excluded from export. Form revisions and Markdown schema snapshots
+preserve earlier setups; explicit opening handles current and original exports.
+Automated save/read/schema/SQLite checks pass; native form/editor/dialog and
+restart acceptance remain open. Saved-setup browsing is a later step.
 
 Acceptance: Markdown and image survive restart; invalid input is rejected;
 existing files cannot be silently overwritten; failures preserve user input.
