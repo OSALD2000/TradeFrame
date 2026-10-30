@@ -27,14 +27,35 @@ there is no automatic draft recovery after a crash.
 **Append screenshots** adds follow-up images to the same current file, including
 after reopening it. Existing fields and images must remain unchanged; edits to
 those require Save copy. The app checks the original Markdown/image fingerprint,
-locks the directory, backs up Markdown as `<file>.<UUID>.bak`, writes new images
-exclusively, checks the fingerprint again and appends validated screenshot blocks.
-The original Markdown bytes are not rewritten. New image names continue in order.
-A failed pre-append operation removes only images it created. A failed/interrupted
-append retains the backup and image files for recovery. A crash may leave
-`.tradeframe-write.lock`; after closing all TradeFrame instances, preserve the
-folder, inspect the backup and current file, and remove that stale lock before
-retrying. External editor contributions are never truncated or overwritten.
+prepares a Markdown backup as `<file>.<UUID>.bak` and stages complete image files
+plus the exact Markdown suffix in an owned `.tradeframe-append-<UUID>/` folder.
+A complete `.tradeframe-write.lock` record is published only after that data has
+been written and flushed. New images are linked exclusively into place; only
+then is the Markdown suffix appended. Original text/images are not rewritten.
+
+Opening a selected file or retrying delivery recovers a recognized interrupted
+append: it verifies the backup, staged hashes, original images and exact expected
+Markdown prefix, then appends only missing bytes. A known live writer is left
+alone. The app permits one process per local profile; a second launch focuses
+its journal. Concurrent writers across profiles/devices are not supported.
+After successful recovery, the operation directory and record are removed and
+the Markdown backup remains. Retrying that same recovered append succeeds
+without duplicating images. External editor contributions are never truncated.
+
+Unknown/legacy empty lock files, changed images, divergent external text and
+altered recovery data stop automatic recovery and preserve the files for
+inspection. Do not delete a recovery record or its directory while recovery is
+pending. For a legacy empty lock from the earlier preview, close all app instances,
+preserve the entire folder, and inspect the Markdown/backup before removing that
+legacy lock. There is no reliable intent to replay from an empty record.
+
+Saving and folder delivery publish complete files using hard links. Choose a
+local filesystem supporting hard links, such as NTFS, APFS or ext4; unsupported
+filesystems report an error and keep the draft. Process termination is tested;
+these checks do not establish power-loss durability or a distributed lock.
+An interruption before publishing an intent may leave an unreferenced staging
+directory, but does not change the existing setup. Unsaved drafts are still
+memory-only and are not recovered by this mechanism.
 
 Main-process validation is authoritative. The renderer cannot choose write
 paths or submit screenshot bytes: folders/files come from native pickers and
@@ -125,7 +146,11 @@ rather than interpreted or overwritten.
 Tests use synthetic images and temporary directories: all field types, conditional
 chains/cycles, lossless typed Markdown round trips, old formats, schema history,
 SQLite reopen/concurrent edits, unchanged files, simulated disk failure, explicit
-file opening, IPC trust and operation exclusion. Server-rendered controls check
+file opening, IPC trust and operation exclusion. Separate child processes exit
+before image publication, during the Markdown suffix and after committing it;
+reopen/retry restores exactly one complete append, including connected folders.
+A live writer, external edits, tampered recovery records and invalid paths are
+also covered. Server-rendered controls check
 typed inputs and editor content. Schema persistence was also checked with the
 actual Electron 45 runtime in Node mode, without opening real journals.
 Native dialog/visual editor acceptance remains open.

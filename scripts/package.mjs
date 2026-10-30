@@ -36,7 +36,7 @@ try {
   // Only compiled code and public metadata enter the distribution, never workspace data.
   await cp(path.join(root, 'dist'), path.join(application, 'dist'), { recursive: true });
   await mkdir(path.join(application, 'dist-electron'));
-  for (const module of ['main', 'preload', 'capture-types', 'journal', 'form-schema', 'schema-store', 'connections', 'onenote']) {
+  for (const module of ['main', 'preload', 'capture-types', 'journal', 'form-schema', 'schema-store', 'connections', 'onenote', 'append-store']) {
     await cp(path.join(root, 'dist-electron', `${module}.js`), path.join(application, 'dist-electron', `${module}.js`));
   }
   await writeFile(path.join(application, 'package.json'), JSON.stringify({
@@ -46,9 +46,13 @@ try {
   const clientId = process.env.TRADEFRAME_MICROSOFT_CLIENT_ID ?? '';
   assert(!clientId || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clientId), 'Invalid public Microsoft application ID');
   await writeFile(path.join(application, 'dist-electron', 'integrations.json'), JSON.stringify({ microsoftClientId: clientId }));
-  await cp(path.join(root, 'README.md'), path.join(staging, 'README.md'));
-  await cp(path.join(root, 'README.de.md'), path.join(staging, 'README.de.md'));
-  await cp(path.join(root, 'docs', 'RELEASE.md'), path.join(staging, 'RELEASE.md'));
+  for (const document of ['README.md', 'README.de.md', 'GLOSSARY.md', 'AGENTS.md',
+    'docs/RELEASE.md', 'docs/JOURNAL.md', 'docs/CAPTURE.md', 'docs/SYNC.md', 'docs/CONTEXT.md',
+    'docs/ROADMAP.md', 'docs/DESIGN.md', 'docs/adr/0001-local-first-journal.md',
+    'docs/adr/0002-versioned-form-schemas.md', 'docs/adr/0003-deliver-local-setups-to-independent-destinations.md']) {
+    await mkdir(path.dirname(path.join(staging, document)), { recursive: true });
+    await cp(path.join(root, document), path.join(staging, document));
+  }
   let notices = 'TradeFrame bundles Electron; its LICENSE and LICENSES.chromium.html are included.\n';
   for (const dependency of ['react', 'react-dom', 'scheduler']) {
     notices += `\n${dependency}\n${await readFile(path.join(path.dirname(require.resolve(`${dependency}/package.json`)), 'LICENSE'), 'utf8')}\n`;

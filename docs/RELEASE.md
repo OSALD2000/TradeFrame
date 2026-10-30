@@ -23,7 +23,7 @@ and writes a native package and SHA-256 checksum in `release/`:
 
 Move any previous package of the same version/architecture before rebuilding.
 Build output is ignored by Git. The script includes only compiled app code,
-public metadata and runtime licenses. It does not include development data,
+public metadata, selected public guides/ADRs and runtime licenses. It does not include development data,
 journals, settings, credentials, `.todo`, source control or `node_modules`.
 React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
@@ -80,6 +80,9 @@ launch with sandboxing enabled, capture permissions, source selection, repeated
 screenshots, captions/removal, save/reopen after restart, form persistence,
 Obsidian and Dropbox together, a disconnected destination and retry, and OneNote
 sign-in/page creation/disconnect. Inspect desktop and narrow-window layouts.
+Terminate a process during a prepared screenshot append, reopen the file and
+verify completion without duplicate captures; verify a live writer is left alone
+and an external edit stops recovery. Test a hard-link-capable journal filesystem.
 Verify a clean user data folder and that no private data appears in the archive.
 
 Choose a project license before presenting the source as reusable open source.

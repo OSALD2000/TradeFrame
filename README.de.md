@@ -10,7 +10,7 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 - Schwebende Aufnahmeleiste und native Bildschirm-/Fensterauswahl.
 - Bis zu 20 Screenshots mit Beschriftung und Aufnahmezeit in einer Setup-Markdown-Datei.
 - Speichern/Oeffnen, weitere Bilder an dieselbe Datei anhaengen mit Markdown-Sicherung,
-  oder eine eigene Kopie fuer Aenderungen an bisherigen Feldern/Bildern speichern.
+  mit vorbereiteter Wiederherstellung nach Prozessabbruch, oder eine eigene Kopie fuer Aenderungen an bisherigen Feldern/Bildern speichern.
 - Konfigurierbare Formulare: acht Feldtypen, Schluessel/Tags, Optionen und Abhaengigkeiten.
   SQLite enthaelt nur versionierte Definitionen; Antworten bleiben Markdown, Bilder PNG.
 - Gemerkter Journalordner und parallele Obsidian-/Dropbox-Ordnerverbindungen mit
@@ -40,7 +40,8 @@ npm start
 packt die installierte Electron-Runtime in den ignorierten Ordner `release/`.
 Auf dem Zielrechner sind Node/npm nicht erforderlich. Fuer das Debian-Paket
 braucht der Linux-Build `dpkg-deb`. Windows/macOS werden auf diesen Systemen
-gebaut. [Build, Download und Abnahme](docs/RELEASE.md)
+gebaut. Das Archiv enthaelt die oeffentlichen Anleitungen mit funktionierenden
+relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
@@ -60,7 +61,9 @@ Markdown-Sicherung. Bestehende Werte/Bilder bleiben dabei unveraendert;
 Fehler- und Wiederherstellungstests niemals mit echten Journalen ausfuehren.
 
 Vor dem Schliessen/Neuladen eines gefuellten Entwurfs erscheint eine Rueckfrage.
-Bei einem Absturz koennen ungespeicherte Entwuerfe verloren gehen. Grenzen,
+Bei einem Absturz koennen ungespeicherte Entwuerfe verloren gehen. Vorbereitete
+Bildergaenzungen werden beim Oeffnen oder Wiederholen vervollstaendigt; fremde
+Aenderungen bleiben Konflikte. Grenzen,
 Sicherungen und Anhaenge-Sperren: [Lokale Setup-Dateien](docs/JOURNAL.md).
 [Aufnahme und Berechtigungen](docs/CAPTURE.md)
 

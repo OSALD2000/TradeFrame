@@ -132,9 +132,9 @@ test('failed Markdown writes clean up the new image without touching prior journ
   const module = { exports: {} };
   vm.runInNewContext(readFileSync(path.resolve(__dirname, '../dist-electron/journal.js'), 'utf8'), {
     exports: module.exports, Buffer,
-    require: (name) => name === 'node:fs/promises' ? { ...fs, writeFile: async (file, ...args) => {
+    require: (name) => name === './append-store' ? { ...require('../dist-electron/append-store.js'), createFile: async (file, ...args) => {
       if (file.endsWith('setup.md')) throw new Error('Synthetic disk failure');
-      return fs.writeFile(file, ...args);
+      return require('../dist-electron/append-store.js').createFile(file, ...args);
     } } : require(name.startsWith('./') ? path.resolve(__dirname, '../dist-electron', name) : name),
   });
   await assert.rejects(module.exports.writeSetup(root, input, screenshots), /Synthetic disk failure/);

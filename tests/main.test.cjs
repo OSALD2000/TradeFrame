@@ -16,7 +16,7 @@ const source = (id, name = 'Synthetic chart') => ({ id, name,
   thumbnail: { isEmpty: () => false, toDataURL: () => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=' },
 });
 
-async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] })) {
+async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] }), primaryInstance = true) {
   const fsSync = require('node:fs');
   const dataRoot = fsSync.mkdtempSync(path.join(require('node:os').tmpdir(), 'tradeframe-main-test-'));
   dataRoots.push(dataRoot);
@@ -24,6 +24,7 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
   app.getPath = () => dataRoot;
   app.isPackaged = true;
   app.setName = () => {};
+  app.requestSingleInstanceLock = () => primaryInstance;
   app.whenReady = () => Promise.resolve();
   app.quit = () => { app.quitCalled = true; };
   const windows = [];
@@ -53,6 +54,7 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
       this.visible = true;
     }
     hide() { this.visible = false; }
+    focus() { this.focused = true; }
     setOpacity(value) { this.opacity = value; }
     setIgnoreMouseEvents(value) { this.ignoreMouseEvents = value; }
     isDestroyed() { return !!this.destroyed; }
@@ -101,6 +103,17 @@ test('startup loads only local UI with isolation and blocks navigation/new windo
   assert.equal(discarded, false, 'The draft-close dialog keeps editing by default');
   app.emit('window-all-closed');
   assert.equal(app.quitCalled, true);
+});
+
+test('a second launch focuses the existing journal and a secondary process creates no windows or IPC handlers', async () => {
+  const primary = await boot();
+  primary.app.emit('second-instance');
+  assert.equal(primary.windows[0].visible, true);
+  assert.equal(primary.windows[0].focused, true);
+  const secondary = await boot(undefined, undefined, false);
+  assert.equal(secondary.app.quitCalled, true);
+  assert.equal(secondary.windows.length, 0);
+  assert.equal(secondary.handlers.size, 0);
 });
 
 test('capture keeps the journal visible and preserves the mapped bar position across screenshots', async () => {

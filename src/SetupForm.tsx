@@ -52,7 +52,7 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath }: { api:
         setValues({ ...emptyValues(loaded.schema), ...loaded.values });
         setMessage('Opened setup. Capture more views to append to this file, or save a separate copy.');
       }
-    } catch { setError('Could not open this setup. Use an unmodified TradeFrame Markdown file with its chart PNG files beside it. Nothing was replaced.'); }
+    } catch { setError('Could not open this setup. Keep its Markdown, chart PNGs and recovery files together. Check for an active writer or changes made outside TradeFrame. Your current draft is unchanged.'); }
     finally { setSaving(false); }
   }
 

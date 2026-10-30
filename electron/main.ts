@@ -14,6 +14,8 @@ import { OneNoteClient } from './onenote';
 import type { SaveResult } from './capture-types';
 
 app.setName('TradeFrame');
+const primaryInstance = app.requestSingleInstanceLock();
+if (!primaryInstance) app.quit();
 protocol.registerSchemesAsPrivileged([{ scheme: 'tradeframe-image', privileges: { standard: true, secure: true } }]);
 const uiFile = path.join(__dirname, '../dist/index.html');
 const preload = path.join(__dirname, 'preload.js');
@@ -393,7 +395,7 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+if (primaryInstance) app.whenReady().then(() => {
   protocol.handle('tradeframe-image', (request) => {
     const bytes = request.method === 'GET' ? images.get(request.url) : undefined;
     return bytes ? new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' } })
@@ -406,6 +408,10 @@ app.whenReady().then(() => {
   ]));
   registerCapture();
   createWindow();
+  app.on('second-instance', () => {
+    if (!journal) createWindow();
+    else { journal.show(); journal.focus(); }
+  });
   app.on('activate', () => {
     if (!journal) createWindow();
     else if (!state.busy) journal.show();

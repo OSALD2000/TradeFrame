@@ -20,8 +20,9 @@ no private journals or account data were opened.
   confirmation. Closing/reloading a draft prompts before discarding it.
 - Append screenshots extends the current saved Markdown file without rewriting
   existing bytes; it requires unchanged existing values/images and a matching
-  fingerprint, writes a Markdown backup and uses exclusive image writes and a
-  lock. Save copy remains available for changes to earlier fields or images.
+  fingerprint, writes a Markdown backup and stages complete files before a
+  durable recovery record. Reopening/retrying resumes only the verified missing
+  suffix, waits for live writers and preserves external conflicts. Save copy remains available for changes to earlier fields or images.
 - Version-3 Markdown includes ordered screenshot references; later captures can
   be validated append-only blocks. Versions 1 and 2 remain readable. Unknown or
   contradictory content is rejected. Details: [JOURNAL](JOURNAL.md).
@@ -46,11 +47,12 @@ no private journals or account data were opened.
 ## Code ownership
 
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
-lifecycle. Sandboxing/context isolation remain enabled; renderer Node access,
+lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,
 new windows and off-app navigation remain blocked. `preload.ts` exposes only
 named commands; form, path, source and value validation remain native.
 
-`journal.ts` owns file persistence and append preservation; `form-schema.ts`
+`journal.ts` owns file persistence and append preservation; `append-store.ts`
+owns staged file publication, prepared intents and process-crash recovery; `form-schema.ts`
 owns types, validation and Markdown. `schema-store.ts` owns form revisions;
 `connections.ts` owns folder delivery and its queue; `onenote.ts` owns OAuth,
 secure-token calls and Graph requests. The renderer cannot submit arbitrary
@@ -61,7 +63,8 @@ boundaries; [RELEASE](RELEASE.md) defines packaging and publisher setup.
 
 The build and automated tests pass with synthetic PNGs, temporary folders,
 SQLite and Electron doubles. Coverage includes multi-image round trips,
-append preservation/backups, folder conflicts/restart/retry, simultaneous
+append preservation/backups and real child-process interruption/recovery,
+folder conflicts/restart/retry, simultaneous
 Obsidian/Dropbox delivery, trusted image URLs and mocked OneNote authentication
 and upload responses. Tests do not authenticate real accounts or capture the
 user's desktop. Native permissions/windowing are covered by [CAPTURE](CAPTURE.md).
@@ -79,3 +82,12 @@ browser protection was disabled. Rendered desktop/narrow QA, real capture,
 installer launch, Dropbox cloud delivery, OneNote consent/upload and Windows/macOS
 execution remain unverified. A successful owner desktop launch on 27 October
 applies to the earlier build, not these new workflows.
+
+The current recovery build passes 59 automated tests. Child processes stop before
+image installation, midway through a suffix and after the suffix is complete;
+reopening and delivery retry finish exactly once. Live writers are checked through
+process liveness and left alone. Old empty records and changed recovery/source
+files are preserved for inspection. Hard-link-capable local filesystems are
+required. Power-loss and concurrent multi-device writers are not verified.
+Downloaded packages now include the explicitly selected public guides/ADRs with
+their original relative paths, so README and recovery links remain usable offline.

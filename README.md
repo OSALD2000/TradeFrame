@@ -10,7 +10,7 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 - Floating capture bar and native screen/window selection.
 - Up to 20 screenshots, captions and capture timestamps in one setup Markdown.
 - Save/reopen, append follow-up screenshots to the same file with a Markdown
-  backup, or save a separate copy to change earlier fields/images.
+  backup and prepared crash recovery, or save a separate copy to change earlier fields/images.
 - Configurable forms: eight input types, keys/tags, choices and visibility rules.
   SQLite holds only versioned definitions; answers stay in Markdown, images in PNG.
 - Remembered journal folder and simultaneous Obsidian/Dropbox folder connections,
@@ -39,7 +39,8 @@ npm start
 and packages the installed Electron runtime into ignored `release/` output. No
 Node/npm is needed on the computer running an extracted package. Linux packaging
 also requires `dpkg-deb` for the Debian installer. Windows/macOS builds run on
-those systems. [Build/download instructions and acceptance](docs/RELEASE.md)
+those systems. The archive includes public guides with working relative links.
+[Build/download instructions and acceptance](docs/RELEASE.md)
 
 ## Journal workflow
 
@@ -57,7 +58,8 @@ and images must stay unchanged; **Save copy** creates a new setup directory for
 those edits. Never use a real journal to test failure/recovery behavior.
 
 Closing/reloading a populated draft asks before discarding it. A crash can lose
-unsaved drafts; recovery boundaries and append-lock/backup handling are in
+unsaved drafts. Prepared screenshot appends resume when reopened or retried;
+foreign edits are kept as conflicts. Recovery and legacy-lock handling are in
 [local setup files](docs/JOURNAL.md). [Capture/permissions](docs/CAPTURE.md)
 
 ## Connections

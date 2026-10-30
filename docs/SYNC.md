@@ -73,9 +73,12 @@ source and the suffix contains validated follow-up screenshot blocks. A missing 
 not recreated, so an offline/unmounted drive is not silently replaced by a
 directory on another filesystem. Markdown is written after the images as the
 snapshot completion marker. An abrupt process/OS crash can leave an incomplete
-folder. Retry fills matching/missing files; a partial Markdown append or a
-divergent externally edited file needs inspection/recovery from the source or
-backup before retry, rather than automatic truncation. No background watcher
+folder. Retrying completes only a recognized prepared append whose stored
+backup/hashes and exact Markdown prefix still match. It waits for a live writer
+and stops without truncating foreign text or replacing changed images. New files
+are published complete. See [append recovery](JOURNAL.md) for hard-link filesystem
+requirements and the handling of old empty locks or unrecognized recovery data.
+No background watcher
 or two-way merge is implemented.
 
 The queue keeps pending/failed jobs and the last 50 completed jobs, up to 1000

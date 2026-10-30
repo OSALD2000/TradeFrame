@@ -1,9 +1,10 @@
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync } from 'node:fs';
-import { mkdir, lstat, readFile, writeFile, appendFile, rm, realpath } from 'node:fs/promises';
+import { mkdir, lstat, readFile, rm, realpath } from 'node:fs/promises';
 import { randomUUID, createHash } from 'node:crypto';
 import path from 'node:path';
 import { deserializeSetup } from './form-schema';
 import { readSetup, pngBytes } from './journal';
+import { appendDocument, createFile, recoverAppend } from './append-store';
 import type { FolderKind, SyncJob, Connections } from './capture-types';
 
 export function folderKind(value: unknown): asserts value is FolderKind {
@@ -101,7 +102,7 @@ export class ConnectionStore {
 
 export async function copySnapshot(source: string, targetRoot: string): Promise<string> {
   const loaded = await readSetup(source);
-  const markdown = await readFile(source, 'utf8');
+  const markdown = loaded.markdown;
   const document = deserializeSetup(markdown);
   const parent = path.basename(path.dirname(source));
   const name = /^setup-[A-Za-z0-9_.-]{1,120}$/.test(parent) ? parent : `setup-import-${createHash('sha256').update(source).digest('hex').slice(0, 20)}`;
@@ -121,8 +122,10 @@ export async function copySnapshot(source: string, targetRoot: string): Promise<
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
     const info = await lstat(target);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('Invalid sync target');
+    await recoverAppend(path.join(target, 'setup.md'));
     const missing = [];
     let markdownAddition: Buffer | null = null;
+    let previousMarkdown: Buffer | null = null;
     // Compare the entire snapshot before writing; never replace an externally edited file.
     for (const file of files) {
       const destination = path.join(target, file.name);
@@ -136,13 +139,19 @@ export async function copySnapshot(source: string, targetRoot: string): Promise<
         const suffix = file.bytes.subarray(existing.length);
         if (!suffix.toString('utf8').startsWith('\n<!-- tradeframe-screenshot: ') || (earlier.screenshots?.length ?? 1) >= loaded.screenshots.length) throw new Error('Sync conflict');
         markdownAddition = suffix;
+        previousMarkdown = existing;
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
         missing.push(file);
       }
     }
-    for (const file of missing) await writeFile(path.join(target, file.name), file.bytes, { flag: 'wx' });
-    if (markdownAddition) await appendFile(path.join(target, 'setup.md'), markdownAddition, { flush: true });
+    if (markdownAddition) {
+      const oldCount = deserializeSetup(previousMarkdown!.toString('utf8')).screenshots?.length ?? 1;
+      for (const image of files.slice(0, oldCount)) {
+        if (missing.includes(image)) await createFile(path.join(target, image.name), image.bytes);
+      }
+      await appendDocument(path.join(target, 'setup.md'), previousMarkdown!, markdownAddition, files.slice(0, -1));
+    } else for (const file of missing) await createFile(path.join(target, file.name), file.bytes);
     return path.join(target, 'setup.md');
   } catch (error) {
     if (created) await rm(target, { recursive: true, force: true });
