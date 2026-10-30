@@ -7,8 +7,9 @@ independent use; Obsidian is optional. The approved file format and preservation
 behavior are in [JOURNAL](../JOURNAL.md). The later decision to keep only form
 definitions in SQLite is recorded in [ADR 0002](0002-versioned-form-schemas.md).
 
-Dropbox, Obsidian, and OneNote are future integration candidates, not current
-dependencies or implemented features. Their mechanisms, permissions, conflict
-handling, and supported data remain undecided. Each integration requires a
-separate agreed scope; this decision does not authorize connecting accounts or
-transmitting journal data.
+The original decision deferred external connections. On 30 October 2026, the
+owner explicitly requested Obsidian, Dropbox and OneNote, including simultaneous
+destinations. [ADR 0003](0003-deliver-local-setups-to-independent-destinations.md)
+extends this decision while keeping the journal independent of those services.
+Runtime connections require explicit folder selection or Microsoft consent;
+implementation authorization does not authorize agent access to real journals.

@@ -30,6 +30,7 @@ svg { flex-shrink: 0; stroke: currentColor; stroke-linecap: round; stroke-linejo
 nav { margin-top: 37px; }
 .nav-item { display: flex; align-items: center; gap: 10px; text-decoration: none; padding: 9px 10px; border-radius: 6px; background: var(--elevated); font-weight: 500; font-size: 13px; }
 .nav-item:hover { background: var(--border); }
+.nav-item + .nav-item { margin-top: 6px; background: transparent; }
 .nav-item svg { width: 17px; height: 17px; stroke-width: 1.3; color: var(--secondary); }
 .nav-count { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sidebar-bottom { margin-top: auto; padding: 40px 10px 0; }
@@ -99,6 +100,11 @@ button { font-family: inherit; }
 .preview-badge { white-space: nowrap; }
 .preview-image { display: block; width: 100%; max-height: 55vh; object-fit: contain; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
 .preview-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 12px; }
+.screenshot-list { display: grid; gap: 28px; }
+.screenshot-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.screenshot-heading h3 { font-size: 13px; font-weight: 500; }
+.screenshot-caption { display: grid; gap: 6px; color: var(--secondary); font-size: 12px; margin-top: 12px; }
+.screenshot-caption input { width: 100%; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--text); padding: 9px; font: inherit; }
 .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
 .source-option { padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; min-width: 0; }
 .source-option:hover { border-color: var(--muted); }
@@ -142,7 +148,24 @@ button { font-family: inherit; }
 .setup-details .save-message { font-size: 12px; color: var(--secondary); margin-top: 12px; overflow-wrap: anywhere; }
 .setup-form .save-message { margin-top: 12px; overflow-wrap: anywhere; }
 .secondary-button:disabled { color: var(--muted); cursor: not-allowed; }
+.connections { padding: 28px; border-top: 1px solid var(--border); scroll-margin-top: 16px; }
+.connection-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; border-top: 1px solid var(--border); padding: 18px 0; }
+.connection-row > div:first-child { min-width: 0; }
+.connection-row h3 { font-size: 13px; font-weight: 500; }
+.connection-row p { font-size: 12px; color: var(--secondary); margin-top: 6px; overflow-wrap: anywhere; }
+.connection-actions { display: flex; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
+.sync-jobs { padding-left: 20px; font-size: 12px; color: var(--secondary); }
+.sync-jobs li { margin-top: 12px; overflow-wrap: anywhere; }
+.save-message { font-size: 12px; color: var(--secondary); margin-top: 12px; overflow-wrap: anywhere; }
+.microsoft-login, .publisher-settings { padding: 16px; border: 1px solid var(--border); border-radius: 6px; margin: 0 0 18px; font-size: 12px; color: var(--secondary); }
+.microsoft-login p + p, .publisher-settings p { margin-top: 10px; }
+.login-code { display: inline-block; font-size: 20px; letter-spacing: 2px; color: var(--text); margin: 12px 20px 12px 0; user-select: all; }
+.publisher-settings summary { cursor: pointer; color: var(--text); }
+.publisher-settings form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin-top: 14px; }
+.publisher-settings label { display: grid; gap: 6px; flex: 1; min-width: min(100%, 280px); }
+.publisher-settings input { background: var(--canvas); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 9px; font: inherit; }
+@media (max-width: 800px) { .connection-row { flex-direction: column; gap: 12px; } }
 @media (max-width: 520px) {
   .preview-heading { flex-wrap: wrap; }
-  .capture-preview, .source-picker, .setup-details { padding: 22px; }
+  .capture-preview, .source-picker, .setup-details, .connections { padding: 22px; }
 }

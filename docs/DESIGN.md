@@ -45,7 +45,7 @@ Secondary research:
 
 `public/tradeframe-icon.png` is the generated master used by Electron windows,
 the macOS development dock, the browser favicon, and the journal brand.
-Vite copies it to `dist/`. Installer icons are a future packaging task.
+Vite copies it to `dist/`. The Linux installer also uses this PNG for its desktop launcher; native Windows/macOS shell branding still needs acceptance.
 Generated with the built-in image tool on 27 October 2026. Prompt brief:
 "One flat TradeFrame desktop app icon: dark rounded tile, transparent outside,
 four off-white capture corners enclosing two thick candlesticks, one off-white
@@ -71,3 +71,16 @@ checks the renderer only; it does not verify the native Electron window.
 including Electron 45 types. Visual QA is blocked in the agent environment:
 the browser security policy rejects local file URLs and local serving was
 unavailable. Desktop and narrow-window rendering still need manual inspection.
+
+## 30 October 2026 extension
+
+Use the approved Linear direction directly for multiple screenshots and
+connections; no new visual system. Screenshots stack in capture order with a
+compact heading, Remove action and labeled caption. The chart remains primary;
+all setup fields stay below the image list. Save/Append is the single accent action.
+Connections uses separated full-width rows, explicit destination paths/status,
+neutral buttons and an inline Microsoft code state. The Refero craft reference
+on focus states/forms informs native labels, visible keyboard focus, inline
+errors and disabled in-flight actions. At narrow widths, destination actions
+wrap below their descriptive text. Native/visual acceptance remains open because
+browser/Electron startup is blocked here by sandbox/socket restrictions.

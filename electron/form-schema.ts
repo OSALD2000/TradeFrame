@@ -8,7 +8,34 @@ export type FieldDefinition = {
   tags: string[]; options?: FieldOption[]; when?: { fieldId: string; equals: FieldValue };
 };
 export type FormSchema = { formatVersion: 1; id: string; revision: number; name: string; fields: FieldDefinition[] };
-export type SetupDocument = { schema: FormSchema; values: FormValues; createdAt: string };
+export type ScreenshotReference = { file: string; caption: string; capturedAt: string };
+export type SetupDocument = { schema: FormSchema; values: FormValues; createdAt: string; screenshots?: ScreenshotReference[] };
+export const MAX_SCREENSHOTS = 20;
+
+export function validateScreenshots(input: unknown): ScreenshotReference[] {
+  check(Array.isArray(input) && input.length > 0 && input.length <= MAX_SCREENSHOTS, 'A setup needs 1–20 screenshots');
+  return input.map((item, index) => {
+    check(record(item), 'Invalid screenshot metadata');
+    keys(item, ['file', 'caption', 'capturedAt']);
+    check(item.file === screenshotFile(index), 'Invalid screenshot filename or order');
+    check(typeof item.caption === 'string' && item.caption.length <= 200 && !/[\r\n\0]/.test(item.caption), 'Invalid screenshot caption');
+    check(typeof item.capturedAt === 'string' && Number.isFinite(Date.parse(item.capturedAt))
+      && new Date(item.capturedAt).toISOString() === item.capturedAt, 'Invalid screenshot timestamp');
+    return { file: item.file, caption: item.caption, capturedAt: item.capturedAt };
+  });
+}
+
+export function screenshotFile(index: number): string {
+  return index === 0 ? 'chart.png' : `chart-${String(index + 1).padStart(3, '0')}.png`;
+}
+
+function renderScreenshot(shot: ScreenshotReference, index: number): string {
+  return `## Screenshot ${index + 1}\n\n![Chart ${index + 1}](${shot.file})\n\n${shot.caption ? `${shot.caption}\n\n` : ''}Captured: ${shot.capturedAt}\n\n`;
+}
+
+export function screenshotAddition(shot: ScreenshotReference, index: number): string {
+  return `\n<!-- tradeframe-screenshot: ${JSON.stringify(shot)} -->\n\n${renderScreenshot(shot, index)}`;
+}
 
 const RESERVED_KEYS = new Set(['schemaVersion', 'createdAt', 'tradeframe', 'tags', 'image', '__proto__', 'constructor', 'prototype']);
 const validId = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(value) && !Object.hasOwn(Object.prototype, value);
@@ -180,17 +207,19 @@ export function serializeSetup(document: SetupDocument): string {
   check(typeof document.createdAt === 'string' && Number.isFinite(Date.parse(document.createdAt))
     && new Date(document.createdAt).toISOString() === document.createdAt, 'Invalid creation timestamp');
   const exportedTags = valueTags(schema, values);
-  const metadata: Record<string, unknown> = { schemaVersion: 2, createdAt: document.createdAt,
-    tradeframe: { formatVersion: 1, schema }, tags: exportedTags };
+  const screenshots = document.screenshots === undefined ? undefined : validateScreenshots(document.screenshots);
+  const metadata: Record<string, unknown> = { schemaVersion: screenshots ? 3 : 2, createdAt: document.createdAt,
+    tradeframe: { formatVersion: 1, schema, ...(screenshots ? { screenshots } : {}) }, tags: exportedTags };
   for (const field of schema.fields) if (Object.hasOwn(values, field.id)) metadata[field.key] = values[field.id];
   const notes = schema.fields.filter((field) => field.type === 'textarea' && typeof values[field.id] === 'string')
     .map((field) => `## ${field.label}\n\n${values[field.id]}\n`).join('\n');
-  const markdown = `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n# Setup\n\n![Chart](chart.png)\n\n${exportedTags.length ? `${exportedTags.map((tag) => `#${tag}`).join(' ')}\n\n` : ''}${notes}`;
+  const charts = screenshots ? screenshots.map(renderScreenshot).join('') : '![Chart](chart.png)\n\n';
+  const markdown = `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n# Setup\n\n${charts}${exportedTags.length ? `${exportedTags.map((tag) => `#${tag}`).join(' ')}\n\n` : ''}${notes}`;
   check(new TextEncoder().encode(markdown).byteLength <= 5_000_000, 'Setup export is too large');
   return markdown;
 }
 
-export function deserializeSetup(markdown: string): SetupDocument {
+function deserializeBase(markdown: string): SetupDocument {
   check(new TextEncoder().encode(markdown).byteLength <= 5_000_000, 'Markdown file is too large');
   const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(markdown);
   check(match, 'Missing TradeFrame metadata');
@@ -212,8 +241,9 @@ export function deserializeSetup(markdown: string): SetupDocument {
     values.note = notes[1].replace(/\r?\n$/, '');
     return { schema: validateSchema(DEFAULT_SCHEMA), values: validateValues(DEFAULT_SCHEMA, values), createdAt: metadata.createdAt };
   }
-  check(metadata.schemaVersion === 2 && record(metadata.tradeframe) && metadata.tradeframe.formatVersion === 1, 'Unsupported setup format');
-  keys(metadata.tradeframe, ['formatVersion', 'schema']);
+  check((metadata.schemaVersion === 2 || metadata.schemaVersion === 3) && record(metadata.tradeframe) && metadata.tradeframe.formatVersion === 1, 'Unsupported setup format');
+  keys(metadata.tradeframe, metadata.schemaVersion === 3 ? ['formatVersion', 'schema', 'screenshots'] : ['formatVersion', 'schema']);
+  const screenshots = metadata.schemaVersion === 3 ? validateScreenshots(metadata.tradeframe.screenshots) : undefined;
   const schema = validateSchema(metadata.tradeframe.schema);
   check(Object.keys(metadata).every((key) => ['schemaVersion', 'createdAt', 'tradeframe', 'tags', ...schema.fields.map((field) => field.key)].includes(key)), 'Unknown Markdown field');
   const values: FormValues = Object.fromEntries(schema.fields.filter((field) => Object.hasOwn(metadata, field.key))
@@ -221,9 +251,31 @@ export function deserializeSetup(markdown: string): SetupDocument {
   const validated = validateValues(schema, values);
   check(Object.keys(validated).length === Object.keys(values).length, 'Hidden field values must not be saved');
   check(JSON.stringify(metadata.tags) === JSON.stringify(valueTags(schema, validated)), 'Markdown tags do not match the schema values');
-  const document = { schema, values: validated, createdAt: metadata.createdAt };
+  const document = { schema, values: validated, createdAt: metadata.createdAt, ...(screenshots ? { screenshots } : {}) };
   const canonical = serializeSetup(document);
   const body = canonical.slice(canonical.indexOf('\n---\n') + '\n---\n'.length);
   check(body.replace(/\r\n/g, '\n') === match[2].replace(/\r\n/g, '\n'), 'Markdown body does not match its field values');
   return document;
+}
+
+function readWithAdditions(markdown: string, depth: number): SetupDocument {
+  try { return deserializeBase(markdown); }
+  catch (error) {
+    if (depth >= MAX_SCREENSHOTS) throw error;
+    const marker = markdown.lastIndexOf('\n<!-- tradeframe-screenshot: ');
+    if (marker < 0) throw error;
+    const addition = markdown.slice(marker);
+    const header = /^\n<!-- tradeframe-screenshot: (.+) -->\n/.exec(addition);
+    if (!header) throw error;
+    const document = readWithAdditions(markdown.slice(0, marker), depth + 1);
+    const previous = document.screenshots ?? [{ file: 'chart.png', caption: '', capturedAt: document.createdAt }];
+    const screenshots = validateScreenshots([...previous, JSON.parse(header[1])]);
+    if (screenshotAddition(screenshots.at(-1)!, previous.length).replace(/\r\n/g, '\n') !== addition.replace(/\r\n/g, '\n')) throw new Error('Invalid appended screenshot');
+    return { ...document, screenshots };
+  }
+}
+
+export function deserializeSetup(markdown: string): SetupDocument {
+  check(new TextEncoder().encode(markdown).byteLength <= 5_000_000, 'Markdown file is too large');
+  return readWithAdditions(markdown.replace(/\r\n/g, '\n'), 0);
 }

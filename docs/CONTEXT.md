@@ -1,97 +1,81 @@
 # TradeFrame context
 
-## Product boundary
+TradeFrame is a local-first Electron/React/TypeScript trading journal. Target
+platforms are Linux, Windows and macOS; real native acceptance is still open.
+The owner requested downloadable builds, Obsidian/Dropbox/OneNote connections,
+simultaneous destinations and multiple screenshots per setup on 30 October 2026.
+The original Super+Ctrl+j script was inspected as a workflow reference only;
+no private journals or account data were opened.
 
-TradeFrame is a local-first desktop trading journal targeting Windows, macOS,
-and Linux. Its initial workflow is chart capture, setup notes, and later review.
-The personal Eww/Sway workflow inspired the product; running TradeFrame must
-not require that desktop setup or Obsidian.
-The reason for this boundary is recorded in the
-[local-first decision](adr/0001-local-first-journal.md).
+## Implemented state
 
-The renderer supports a capture toolbar, source selection, and an in-memory
-screenshot preview. Setup details can be saved explicitly as Markdown plus PNG
-in a native-dialog-selected folder; see [JOURNAL](JOURNAL.md) for the format and
-recovery boundaries. Forms are configurable, versioned in project-local SQLite,
-and included as snapshots in Markdown. SQLite contains no setup answers/images.
-Explicit opening restores exported Markdown and its sibling PNG, including the
-original fixed-field format. Automatic browsing, scanning, and edit-in-place
-are not implemented.
-The journal remains visible when the capture bar opens and during source
-selection/capture; only the bar is made transparent for the snapshot. Screen snapshots
-can therefore include the journal.
-The bar reappears after each capture attempt and stays open until explicitly
-closed from the journal or the bar, or until the app closes. Its logical open
-state is shared with the renderer so the journal can offer a close action.
-During capture the bar stays mapped with opacity zero and mouse input ignored;
-restoring opacity/input avoids compositor repositioning from hide/show. Native
-acceptance of transparency and retained placement remains open. No position
-is saved across app restarts.
-Native capture and window behavior remain unverified on real target desktops.
-Intended behavior and
-milestone acceptance live in [ROADMAP](ROADMAP.md); visual rules live in
-[DESIGN](DESIGN.md), and canonical domain terms live in [GLOSSARY](../GLOSSARY.md).
+- Floating capture bar, native source snapshots, source selection, up to 20
+  ordered screenshots per setup, optional captions, capture timestamps and removal.
+  The journal stays visible; the mapped bar becomes transparent during capture.
+- Native image bytes stay in memory behind opaque `tradeframe-image:` URLs.
+  IPC updates carry image URLs rather than retransmitting PNG data. Removing a
+  screenshot or closing/resetting the journal releases its cached bytes.
+- Explicit local save creates a fresh Markdown/PNG folder. Open restores the
+  original schema, values and screenshots. New setup resets the draft with a
+  confirmation. Closing/reloading a draft prompts before discarding it.
+- Append screenshots extends the current saved Markdown file without rewriting
+  existing bytes; it requires unchanged existing values/images and a matching
+  fingerprint, writes a Markdown backup and uses exclusive image writes and a
+  lock. Save copy remains available for changes to earlier fields or images.
+- Version-3 Markdown includes ordered screenshot references; later captures can
+  be validated append-only blocks. Versions 1 and 2 remain readable. Unknown or
+  contradictory content is rejected. Details: [JOURNAL](JOURNAL.md).
+- Forms support eight field types, stable IDs, keys/tags, choices and conditional
+  visibility. Only definitions live in SQLite. The DB is now in Electron's
+  user-data directory. Development imports all revisions from the old project
+  database without changing it. Existing setups retain embedded schema snapshots.
+- Connections remembers the journal folder, an Obsidian vault and a Dropbox
+  desktop-sync folder. Every save/append delivers to both when connected. Jobs
+  survive restart, retry explicitly, and preserve external conflicts. Folder
+  destinations extend matching Markdown files only by appending the exact suffix.
+- OneNote uses Microsoft device authorization, delegated Notes.ReadWrite and
+  offline_access, refresh, encrypted refresh-token persistence where supported,
+  multipart pages with all screenshots, and duplicate checks before retrying.
+  A publisher Microsoft application ID and live account acceptance are pending.
+  OneNote creates a new page per saved delivery, including a follow-up delivery.
+- Packaging produces native runtime archives/checksums; Linux also builds a
+  Debian installer with a desktop entry and sandbox metadata. No dependency was
+  added. The lockfile was reviewed and adopted; CI uses npm ci. A manual package
+  workflow builds artifacts on three OS runners without publishing releases.
 
-## Implemented boundaries
+## Code ownership
 
-- `electron/main.ts` owns the journal/capture windows and application lifecycle. It loads
-  the compiled local UI, enables sandbox/context isolation, disables renderer
-  Node integration, and blocks new windows and navigation away from the app.
-- `electron/preload.ts` exposes named capture, form, open/save commands and a state subscription;
-  the main process validates the calling window, main frame, local URL, and
-  selected source. No raw IPC, filesystem API, or privileged event reaches the UI.
-- `src/` contains the React journal, capture bar, and CSS. It receives temporary
-  screenshot images through the bridge; it has no direct journal file access.
-- `electron/journal.ts` validates setup fields, creates exclusive per-setup
-  Markdown/PNG files and reads explicitly selected setup files. The main process
-  owns native pickers, schema storage, and open/save lifecycle.
-  `src/SetupForm.tsx` follows the preview at full journal width and retains the
-  draft during save errors/cancellation and source selection.
-- `electron/form-schema.ts` is shared, platform-neutral validation, dependency
-  evaluation, and typed Markdown serialization/deserialization. It preserves
-  stable IDs, schema snapshots, field types and whitespace; hidden values are
-  excluded from export without mutating the draft.
-- `electron/schema-store.ts` owns append-only schema revisions in
-  `data/form-schemas.sqlite` using built-in `node:sqlite`. The DB is ignored by
-  Git; only definitions are stored. A store is created lazily and closed at quit.
-- `src/SchemaEditor.tsx` edits definitions, tags, choices and visibility rules;
-  `src/FieldInput.tsx` renders typed controls. No user-provided scripts execute.
-- `tests/main.test.cjs` exercises compiled main-process capture and preload
-  behavior with Electron doubles and synthetic images. It is not a real desktop
-  launch, renderer test, or native capture test.
-- `tests/journal.test.cjs` covers validation, serialization, real temporary-file
-  saves/reads, non-overwrite behavior, and cleanup after a simulated write failure.
-- Form-model/store tests cover typed round trips, dependency rules, old formats,
-  revision preservation, real SQLite reopen and stale edits. Server-rendered
-  controls check input representations; they do not replace native visual QA.
-- Build output belongs in the ignored output directories; edit source files.
+`electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
+lifecycle. Sandboxing/context isolation remain enabled; renderer Node access,
+new windows and off-app navigation remain blocked. `preload.ts` exposes only
+named commands; form, path, source and value validation remain native.
 
-## Development facts
+`journal.ts` owns file persistence and append preservation; `form-schema.ts`
+owns types, validation and Markdown. `schema-store.ts` owns form revisions;
+`connections.ts` owns folder delivery and its queue; `onenote.ts` owns OAuth,
+secure-token calls and Graph requests. The renderer cannot submit arbitrary
+screenshot bytes, filesystem paths or API URLs. [SYNC](SYNC.md) defines delivery
+boundaries; [RELEASE](RELEASE.md) defines packaging and publisher setup.
 
-Read `package.json` for executable commands. The full check builds before
-testing because the main-process test consumes compiled output. The browser
-development preview shows only the renderer; the desktop start also launches
-Electron. These are different verification environments.
+## Verification facts, 30 October 2026
 
-See [CAPTURE](CAPTURE.md) before changing capture/window behavior or performing
-native verification. Unsaved screenshots are memory-only; closing the journal clears
-them. The floating bar is controlled by mouse; no global shortcut is registered.
+The build and automated tests pass with synthetic PNGs, temporary folders,
+SQLite and Electron doubles. Coverage includes multi-image round trips,
+append preservation/backups, folder conflicts/restart/retry, simultaneous
+Obsidian/Dropbox delivery, trusted image URLs and mocked OneNote authentication
+and upload responses. Tests do not authenticate real accounts or capture the
+user's desktop. Native permissions/windowing are covered by [CAPTURE](CAPTURE.md).
 
-## Known verification limits
+A clean offline npm ci with install scripts disabled succeeded in /tmp from the
+existing cache. This verifies dependency resolution, not a fresh Electron binary
+download. npm DNS is blocked in this environment. A Linux archive was built and
+its checksum/allowlisted contents inspected. The final Linux archive and Debian
+installer were inspected for root ownership/sandbox mode 4755, launcher metadata,
+compiled-module hashes, checksums and exclusion of private/development files.
 
-Electron 45 is installed locally and the current full check has passed against
-its types. The owner has approved the visual design. Native operation on all
-three target systems has not been verified.
-
-The initial agent environment could not reach the npm registry, serve local
-HTTP, or open local file URLs through the browser tool. Those are observed
-environment limits, not requirements for future environments.
-
-27 October 2026: the owner confirmed a successful desktop app launch after the
-earlier Linux Chromium sandbox helper error. Native capture and the revised
-window visibility behavior still need manual acceptance; keep sandboxing enabled.
-
-`package-lock.json` was generated by the owner and is currently untracked;
-preserve it pending review and adoption. CI still uses `npm install`. Lockfile
-review and the switch to `npm ci` are an outstanding foundation task, not part
-of the agent-documentation change.
+Native Electron and headless Chrome both fail here with sandbox/socket
+Operation not permitted. Vite serving fails with listen EPERM. No sandbox or
+browser protection was disabled. Rendered desktop/narrow QA, real capture,
+installer launch, Dropbox cloud delivery, OneNote consent/upload and Windows/macOS
+execution remain unverified. A successful owner desktop launch on 27 October
+applies to the earlier build, not these new workflows.

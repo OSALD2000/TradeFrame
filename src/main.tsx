@@ -3,6 +3,7 @@ import './styles.css';
 import { useCapture } from './capture';
 import { CaptureBar } from './CaptureBar';
 import { SetupForm } from './SetupForm';
+import { Connections } from './Connections';
 
 function App() {
   const { state, api, run, error } = useCapture();
@@ -22,6 +23,7 @@ function App() {
             </svg>
             Journal
           </a>
+          <a className="nav-item" href="#connections">Connections</a>
         </nav>
         <div className="sidebar-bottom">
           <span className="preview-badge">Early preview</span>
@@ -41,12 +43,12 @@ function App() {
                 <h1>Trading journal</h1>
                 <p>A clear view of every decision.</p>
               </div>
-              <button className={state.preview ? 'secondary-button' : 'capture-button'} disabled={!api || state.busy} onClick={() => api && run(state.barOpen ? api.showJournal : api.openBar)} aria-expanded={state.barOpen} aria-describedby={!state.preview && !state.sources.length ? "capture-status" : undefined}>
+              <button className={state.screenshots.length ? 'secondary-button' : 'capture-button'} disabled={!api || state.busy} onClick={() => api && run(state.barOpen ? api.showJournal : api.openBar)} aria-expanded={state.barOpen} aria-describedby={!state.screenshots.length && !state.sources.length ? "capture-status" : undefined}>
                 <span aria-hidden="true">{state.barOpen ? '×' : '＋'}</span> {state.barOpen ? 'Close capture bar' : 'Capture chart'}
               </button>
             </header>
             <div className="list-header">
-              <h2>Current capture</h2>
+              <h2>Current setup</h2>
               <span>Local workspace</span>
             </div>
             {error && <p className="capture-error" role="alert">{error}</p>}
@@ -61,15 +63,22 @@ function App() {
                   </button>
                 ))}</div>
               </section>
-            ) : state.preview ? (
+            ) : state.screenshots.length ? (
               <section className="capture-preview" aria-labelledby="preview-title">
-                <div className="preview-heading"><div><h2 id="preview-title">Screenshot preview</h2><p>{state.preview.name}</p></div><span className="preview-badge">In memory</span></div>
-                <img className="preview-image" src={state.preview.image} alt={`Captured chart from ${state.preview.name}`} />
+                <div className="preview-heading"><div><h2 id="preview-title">Setup screenshots</h2><p>{state.screenshots.length} of 20 · All images will be linked in one Markdown file.</p></div><span className="preview-badge">In memory</span></div>
+                <div className="screenshot-list">{state.screenshots.map((shot, index) => <article className="screenshot-card" key={shot.id}>
+                  <div className="screenshot-heading"><h3>Screenshot {index + 1}</h3>
+                    <button className="secondary-button" disabled={state.busy} aria-label={`Remove screenshot ${index + 1}`} onClick={() => api && run(() => api.removeScreenshot(shot.id))}>Remove</button>
+                  </div>
+                  <img className="preview-image" src={shot.image} alt={`Chart screenshot ${index + 1}${shot.caption ? `: ${shot.caption}` : ''}`} />
+                  <label className="screenshot-caption">Caption (optional)
+                    <input maxLength={200} disabled={state.busy} value={shot.caption} placeholder="For example, 15m entry or 1h follow-up…" onChange={(event) => api && run(() => api.captionScreenshot(shot.id, event.target.value))} />
+                  </label>
+                </article>)}</div>
                 <div className="preview-actions">
-                  <button className="secondary-button" disabled={state.busy} onClick={() => api && run(api.openBar)}>Retake screenshot</button>
-                  <button className="secondary-button" disabled={state.busy} onClick={() => api && run(api.discard)}>Discard</button>
+                  <button className="secondary-button" disabled={state.busy || state.screenshots.length >= 20} onClick={() => api && run(api.openBar)}>Add screenshot</button>
                 </div>
-                <p className="preview-note">Add setup details to save a separate local copy. Unsaved drafts are lost when you close the app.</p>
+                <p className="preview-note">{state.savedPath ? `Current file: ${state.savedPath}` : 'Capture more views before saving, or open a saved setup to add follow-up screenshots.'}</p>
               </section>
             ) : <section className="empty-state" aria-labelledby="empty-title">
               <div className="capture-frame" aria-hidden="true">
@@ -86,8 +95,9 @@ function App() {
             </section>}
             <section className="setup-details" hidden={state.sources.length > 0} aria-labelledby="details-title">
               <h2 id="details-title">Setup details</h2>
-              <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} hasPreview={!!state.preview} />
+              <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} hasPreview={state.screenshots.length > 0} savedPath={state.savedPath} />
             </section>
+            <Connections api={api} busy={state.busy} />
             <footer className="journal-footer"><span>Saved setups stay in your chosen folder</span><span>Capture the chart. Remember the trade.</span></footer>
           </main>
         </div>

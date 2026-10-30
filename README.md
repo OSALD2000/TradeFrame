@@ -1,98 +1,95 @@
 # TradeFrame
 
-Capture the chart. Remember the trade.
+Capture the chart. Remember the trade. [Deutsch](README.de.md)
 
-A local-first desktop trading journal for Windows, macOS, and Linux.
-Inspired by a personal Eww/Sway workflow: capture a chart, describe the setup,
-and return to trading. [Deutsch](README.de.md)
+A local-first desktop trading journal targeting Linux, Windows and macOS.
+Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 
-## Current stage
+## Current preview
 
-The app includes a floating capture bar, screen/window source selection, and
-an in-memory screenshot preview with retake/discard controls. Setup details can
-be saved as **Markdown plus PNG in a chosen local folder**. Forms are configurable:
-types, required fields, Markdown keys, tags, choices, and conditional inputs.
-**SQLite stores only versioned form definitions; setup answers stay in Markdown.**
-Exported setups can be opened again; automatic browsing and editing files in
-place are not implemented. Native capture and
-floating-window behavior still need real desktop testing.
-Target platforms are not yet verified desktop releases.
+- Floating capture bar and native screen/window selection.
+- Up to 20 screenshots, captions and capture timestamps in one setup Markdown.
+- Save/reopen, append follow-up screenshots to the same file with a Markdown
+  backup, or save a separate copy to change earlier fields/images.
+- Configurable forms: eight input types, keys/tags, choices and visibility rules.
+  SQLite holds only versioned definitions; answers stay in Markdown, images in PNG.
+- Remembered journal folder and simultaneous Obsidian/Dropbox folder connections,
+  with persisted delivery jobs, explicit retry and protection for external edits.
+- OneNote device sign-in and multi-image page delivery through Microsoft Graph.
+- Downloadable runtime archives, Linux Debian installer and SHA-256 checksums;
+  a manual workflow prepares Windows/macOS/Linux artifacts without publishing.
 
-## Develop
+This is an early preview. Build/tests pass; native capture, layout, installer
+launch, real cloud delivery and other operating systems still need acceptance.
+OneNote requires the publisher's registered Microsoft application ID. No public
+release or signed/notarized build is claimed. [Current evidence](docs/CONTEXT.md)
 
-Use Node.js 24 LTS (24.15.0 or newer) and npm. On Linux, use a graphical
-session with the system libraries required by Electron.
+## Develop and package
+
+Use Node.js 24.15+ (24.x) and npm; Linux needs Electron's system libraries and a
+graphical session. Use a synthetic chart and temporary journal folders for tests.
 
 ```sh
-npm install
+npm ci
 npm run check
 npm start
 ```
 
-- `npm start`: build and launch the desktop app.
-- `npm run dev`: preview the UI in a browser; this is not the desktop app.
-- `npm run typecheck`: check the UI and Electron TypeScript.
-- `npm test`: test capture/save IPC with an Electron double and local saves in temporary folders;
-  run `npm run build` first. This does not replace a real desktop launch.
-- `npm run check`: typecheck, build, and run the tests.
+`npm run dev` previews the renderer in a browser. `npm run package` runs all checks
+and packages the installed Electron runtime into ignored `release/` output. No
+Node/npm is needed on the computer running an extracted package. Linux packaging
+also requires `dpkg-deb` for the Debian installer. Windows/macOS builds run on
+those systems. [Build/download instructions and acceptance](docs/RELEASE.md)
 
-The current dependency and verification status is maintained in
-[CONTEXT](docs/CONTEXT.md). The owner-generated lockfile still needs review and
-adoption, followed by the switch to `npm ci` in CI. A successful build does not
-replace a real desktop launch.
+## Journal workflow
 
-## Structure
+Click **Capture chart**, then **Screenshot** on the floating bar. Choose a source
+if prompted. Each capture adds a view; captions can identify its timeframe.
+Remove individual draft images or use **New setup** to clear the current setup.
+The bar stays open until closed from the journal or with **×**.
 
-- `electron/main.ts`: desktop window and lifecycle.
-- `src/`: React UI and local styles.
-- `electron/journal.ts`: setup validation and local Markdown/PNG saves.
-- `electron/form-schema.ts`: typed form rules and Markdown serialization/deserialization.
-- `electron/schema-store.ts`: append-only form revisions in local SQLite.
-- `tests/`: native-process doubles and temporary-file save checks.
-- `docs/ROADMAP.md`: scope, milestones, decisions, and acceptance criteria.
-- `.github/workflows/check.yml`: Windows, macOS, and Linux build checks.
+Enter **Setup details** and **Save setup…**. The first save asks for a journal
+folder; later saves remember it. A setup folder holds `setup.md`, `chart.png`,
+`chart-002.png`, etc. **Open setup…** restores the complete form and images.
+Capture another view and **Append screenshots** to extend that same file while
+preserving its original bytes and creating a Markdown backup. Earlier values
+and images must stay unchanged; **Save copy** creates a new setup directory for
+those edits. Never use a real journal to test failure/recovery behavior.
 
-The UI has no Node.js access. The renderer uses context isolation and sandboxing;
-external navigation and new windows are blocked. A narrow preload bridge exposes
-capture/form/open/save commands; the main process validates callers, definitions,
-typed answers, selected files and source selection.
+Closing/reloading a populated draft asks before discarding it. A crash can lose
+unsaved drafts; recovery boundaries and append-lock/backup handling are in
+[local setup files](docs/JOURNAL.md). [Capture/permissions](docs/CAPTURE.md)
 
-## Try capture
+## Connections
 
-Click **Capture chart**, then **Screenshot** on the floating bar. Choose the
-screen/window if prompted and inspect the preview. **Retake screenshot** returns
-to the bar; **Discard** clears the preview. The bar stays open after captures;
-close it with **Close capture bar** in the journal or **×** on the bar.
-To save, fill in **Setup details**, click **Save setup…**, and choose a folder.
-Each save creates a separate setup directory. Cancellation preserves the draft;
-unsaved drafts are lost when the app closes. See [local setup files](docs/JOURNAL.md).
+Choose destinations in **Connections**. Obsidian and Dropbox can be connected
+at the same time, with OneNote optionally added. Explicit saves/appends deliver
+only the current setup; no journal scan or two-way merge takes place.
 
-See [capture notes](docs/CAPTURE.md) for the Sway floating rule, permissions,
-snapshot resolution limits, and manual acceptance checks. No shortcut is needed.
+Obsidian receives portable Markdown/PNG in the chosen vault's `TradeFrame/`
+folder. Dropbox receives the same files in a folder managed by its desktop
+client, which handles cloud synchronization. TradeFrame does not authenticate
+to the Dropbox API or treat a local copy as proof of a cloud upload.
 
-## Customize forms
+OneNote uses Microsoft consent and creates a page containing fields, tags and
+all images in the default notebook's TradeFrame section. Refresh tokens use
+system encryption where supported; otherwise sign-in lasts this session only.
+A new follow-up delivery creates a new OneNote page; existing pages are preserved.
+Failed deliveries survive restart and appear under **Retry sync**. Disconnecting
+cancels outstanding deliveries without deleting existing notes or pages.
+[Behavior, conflicts and verification](docs/SYNC.md)
 
-Use **Edit form** or **New form** below the screenshot. Each field has a stable
-identity, label, type, Markdown key, optional tags and an optional equality-based
-visibility rule. Choice options can add their own tags. Hidden answers remain in
-the draft but are excluded from saved files. **Open setup…** restores an explicitly
-selected exported setup, its original form revision, and its image.
+## Architecture and limits
 
-Definitions live in ignored `data/form-schemas.sqlite`; no setup answers or images
-are stored in the database. Markdown carries a schema snapshot, typed answers and
-literal tags. Read [local setup files](docs/JOURNAL.md) for format limits, legacy
-compatibility, validation and preservation behavior. No extra database dependency
-is needed: Node/Electron's built-in SQLite is used.
+Electron owns native capture, files, SQLite, OAuth and the delivery queue. React
+has no Node/filesystem access; sandboxing and context isolation stay enabled.
+Named IPC commands validate callers and inputs. Image bytes stay in a native
+memory cache behind opaque local image URLs. No new application dependency was
+added for SQLite, integrations or packaging.
 
-## Direction
+[Roadmap](docs/ROADMAP.md) · [Visual direction](docs/DESIGN.md) ·
+[Agent entry point](AGENTS.md) · [Domain language](GLOSSARY.md)
 
-The next steps add review and follow-up screenshots to saved setups. Obsidian
-remains optional. Existing journals are not scanned or modified automatically.
-
-Read the [roadmap](docs/ROADMAP.md) before starting the next milestone.
-The approved visual direction and reference roles are in the [design notes](docs/DESIGN.md).
-Coding agents start with [AGENTS.md](AGENTS.md); product terminology is defined
-in [GLOSSARY.md](GLOSSARY.md). Future Dropbox, Obsidian, and OneNote integrations
-are backlog ideas, not implemented features.
-There are no installers, signing, automatic updates, cloud accounts, broker
-connections, or AI features in this milestone. No license has been selected yet.
+Saved-setup browsing, general Markdown importing, two-way sync, direct Dropbox
+OAuth, automatic updates, broker and AI features are not implemented. No source
+license has been selected. The owner performs pushes and public release uploads.

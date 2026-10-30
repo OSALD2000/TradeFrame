@@ -48,6 +48,25 @@ test('invalid schemas cannot change existing revisions', () => {
   } finally { store.close(); }
 });
 
+test('moving legacy form definitions imports every revision and preserves the source', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-schema-migrate-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const file = path.join(root, 'legacy.sqlite');
+  const legacy = new SchemaStore(file);
+  legacy.save({ ...legacy.list()[0], name: 'Legacy form' });
+  legacy.close();
+  const original = await fs.readFile(file);
+  const migrated = new SchemaStore(path.join(root, 'user-data', 'forms.sqlite'));
+  try {
+    migrated.importFrom(file);
+    migrated.importFrom(file);
+    assert.equal(migrated.list()[0].revision, 2);
+    assert.equal(migrated.list()[0].name, 'Legacy form');
+    assert.throws(() => migrated.remember({ ...DEFAULT_SCHEMA, name: 'Different history' }), /different/);
+    assert.deepEqual(await fs.readFile(file), original);
+  } finally { migrated.close(); }
+});
+
 test('future or unrelated databases are rejected without rewriting their contents', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-db-version-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

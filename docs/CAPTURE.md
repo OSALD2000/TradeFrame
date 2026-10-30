@@ -10,20 +10,23 @@
    retains its dragged position rather than being placed again by Wayland.
    The journal stays visible, including while the operating system's source picker is open.
 3. On PipeWire, the operating system may prompt for a screen/window. If only one
-   image is returned, it becomes the preview directly. When multiple sources
+   image is returned, it is added to the current setup directly. When multiple sources
    are returned, choose a snapshot in the journal. After each capture attempt,
    the bar reappears and stays open for another screenshot, including after
    cancellation or failure.
-4. **Cancel selection** preserves an earlier preview. **Discard** on a preview
-   removes it. **Retake screenshot** returns to the floating controls; a failed
-   or cancelled capture leaves the earlier preview intact.
+4. **Cancel selection** preserves all earlier screenshots. **Remove** deletes only
+   the selected draft image. **Add screenshot** returns to the floating controls;
+   failed/cancelled capture preserves the current setup. Each view has an optional
+   caption and a capture timestamp; a setup contains up to 20 views.
 5. **Close capture bar** in the journal, or **Journal** / **×** on the bar, hides
    the bar explicitly without discarding the preview. Closing the app closes it too.
 
-This is a single-snapshot prototype, not a recorder. Captures and source titles
-stay in memory until explicit save; nothing is transmitted. All candidate
+This collects individual snapshots, not video. Captures and source titles
+stay in memory until explicit save; candidate-source titles are not exported.
+Saving may deliver the selected setup to explicitly connected destinations;
+[SYNC](SYNC.md) describes those boundaries. All candidate
 snapshots are collected at capture time and discarded after selection. Closing
-the journal clears the unsaved preview. To save the selected image and setup
+the journal clears unsaved screenshots after a discard confirmation. To save images and setup
 details locally, use [the journal save flow](JOURNAL.md). There is no global
 shortcut, annotation, or crop tool yet.
 
@@ -84,10 +87,12 @@ Use a synthetic chart/test window without personal or employer data.
   verify that choosing the chart window excludes it. Note any resolution limit.
 - If several sources appear, select one; repeat and cancel selection. The
   earlier preview must survive cancellation.
-- Retake and deny/cancel OS access. The journal must return; an earlier preview
+- Add another screenshot and deny/cancel OS access. The journal must return; an earlier preview
   must remain. Permission prompts may be cached differently by each desktop.
-- Discard an unsaved preview; reopen the app and confirm it is gone. Explicitly
-  saved Markdown/PNG files must remain unchanged by Discard or app closure.
+- Remove one of several screenshots; confirm the others remain. Start New setup
+  and verify the confirmation. Closing a populated draft must ask before discard.
+  Reopen saved Markdown and append another image to that same file; verify its
+  old text/images and Markdown backup remain, including after restart.
 - Inspect the journal at desktop and minimum window sizes and the bar at its
   fixed size. Verify keyboard focus and actionable errors.
 

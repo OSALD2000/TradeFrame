@@ -3,6 +3,7 @@ data/
 node_modules/
 dist/
 dist-electron/
+release/
 *.log
 .env*
 !.env.example

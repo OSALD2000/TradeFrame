@@ -74,5 +74,18 @@ export class SchemaStore {
     }
   }
 
+  importFrom(file: string) {
+    const source = new DatabaseSync(file, { readOnly: true });
+    try {
+      if (source.prepare('PRAGMA user_version').get()!.user_version !== 1) throw new Error('Unsupported legacy schema database');
+      const rows = source.prepare('SELECT schema_json FROM schema_revisions ORDER BY id, revision').all();
+      this.db.exec('BEGIN IMMEDIATE');
+      try {
+        for (const row of rows) this.remember(validateSchema(JSON.parse(String(row.schema_json))));
+        this.db.exec('COMMIT');
+      } catch (error) { this.db.exec('ROLLBACK'); throw error; }
+    } finally { source.close(); }
+  }
+
   close() { this.db.close(); }
 }

@@ -48,3 +48,8 @@ A rule that makes a field applicable only when another applicable field has a
 specified answer. Inapplicable answers remain draft information rather than
 part of the documented setup.
 _Avoid_: Formula for a visibility rule.
+
+**Follow-up screenshot**:
+A later chart view added to an already documented setup, preserving its earlier
+views and reasoning.
+_Avoid_: New setup when only adding another view of the same opportunity.

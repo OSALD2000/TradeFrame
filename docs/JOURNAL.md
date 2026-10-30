@@ -9,21 +9,36 @@ remain in Markdown and screenshots remain PNG files. See the
 
 1. Select a form under Setup details, or use **New form** / **Edit form**.
    The included Trading setup form contains the original trading fields.
-2. Capture a chart and fill in the visible fields below the image.
-3. Click **Save setup…** and choose a journal folder with the native picker.
+2. Capture one or more charts and fill in the visible fields below the images.
+   Each capture adds another view; captions can identify its timeframe or purpose.
+3. Click **Save setup…** and choose a journal folder with the native picker
+   if none is configured. Connections remembers the folder for subsequent saves.
 4. A new `setup-<UTC timestamp>-<random suffix>` directory contains `setup.md`
-   and `chart.png`. Success shows the Markdown path; a second save makes a new
+   and `chart.png`, `chart-002.png`, etc. Success shows the Markdown path; a second save makes a new
    setup, even if the form is unchanged. No existing files are overwritten.
 
-**Open setup…** opens an explicitly chosen TradeFrame Markdown file and its
-sibling `chart.png`, restoring its schema snapshot and typed values. Saving an
-opened setup creates a new copy, never overwrites the original, and assigns the
-new copy a new creation timestamp. Discard clears the image but retains field
-drafts. Switching forms or opening another setup asks before replacing answers.
+**Open setup…** restores an explicitly chosen TradeFrame Markdown file, its
+schema snapshot, typed values and all sibling chart PNGs. **Save copy** creates a
+new directory with a new creation timestamp and leaves the source unchanged.
+**New setup** asks before clearing current fields/screenshots. Removing an image
+affects the draft only. Closing/reloading a populated draft prompts before discard;
+there is no automatic draft recovery after a crash.
+
+**Append screenshots** adds follow-up images to the same current file, including
+after reopening it. Existing fields and images must remain unchanged; edits to
+those require Save copy. The app checks the original Markdown/image fingerprint,
+locks the directory, backs up Markdown as `<file>.<UUID>.bak`, writes new images
+exclusively, checks the fingerprint again and appends validated screenshot blocks.
+The original Markdown bytes are not rewritten. New image names continue in order.
+A failed pre-append operation removes only images it created. A failed/interrupted
+append retains the backup and image files for recovery. A crash may leave
+`.tradeframe-write.lock`; after closing all TradeFrame instances, preserve the
+folder, inspect the backup and current file, and remove that stale lock before
+retrying. External editor contributions are never truncated or overwritten.
 
 Main-process validation is authoritative. The renderer cannot choose write
 paths or submit screenshot bytes: folders/files come from native pickers and
-images from the native preview. Capture, save, and open operations are mutually
+images from the native in-memory image cache. Capture, save, and open operations are mutually
 exclusive. Open rejects symlink files, oversized data, and invalid PNG signatures.
 
 Cancellation and reported write errors preserve the draft and preview for retry.
@@ -33,8 +48,9 @@ drafts and previews are memory-only and are lost when the app closes.
 
 ## Form definitions and SQLite
 
-`data/form-schemas.sqlite` is local to this development project and ignored by
-Git, including its WAL/SHM files. The only application table is
+`form-schemas.sqlite` lives in Electron's user-data directory. Development imports
+all revisions from the former ignored `data/form-schemas.sqlite` if present,
+without changing that source. Packaged builds never write inside the installation. The only application table is
 `schema_revisions(id, revision, schema_json)`. It contains validated schema JSON,
 not setup values, screenshots, journal paths or imported note contents.
 SQLite database format version is tracked by `PRAGMA user_version` (currently 1).
@@ -64,17 +80,20 @@ accepts comma-separated tags with or without a leading `#`. Empty answers do not
 emit tags. Boolean `false` and numeric `0` are explicit answers, so configured
 field tags apply to them. Option tags apply only to selected options.
 
-## Markdown format version 2
+## Markdown format version 3
 
 `setup.md` is UTF-8 with YAML frontmatter. Each value is a single-line JSON
 literal (valid YAML), preserving strings, finite numbers, booleans, null, and
-ordered string lists. Reserved entries: `schemaVersion: 2`, `createdAt` (UTC ISO),
-`tradeframe` (form format version and complete schema snapshot), and `tags`.
+ordered string lists. Reserved entries: `schemaVersion: 3`, `createdAt` (UTC ISO),
+`tradeframe` (form format version, complete schema snapshot and ordered screenshot
+references), and `tags`. Each reference includes its fixed local filename, caption
+and UTC capture timestamp.
 User-defined keys hold answers; stable field IDs are recovered through the
 snapshot's key mapping. Optional missing fields remain distinguishable from
 explicit empty strings, empty lists, false, zero, and null in the document API.
 
-The body links `chart.png`, emits literal `#tags`, and repeats long-text answers
+The body links each chart PNG with a heading/caption/time, emits literal `#tags`,
+and repeats long-text answers
 under their field labels for readable notes. During reading, body/tag values
 must agree with frontmatter; contradictory or unsupported files fail explicitly.
 The reader handles TradeFrame's own exports, not arbitrary YAML/Markdown syntax.
@@ -84,19 +103,22 @@ Numbers use JavaScript's finite numeric representation; unsafe integers and -0
 are rejected (the input normalizes -0 to 0). Use text for exact large identifiers.
 
 Bounds: 100 fields, 100 options per choice field, 20,000 characters per text
-answer, 1 MB UTF-8 per schema, 5 MB per Markdown file, and 32 MB per PNG.
+answer, 1 MB UTF-8 per schema, 5 MB per Markdown file, 20 images, 32 MB per PNG and 128 MB total image bytes.
 PNG resolution limits remain those of [CAPTURE](CAPTURE.md).
 
-The original version-1 TradeFrame exports can be opened with their fixed trading
+The original version-1 and version-2 TradeFrame exports can be opened with their fixed trading
 schema and New York wall-clock semantics. Original files are never migrated or
-rewritten automatically. Re-saving produces a separate version-2 copy.
+rewritten automatically. Save copy produces a separate version-3 copy. Appending preserves the original
+metadata/body and adds a `tradeframe-screenshot` JSON comment followed by its
+exact rendered image section. The reader validates the full chain and file order.
+Appending never changes the original creation timestamp or previous field values.
 Unknown versions/keys, duplicate keys, invalid types/options/dates, or hidden
 answers in a file are rejected instead of guessed or silently discarded.
 
-No saved-setup browser, automatic scan, folder preference, overwrite/edit-in-place,
-cloud sync, or migration of unrelated journals exists. Development currently
-requires a writable project directory for the schema DB; installer-specific
-storage location must be decided before packaging.
+Saved-setup browsing, arbitrary Markdown importing and field editing in place
+are not implemented. Folder preferences and optional one-way connections are
+implemented separately; see [SYNC](SYNC.md). A divergent external body is rejected
+rather than interpreted or overwritten.
 
 ## Verification
 
