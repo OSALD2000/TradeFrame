@@ -79,9 +79,15 @@ compiled-module hashes, checksums and exclusion of private/development files.
 Native Electron and headless Chrome both fail here with sandbox/socket
 Operation not permitted. Vite serving fails with listen EPERM. No sandbox or
 browser protection was disabled. Rendered desktop/narrow QA, real capture,
-installer launch, Dropbox cloud delivery, OneNote consent/upload and Windows/macOS
+Dropbox cloud delivery, OneNote consent/upload and Windows/macOS
 execution remain unverified. A successful owner desktop launch on 27 October
 applies to the earlier build, not these new workflows.
+
+30 October 2026: the owner confirmed that the installed Debian package starts.
+The extracted archive had failed because its chrome-sandbox helper belonged to
+the user; installing the Debian package supplies root ownership and mode 4755.
+This confirms the current Linux installer launch. Capture, multi-image save/open/
+append, layout and actual connected-service delivery still need native acceptance.
 
 The current recovery build passes 59 automated tests. Child processes stop before
 image installation, midway through a suffix and after the suffix is complete;
