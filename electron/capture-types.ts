@@ -3,7 +3,7 @@ export type FolderKind = 'journal' | 'obsidian' | 'dropbox';
 export type SyncJob = { id: string; source: string; status: 'pending' | 'synced' | 'failed'; error: string | null }
   & ({ kind: 'obsidian' | 'dropbox'; folder: string } | { kind: 'onenote'; section: string });
 export type Connections = { version: 1; folders: Record<FolderKind, string | null>; jobs: SyncJob[] };
-export type OneNoteState = { configured: boolean; connected: boolean; durable: boolean; section: string; error: string | null;
+export type OneNoteState = { configured: boolean; applicationId: string; customApplicationId: boolean; connected: boolean; durable: boolean; section: string; error: string | null;
   login: { userCode: string; expiresAt: number } | null };
 export type SetupInput = { schema: FormSchema; values: FormValues };
 

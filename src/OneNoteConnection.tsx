@@ -4,7 +4,6 @@ import type { CaptureAPI, OneNoteState } from '../electron/capture-types';
 export function OneNoteConnection({ api, busy }: { api: CaptureAPI | undefined; busy: boolean }) {
   const [state, setState] = useState<OneNoteState | null>(null);
   const [working, setWorking] = useState(false);
-  const [clientId, setClientId] = useState('');
   const [error, setError] = useState('');
   useEffect(() => {
     if (busy) return;
@@ -43,15 +42,29 @@ export function OneNoteConnection({ api, busy }: { api: CaptureAPI | undefined; 
       <button className="secondary-button" disabled={!api} onClick={() => api?.openMicrosoftLogin().catch(() => setError('Open microsoft.com/devicelogin in your browser to sign in.'))}>Open Microsoft sign-in</button>
       <p>Expires at {new Date(state.login.expiresAt).toLocaleTimeString()}. Keep this window open; connection is checked automatically.</p>
     </div>}
-    {state && !state.configured && <details className="publisher-settings">
-      <summary>OneNote setup required for this build</summary>
-      <p>The publisher needs to register TradeFrame with Microsoft. An application ID is public; never enter a password or client secret here.</p>
-      <form onSubmit={(event) => { event.preventDefault(); if (api) void update(() => api.configureOneNote(clientId.trim())); }}>
-        <label>Microsoft application ID<input required value={clientId} maxLength={36} spellCheck={false} autoComplete="off" placeholder="00000000-0000-0000-0000-000000000000" onChange={(event) => setClientId(event.target.value)} /></label>
-        <button className="secondary-button" disabled={!api || busy || working} type="submit">Configure OneNote</button>
-      </form>
-    </details>}
+    {state && <OneNoteApplicationSettings state={state} disabled={!api || busy || working}
+      onConfigure={(id) => update(() => api!.configureOneNote(id))} />}
     {state?.connected && !state.durable && <p className="preview-note">Sign-in is kept only until you close the app. Unlock a supported system keyring to keep it securely across restarts.</p>}
     {(error || state?.error) && <p className="save-message" role="alert">{error || state?.error}</p>}
   </div>;
+}
+
+export function OneNoteApplicationSettings({ state, disabled, onConfigure }: {
+  state: OneNoteState; disabled: boolean; onConfigure(id: string): Promise<void>;
+}) {
+  const [clientId, setClientId] = useState(state.applicationId);
+  useEffect(() => { setClientId(state.applicationId); }, [state.applicationId]);
+  return <details className="publisher-settings" open={!state.configured || !!state.error}>
+    <summary>Microsoft application ID · change or remove</summary>
+    <p>Use the Application (client) ID from Entra ID → App registrations → your TradeFrame app → Overview.
+      A user/object ID or directory/tenant ID will not work. Never enter a password or client secret.</p>
+    <p>Changing or removing your custom ID disconnects OneNote and cancels pending OneNote deliveries. Existing notes and pages stay.</p>
+    <form onSubmit={(event) => { event.preventDefault(); void onConfigure(clientId.trim()); }}>
+      <label>Application (client) ID<input required value={clientId} maxLength={36} disabled={disabled} spellCheck={false} autoComplete="off"
+        pattern="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+        placeholder="00000000-0000-0000-0000-000000000000" onChange={(event) => setClientId(event.target.value)} /></label>
+      <button className="secondary-button" disabled={disabled} type="submit">Save application ID</button>
+      {state.customApplicationId && <button className="secondary-button" disabled={disabled} type="button" onClick={() => void onConfigure('')}>Remove custom ID</button>}
+    </form>
+  </details>;
 }

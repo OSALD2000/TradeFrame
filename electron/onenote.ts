@@ -15,6 +15,7 @@ const escapeHtml = (text: unknown) => String(text).replace(/[&<>"']/g, (c) => ({
 
 export class OneNoteClient {
   private clientId = '';
+  private customApplicationId = false;
   private refreshToken = '';
   private accessToken = '';
   private expiresAt = 0;
@@ -41,8 +42,9 @@ export class OneNoteClient {
         const config = JSON.parse(await readFile(path.join(this.directory, 'onenote.json'), 'utf8'));
         if (!clientIdPattern.test(config.clientId)) throw new Error('Invalid Microsoft application ID');
         this.clientId = config.clientId;
+        this.customApplicationId = true;
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') this.error = 'Could not load OneNote settings. Configure the Microsoft application again.';
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') { this.customApplicationId = true; this.error = 'Could not load OneNote settings. Edit or remove the custom application ID below.'; }
       }
       try {
         const encrypted = await readFile(path.join(this.directory, 'onenote-token.bin'));
@@ -73,15 +75,17 @@ export class OneNoteClient {
   async getState(): Promise<OneNoteState> {
     await this.load();
     if (this.login && this.now() >= this.login.expiresAt) { this.login = null; this.error = 'Sign-in expired. Connect again to get a new code.'; }
-    return { configured: !!this.clientId, connected: !!(this.refreshToken || this.accessToken), durable: this.durable,
+    return { configured: !!this.clientId, applicationId: this.clientId, customApplicationId: this.customApplicationId, connected: !!(this.refreshToken || this.accessToken), durable: this.durable,
       section: 'TradeFrame', error: this.error, login: this.login ? { userCode: this.login.userCode, expiresAt: this.login.expiresAt } : null };
   }
   async configure(clientId: unknown) {
     await this.load();
-    if (typeof clientId !== 'string' || !clientIdPattern.test(clientId)) throw new Error('Enter a valid Microsoft application ID');
+    if (typeof clientId !== 'string' || (clientId !== '' && !clientIdPattern.test(clientId))) throw new Error('Enter a valid Microsoft Application (client) ID');
     await this.disconnect();
-    await this.atomicWrite(path.join(this.directory, 'onenote.json'), JSON.stringify({ clientId }));
-    this.clientId = clientId;
+    if (clientId) await this.atomicWrite(path.join(this.directory, 'onenote.json'), JSON.stringify({ clientId }));
+    else await rm(path.join(this.directory, 'onenote.json'), { force: true });
+    this.customApplicationId = !!clientId;
+    this.clientId = clientId || (clientIdPattern.test(this.publisherClientId) ? this.publisherClientId : '');
     return this.getState();
   }
   private async tokenRequest(endpoint: 'token' | 'devicecode', body: Record<string, string>) {
@@ -94,11 +98,21 @@ export class OneNoteClient {
     await this.load();
     if (!this.clientId) throw new Error('The publisher must configure a Microsoft application ID before OneNote can connect');
     const generation = ++this.generation;
-    const { response, data } = await this.tokenRequest('devicecode', { scope });
+    this.login = null;
+    let result;
+    try { result = await this.tokenRequest('devicecode', { scope }); }
+    catch {
+      if (generation === this.generation) this.error = 'Could not reach Microsoft. Check your connection and retry. You can still edit or remove the application ID below.';
+      return this.getState();
+    }
+    const { response, data } = result;
     if (generation !== this.generation) return this.getState();
     if (!response.ok || typeof data.device_code !== 'string' || typeof data.user_code !== 'string'
       || data.user_code.length > 40 || typeof data.expires_in !== 'number' || data.expires_in < 1 || data.expires_in > 3600
-      || typeof data.interval !== 'number' || data.interval < 1 || data.interval > 60) throw new Error('Microsoft sign-in could not start. Check the application registration and network.');
+      || typeof data.interval !== 'number' || data.interval < 1 || data.interval > 60) {
+      this.error = 'Microsoft sign-in could not start. Use the Application (client) ID from App registrations and enable public client flows. You can edit or remove your ID below.';
+      return this.getState();
+    }
     this.error = null;
     this.login = { deviceCode: data.device_code, userCode: data.user_code, expiresAt: this.now() + data.expires_in * 1000,
       interval: data.interval * 1000, nextPoll: this.now() + data.interval * 1000 };

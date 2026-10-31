@@ -31,7 +31,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.3.0`. The tag must match
+only, or when the owner pushes a version tag such as `v0.3.1`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -49,8 +49,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.3.1
+git push origin v0.3.1
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.
@@ -79,6 +79,9 @@ a trusted publisher identity. Do not claim a signed/notarized public release.
 ## OneNote publisher setup
 
 Register a dedicated TradeFrame app in Microsoft Entra **App registrations**.
+Copy **Application (client) ID** from that app's Overview page; the ID below
+your profile name, the user/object ID and Directory (tenant) ID are not this value.
+See Microsoft's [app registration guide](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app).
 Enable personal Microsoft accounts (and organization accounts if desired),
 enable **Allow public client flows** in Authentication, and add the delegated
 Microsoft Graph `Notes.ReadWrite` permission. No client secret belongs in a

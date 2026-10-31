@@ -42,6 +42,16 @@ No account password, access token, refresh token or private device code is sent
 to the renderer. **Disconnect** cancels pending OneNote deliveries and removes
 the local credentials; it does not delete cloud pages or revoke consent at Microsoft.
 
+The Microsoft application settings remain available after configuration and after
+failed sign-in. **Save application ID** replaces a custom ID; **Remove custom ID**
+removes it and disconnects the local OneNote session, including encrypted saved
+credentials and pending OneNote deliveries. Existing notes/pages and other folder
+jobs remain unchanged. If the build embeds a publisher ID, removing an override
+restores that default; otherwise OneNote becomes unconfigured. Changes survive
+restart. Only the public application ID is exposed to the UI, never tokens.
+
+Use **Application (client) ID** from **Entra ID → App registrations → TradeFrame →
+Overview**. A user/object ID or directory/tenant ID is a different identifier.
 A configured publisher application ID is required; [release setup](RELEASE.md)
 describes registration. A public Microsoft account with an initialized default
 OneNote notebook is needed for the personal-account flow. Organization policy

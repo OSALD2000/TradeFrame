@@ -110,6 +110,10 @@ ueberleben Neustarts und stehen unter **Retry sync**. Trennen beendet offene
 Uebertragungen, loescht aber keine vorhandenen Notizen oder Seiten.
 [Verhalten, Konflikte und Pruefgrenzen](docs/SYNC.md)
 
+Die OneNote-App-ID bleibt auch nach einem Anmeldefehler aenderbar.
+**Save application ID** ersetzt sie; **Remove custom ID** entfernt die eigene
+ID und lokale Anmeldung. Vorhandene Seiten bleiben erhalten.
+
 ## Architektur und Grenzen
 
 Electron verwaltet Aufnahme, Dateien, SQLite, OAuth und Uebertragungsauftraege.

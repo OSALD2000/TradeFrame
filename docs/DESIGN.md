@@ -101,3 +101,8 @@ full-width form below the images. A multiline screenshot note replaces the short
 caption; the required timeframe stays beside it. The new Trading journal form
 is selected for new work; earlier/custom schemas remain selectable and unchanged.
 Keep neutral surfaces and one accent action. No new navigation or visual system.
+
+OneNote recovery: keep the application settings as a persistent neutral details
+section, prefill the saved public client ID and offer Save/Remove actions. Open
+it when setup is missing or sign-in fails. The owner's reported hidden-controls
+bug supplies the interaction requirement; retain the locked form/focus styling.

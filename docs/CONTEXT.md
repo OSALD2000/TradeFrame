@@ -162,3 +162,16 @@ still recover directory-wide lock records. All 81 tests also pass with a symlink
 TMPDIR, reproducing the path-alias condition that affected macOS. No real vault
 files were changed. Desktop layout/capture and actual installed 0.3.0 acceptance
 remain open; the automated tests do not establish a native Windows/macOS launch.
+
+31 October OneNote recovery patch (0.3.1): the owner reported entering a profile
+or directory ID and losing access to the configuration controls after sign-in
+failed. The application settings now stay available, prefill the public client
+ID, and allow replacement/removal. Removing a custom ID deletes its local config
+and encrypted sign-in, cancels pending OneNote deliveries, and falls back to the
+bundled publisher ID if present. Other destinations and existing pages remain.
+Failed device-code starts return a safe actionable state without exposing raw
+Microsoft diagnostics. The native bridge still admits only the trusted journal.
+Build and 86 tests pass, including configured/error-state controls, invalid-ID
+correction, removal/restart, publisher fallback, credential deletion, malformed
+config, network failure and independent pending folder jobs. Actual Microsoft
+account consent/upload and desktop visual acceptance remain open.

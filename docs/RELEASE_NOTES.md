@@ -1,4 +1,10 @@
-# TradeFrame 0.3.0 preview
+# TradeFrame 0.3.1 preview
+
+OneNote application settings stay available after configuration and failed sign-in.
+You can edit the saved public Application (client) ID or remove your custom ID.
+Reset disconnects the local session and cancels pending OneNote deliveries while
+preserving existing pages and other destinations. Sign-in failures explain the
+required app-registration ID and leave reset controls accessible.
 
 New Trading journal form and calendar filing inspired by the owner's previous
 journal: market date, optional New York HH:mm time, session, instrument,
@@ -27,6 +33,11 @@ acceptance, trusted signing/notarization and cloud/account tests remain open.
 For publisher setup and platform builds, see [release guidance](RELEASE.md).
 
 ## Deutsch
+
+OneNote-App-ID bleibt nach Eingabe oder Anmeldefehler aenderbar und entfernbar.
+Entfernen loescht die lokale Anmeldung und offene OneNote-Auftraege, erhaelt
+vorhandene Seiten und andere Ziele. Benoetigt wird die Anwendungs-ID (Client-ID)
+einer App-Registrierung, nicht eine Profil-/Benutzer-/Mandanten-ID.
 
 Trading journal uebernimmt Datumsordner und lesbare Notiznamen nach dem
 Marktdatum. Das Formular enthaelt Session, No Trade, Result/R und Daily Bias.

@@ -17,11 +17,25 @@ for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module
 const { FieldInput } = require('../src/FieldInput.tsx');
 const { SchemaEditor } = require('../src/SchemaEditor.tsx');
 const { ScreenshotFields } = require('../src/ScreenshotFields.tsx');
+const { OneNoteApplicationSettings } = require('../src/OneNoteConnection.tsx');
 if (previous.ts) require.extensions['.ts'] = previous.ts; else delete require.extensions['.ts'];
 if (previous.tsx) require.extensions['.tsx'] = previous.tsx; else delete require.extensions['.tsx'];
 
 const field = (type, extra = {}) => ({ id: 'test', key: 'test', label: 'Test', type, required: false, tags: [], ...extra });
 const render = (definition, value) => renderToStaticMarkup(React.createElement(FieldInput, { field: definition, value, onChange: () => {} }));
+
+test('configured OneNote IDs remain editable and removable after failed sign-in', () => {
+  const markup = renderToStaticMarkup(React.createElement(OneNoteApplicationSettings, {
+    state: { configured: true, applicationId: '11111111-2222-3333-4444-555555555555', customApplicationId: true,
+      connected: false, error: 'Sign-in failed' }, disabled: false, onConfigure: async () => {},
+  }));
+  assert.match(markup, /<details[^>]*open=""/);
+  assert.match(markup, /value="11111111-2222-3333-4444-555555555555"/);
+  assert.match(markup, /Save application ID/);
+  assert.match(markup, /type="button">Remove custom ID/);
+  assert.match(markup, /App registrations/);
+  assert.match(markup, /user\/object ID or directory\/tenant ID/);
+});
 
 test('each screenshot has an independent required timeframe control and multiline notes', () => {
   const markup = renderToStaticMarkup(React.createElement(ScreenshotFields, {

@@ -220,6 +220,21 @@ test('OneNote operations and login browser are unavailable to the capture bar', 
   await assert.rejects(invoke('onenote:browser'), /Start OneNote sign-in/);
 });
 
+test('OneNote application ID reset uses trusted IPC and cancels only pending OneNote deliveries', async () => {
+  const { app, windows, invoke } = await boot();
+  const { ConnectionStore } = require('../dist-electron/connections.js');
+  const store = new ConnectionStore(path.join(app.getPath(), 'connections.json'));
+  store.setFolder('obsidian', app.getPath());
+  store.enqueue(path.join(app.getPath(), 'synthetic.md'), 'TradeFrame');
+  const configured = await invoke('onenote:configure', windows[0], '11111111-2222-3333-4444-555555555555');
+  assert.equal(configured.customApplicationId, true);
+  assert.deepEqual(Array.from((await invoke('connections:get')).jobs, (job) => job.kind), ['obsidian']);
+  const cleared = await invoke('onenote:configure', windows[0], '');
+  assert.equal(cleared.applicationId, '');
+  assert.equal(cleared.configured, false);
+  assert.equal(cleared.connected, false);
+});
+
 test('native save requires an explicitly chosen timeframe for every screenshot', async () => {
   let dialogs = 0;
   const { windows, invoke } = await boot(undefined, async () => { dialogs++; return { canceled: true, filePaths: [] }; });

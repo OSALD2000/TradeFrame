@@ -23,6 +23,68 @@ async function fixture(t) {
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   return root;
 }
+
+test('a rejected application ID can be corrected, removed and stays removed after restart', async (t) => {
+  const root = await fixture(t);
+  const replacement = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+  let accepted = false;
+  const request = async (_, options) => {
+    assert.equal(options.body.get('client_id'), accepted ? replacement : clientId);
+    return accepted ? json({ device_code: 'private-code', user_code: 'NEW-CODE', expires_in: 60, interval: 1 })
+      : json({ error: 'unauthorized_client', error_description: 'private diagnostic details' }, 400);
+  };
+  let client = new OneNoteClient(root, encryption(), '', request);
+  await client.configure(clientId);
+  const failed = await client.begin();
+  assert.equal(failed.applicationId, clientId); assert.equal(failed.customApplicationId, true);
+  assert.match(failed.error, /Application \(client\) ID/);
+  assert.doesNotMatch(JSON.stringify(failed), /private diagnostic/);
+  await assert.rejects(client.configure('not-a-uuid'), /valid Microsoft/);
+  assert.equal((await client.getState()).applicationId, clientId);
+  await client.configure(replacement); accepted = true;
+  assert.equal((await client.begin()).login.userCode, 'NEW-CODE');
+  const reset = await client.configure('');
+  assert.equal(reset.configured, false); assert.equal(reset.customApplicationId, false);
+  assert.equal(reset.login, null); assert.equal(reset.error, null);
+  await assert.rejects(fs.stat(path.join(root, 'onenote.json')), { code: 'ENOENT' });
+  client = new OneNoteClient(root, encryption());
+  assert.equal((await client.getState()).applicationId, '');
+});
+
+test('removing a custom ID disconnects persisted credentials and restores the publisher default', async (t) => {
+  const root = await fixture(t);
+  const secure = encryption();
+  let now = 0;
+  const replacement = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+  const request = async (url) => url.endsWith('devicecode')
+    ? json({ device_code: 'private-code', user_code: 'TEST', expires_in: 60, interval: 1 })
+    : json({ access_token: 'private-access', refresh_token: 'private-refresh', expires_in: 3600 });
+  let client = new OneNoteClient(root, secure, clientId, request, () => now);
+  await client.configure(replacement); await client.begin(); now += 1000; await client.poll();
+  assert.equal((await client.getState()).connected, true);
+  await fs.stat(path.join(root, 'onenote-token.bin'));
+  const reset = await client.configure('');
+  assert.equal(reset.connected, false); assert.equal(reset.durable, false);
+  assert.equal(reset.applicationId, clientId); assert.equal(reset.customApplicationId, false);
+  await assert.rejects(fs.stat(path.join(root, 'onenote-token.bin')), { code: 'ENOENT' });
+  client = new OneNoteClient(root, secure, clientId);
+  assert.equal((await client.getState()).applicationId, clientId);
+  assert.equal((await client.getState()).connected, false);
+});
+
+test('unreadable application settings and network failures leave reset available', async (t) => {
+  const root = await fixture(t);
+  await fs.writeFile(path.join(root, 'onenote.json'), '{invalid');
+  const client = new OneNoteClient(root, encryption(), '', async () => { throw new Error('private network detail'); });
+  assert.equal((await client.getState()).customApplicationId, true);
+  await client.configure('');
+  assert.equal((await client.getState()).customApplicationId, false);
+  await client.configure(clientId);
+  const state = await client.begin();
+  assert.match(state.error, /Could not reach Microsoft/);
+  assert.doesNotMatch(JSON.stringify(state), /private network/);
+  assert.equal(state.customApplicationId, true);
+});
 test('device login respects polling intervals, hides credentials, encrypts refresh tokens and refreshes after restart', async (t) => {
   const root = await fixture(t);
   let now = 1_000_000;

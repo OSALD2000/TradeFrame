@@ -102,6 +102,9 @@ Failed deliveries survive restart and appear under **Retry sync**. Disconnecting
 cancels outstanding deliveries without deleting existing notes or pages.
 [Behavior, conflicts and verification](docs/SYNC.md)
 
+OneNote application settings stay available after failed sign-in. Use **Save application ID**
+to replace a custom ID or **Remove custom ID** to reset it; existing pages stay.
+
 ## Architecture and limits
 
 Electron owns native capture, files, SQLite, OAuth and the delivery queue. React

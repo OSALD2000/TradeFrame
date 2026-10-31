@@ -10,7 +10,7 @@ for (const platform of ['linux', 'win32', 'darwin']) test(`packaging preserves t
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const app = platform === 'darwin' ? path.join(root, 'Electron.app', 'Contents', 'Resources', 'app') : path.join(root, 'resources', 'app');
   await fs.mkdir(app, { recursive: true });
-  await fs.writeFile(path.join(app, 'package.json'), JSON.stringify({ name: 'tradeframe', version: '0.3.0' }));
+  await fs.writeFile(path.join(app, 'package.json'), JSON.stringify({ name: 'tradeframe', version: '0.3.1' }));
   if (platform === 'darwin') {
     await fs.writeFile(path.join(root, 'Electron.app', 'Contents', 'Info.plist'), 'Synthetic plist');
     for (const name of ['Electron Helper.app', 'Electron Helper (Renderer).app']) {
@@ -22,12 +22,12 @@ for (const platform of ['linux', 'win32', 'darwin']) test(`packaging preserves t
   else await fs.writeFile(path.join(root, platform === 'win32' ? 'electron.exe' : 'electron'), 'Synthetic executable');
   if (platform === 'win32') await fs.writeFile(path.join(root, 'electron_wer.dll'), 'Synthetic crash helper');
   const calls = [];
-  const result = await brandApp(root, platform, '0.3.0', (command, args) => {
+  const result = await brandApp(root, platform, '0.3.1', (command, args) => {
     calls.push([command, args]);
     assert.ok(require('node:fs').existsSync(args.at(-1)), 'Native tools must receive the existing renamed bundle/plist path');
     if (args[1]?.startsWith('Set :NSScreenCaptureUsageDescription')) throw new Error('Synthetic missing plist key');
   });
-  assert.equal(JSON.parse(await fs.readFile(path.join(result, 'package.json'), 'utf8')).version, '0.3.0');
+  assert.equal(JSON.parse(await fs.readFile(path.join(result, 'package.json'), 'utf8')).version, '0.3.1');
   if (platform === 'darwin') {
     assert.ok(result.includes('TradeFrame.app'));
     await assert.rejects(fs.stat(path.join(root, 'Electron.app')), { code: 'ENOENT' });
