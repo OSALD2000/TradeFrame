@@ -7,6 +7,25 @@ const { DatabaseSync } = require('node:sqlite');
 const { SchemaStore } = require('../dist-electron/schema-store.js');
 const { DEFAULT_SCHEMA, validateSchema } = require('../dist-electron/form-schema.js');
 
+test('the new journal template is added without changing saved default revisions', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-journal-form-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const file = path.join(root, 'forms.sqlite');
+  const store = new SchemaStore(file);
+  store.save({ ...DEFAULT_SCHEMA, name: 'Custom existing form' });
+  store.close();
+  const db = new DatabaseSync(file);
+  db.prepare('DELETE FROM schema_revisions WHERE id = ?').run('journal'); db.close();
+  const reopened = new SchemaStore(file);
+  try {
+    assert.equal(reopened.list().find((form) => form.id === 'default').name, 'Custom existing form');
+    const journal = reopened.list().find((form) => form.id === 'journal');
+    assert.ok(journal.fields.some((field) => field.id === 'date' && field.required));
+    assert.ok(journal.fields.some((field) => field.id === 'r' && field.type === 'number'));
+    assert.ok(journal.fields.some((field) => field.id === 'result'));
+  } finally { reopened.close(); }
+});
+
 test('SQLite persists only immutable form revisions across reopen and detects stale edits', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-schema-db-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
@@ -30,7 +49,7 @@ test('SQLite persists only immutable form revisions across reopen and detects st
     try {
       const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => row.name);
       assert.deepEqual(tables, ['schema_revisions']);
-      assert.equal(db.prepare('SELECT COUNT(*) AS count FROM schema_revisions').get().count, 3);
+      assert.equal(db.prepare('SELECT COUNT(*) AS count FROM schema_revisions').get().count, 4);
       const row = db.prepare('SELECT schema_json FROM schema_revisions WHERE revision = 1').get();
       assert.deepEqual(validateSchema(JSON.parse(row.schema_json)), original);
       assert.equal(Object.hasOwn(JSON.parse(row.schema_json), 'values'), false);

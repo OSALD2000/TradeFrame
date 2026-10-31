@@ -356,7 +356,7 @@ function registerCapture() {
   ipcMain.handle('capture:caption', (event, id: unknown, caption: unknown) => {
     assertSender(event, journal);
     const shot = state.screenshots.find((shot) => shot.id === id);
-    if (state.busy || !shot || typeof caption !== 'string' || caption.length > 200 || /[\r\n\0]/.test(caption)) throw new Error('Invalid screenshot caption');
+    if (state.busy || !shot || typeof caption !== 'string' || caption.length > 20000 || /\0/.test(caption)) throw new Error('Invalid screenshot caption');
     shot.caption = caption;
     publish();
   });

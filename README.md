@@ -8,9 +8,12 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 ## Current preview
 
 - Floating capture bar and native screen/window selection.
-- Up to 20 screenshots, each with a required timeframe, optional caption and capture timestamp in one setup Markdown.
+- Up to 20 screenshots, each with a required timeframe, optional multiline notes and capture timestamp in one setup Markdown.
 - Save/reopen, append follow-up screenshots to the same file with a Markdown
   backup and prepared crash recovery, or save a separate copy to change earlier fields/images.
+- Trading journal form with market date, New York time, session, instrument,
+  direction including No Trade, model, daily bias, result and optional signed R.
+  Readable notes and unique images share mode/year/month/day folders.
 - Configurable forms: eight input types, keys/tags, choices and visibility rules.
   SQLite holds only versioned definitions; answers stay in Markdown, images in PNG.
 - Remembered journal folder and simultaneous Obsidian/Dropbox folder connections,
@@ -47,21 +50,32 @@ those systems. The archive includes public guides with working relative links.
 
 Click **Capture chart**, then **Screenshot** on the floating bar. Choose a source
 if prompted. Each capture adds a view. Choose its **Timeframe (required)**, such
-as `1m`, `2m` or `1h`; add an optional caption for its purpose. Every image needs
-its own timeframe before saving. The setup-level Timeframe field remains separate.
+as `1m`, `2m` or `1h`; add optional multiline notes for this view. Every image needs
+its own timeframe before saving. The older Trading setup form retains its separate setup-level Timeframe field.
 Remove individual draft images or use **New setup** to clear the current setup.
 The bar stays open until closed from the journal or with **×**.
 
 Enter **Setup details** and **Save setup…**. The first save asks for a journal
-folder; later saves remember it. A setup folder holds `setup.md`, `chart.png`,
-`chart-002.png`, etc. **Open setup…** restores the complete form and images.
+folder; later saves remember it. Choose the parent of `backtesting` and `live`.
+The selected Trading journal form saves by **market date**, for example:
+
+```text
+backtesting/2025/01/07/
+  2025-01-07 0930 TEST Short Example.md
+  chart-<note-id>-001.png
+```
+
+Capture dates stay separate. Same-name notes receive `(2)`, `(3)`, etc.; images
+use a unique note ID. Earlier/custom forms retain their separate `setup.md` folders.
+If the journal folder is already inside your Obsidian vault, it is directly
+visible there without also connecting that vault as a second destination. **Open setup…** restores the complete form and images.
 Capture another view and **Append screenshots** to extend that same file while
 preserving its original bytes and creating a Markdown backup. Earlier values
-and images must stay unchanged; **Save copy** creates a new setup directory for
+and images must stay unchanged; **Save copy** creates a separate note for
 those edits. Never use a real journal to test failure/recovery behavior.
 
 Older files still open unchanged. Choose the missing image timeframes and use
-**Save copy** once to create a version-4 file; future screenshots can append to
+**Save copy** once to create a version-5 file; future screenshots can append to
 that copy. Timeframes are never guessed from captions or setup fields.
 
 Closing/reloading a populated draft asks before discarding it. A crash can lose

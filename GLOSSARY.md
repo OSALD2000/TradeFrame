@@ -59,3 +59,19 @@ The chart interval recorded for one captured view, such as 1m or 2m. Every new
 saved image requires its own interval. A form's setup-level timeframe answer
 remains independent; earlier files may have no recorded image interval.
 _Avoid_: Caption as a substitute for the structured timeframe.
+
+**Market date**:
+The trading day being documented, including a historical day in a backtest.
+It can differ from the day the chart was captured.
+_Avoid_: Capture date as a substitute for the market date.
+
+**Session**:
+The trading window to which an observation belongs, such as NY AM.
+
+**Result**:
+The recorded outcome: pending, win, loss, break-even or no trade.
+No trade records that no position was opened.
+
+**R multiple**:
+The signed result expressed in units of the trade's initial risk. A missing
+result differs from an explicit zero.

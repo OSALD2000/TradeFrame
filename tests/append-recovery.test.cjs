@@ -7,19 +7,20 @@ const { spawn } = require('node:child_process');
 const { setTimeout: delay } = require('node:timers/promises');
 const { readSetup, writeSetup, appendScreenshots } = require('../dist-electron/journal.js');
 const { copySnapshot } = require('../dist-electron/connections.js');
-const { DEFAULT_SCHEMA } = require('../dist-electron/form-schema.js');
+const { DEFAULT_SCHEMA, JOURNAL_SCHEMA } = require('../dist-electron/form-schema.js');
 const { createFile } = require('../dist-electron/append-store.js');
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 const input = { schema: DEFAULT_SCHEMA, values: { mode: 'live', symbol: 'TEST', direction: 'long', model: 'Synthetic', timeframe: '5m', entryTimeNewYork: '', note: 'Keep all original text 🕯' } };
 const screenshot = { id: 'test', image, caption: 'Entry', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' };
-async function fixture(t) {
+async function fixture(t, calendar = false) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-recovery-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const file = await writeSetup(root, input, [screenshot]);
-  const data = { file, input, screenshot: { ...screenshot, id: 'follow-up', caption: 'Follow-up 🕯' } };
+  const setup = calendar ? { schema: JOURNAL_SCHEMA, values: { mode: 'backtest', date: '2025-01-07', time_ny: '09:30', session: 'NY AM', symbol: 'TEST', direction: 'long', model: 'Example', result: 'pending', r: null, note: input.values.note } } : input;
+  const file = await writeSetup(root, setup, [screenshot]);
+  const data = { file, input: setup, screenshot: { ...screenshot, id: 'follow-up', caption: 'Follow-up 🕯' } };
   const fixtureFile = path.join(root, 'fixture.json');
   await fs.writeFile(fixtureFile, JSON.stringify(data));
-  return { root, file, fixtureFile, data, original: await fs.readFile(file), lock: path.join(path.dirname(file), '.tradeframe-write.lock') };
+  return { root, file, fixtureFile, data, original: await fs.readFile(file), lock: path.join(path.dirname(file), calendar ? `${path.basename(file)}.tradeframe-write.lock` : '.tradeframe-write.lock') };
 }
 function interrupt(t, scenario, f, action = 'append') {
   const child = spawn(process.execPath, [path.join(__dirname, 'helpers/interrupted-append.cjs'), scenario, f.fixtureFile, action], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -32,6 +33,33 @@ function interrupt(t, scenario, f, action = 'append') {
   t.after(() => { if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); });
   return { child, terminal };
 }
+
+for (const scenario of ['prepared', 'partial', 'committed']) test(`calendar append recovers at ${scenario} without blocking another note in the same day`, { timeout: 10000 }, async (t) => {
+  const f = await fixture(t, true);
+  const other = await writeSetup(f.root, f.data.input, [screenshot]);
+  const untouched = await fs.readFile(other);
+  const ended = await interrupt(t, scenario, f).terminal;
+  assert.equal(ended.code, 71, ended.errors);
+  await fs.stat(f.lock);
+  assert.equal((await readSetup(other)).screenshots.length, 1);
+  assert.equal((await readSetup(f.file)).screenshots.length, 2);
+  assert.deepEqual(await fs.readFile(other), untouched);
+  assert.ok((await fs.readFile(f.file)).subarray(0, f.original.length).equals(f.original));
+  assert.equal((await readSetup(f.file)).screenshots.length, 2);
+  await assert.rejects(fs.stat(f.lock), { code: 'ENOENT' });
+});
+
+test('renamed older notes still recover their directory-wide lock records', async (t) => {
+  const f = await fixture(t);
+  const renamed = path.join(path.dirname(f.file), 'Renamed older note.md');
+  await fs.rename(f.file, renamed);
+  await fs.writeFile(f.fixtureFile, JSON.stringify({ ...f.data, file: renamed }));
+  const ended = await interrupt(t, 'partial', f).terminal;
+  assert.equal(ended.code, 71, ended.errors);
+  await fs.rename(`${renamed}.tradeframe-write.lock`, f.lock);
+  assert.equal((await readSetup(renamed)).screenshots.length, 2);
+  await assert.rejects(fs.stat(f.lock), { code: 'ENOENT' });
+});
 
 for (const scenario of ['prepared', 'partial', 'committed']) test(`reopening recovers an append after process exit at ${scenario} without duplicating images`, { timeout: 10000 }, async (t) => {
   const f = await fixture(t);

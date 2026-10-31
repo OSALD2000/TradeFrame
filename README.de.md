@@ -8,9 +8,12 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 ## Aktuelle Vorschau
 
 - Schwebende Aufnahmeleiste und native Bildschirm-/Fensterauswahl.
-- Bis zu 20 Screenshots mit jeweils verpflichtendem Timeframe, optionaler Beschriftung und Aufnahmezeit in einer Setup-Markdown-Datei.
+- Bis zu 20 Screenshots mit jeweils verpflichtendem Timeframe, optionalem mehrzeiligem Bildtext und Aufnahmezeit in einer Setup-Markdown-Datei.
 - Speichern/Oeffnen, weitere Bilder an dieselbe Datei anhaengen mit Markdown-Sicherung,
   mit vorbereiteter Wiederherstellung nach Prozessabbruch, oder eine eigene Kopie fuer Aenderungen an bisherigen Feldern/Bildern speichern.
+- Neues Formular Trading journal mit Marktdatum, New-York-Uhrzeit, Session,
+  Instrument, Richtung inklusive No Trade, Modell, Daily Bias, Result und optionalem R.
+  Lesbare Notizen und eindeutige Bilder liegen unter Modus/Jahr/Monat/Tag.
 - Konfigurierbare Formulare: acht Feldtypen, Schluessel/Tags, Optionen und Abhaengigkeiten.
   SQLite enthaelt nur versionierte Definitionen; Antworten bleiben Markdown, Bilder PNG.
 - Gemerkter Journalordner und parallele Obsidian-/Dropbox-Ordnerverbindungen mit
@@ -49,18 +52,30 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 **Capture chart** und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
 eine Quelle auswaehlen. Unter jedem Bild **Timeframe (required)** auswaehlen,
 zum Beispiel `1m`, `2m` oder `1h`. Jedes Bild braucht vor dem Speichern einen
-eigenen Timeframe; eine Beschriftung ist optional. Das Timeframe-Feld des gesamten
-Setups bleibt davon getrennt. Einzelne Entwurfsbilder lassen sich entfernen;
+eigenen Timeframe; mehrzeiliger Text je Bild ist optional. Das alte Formular
+Trading setup behaelt sein zusaetzliches Setup-Timeframe-Feld. Einzelne Entwurfsbilder lassen sich entfernen;
 **New setup** leert nach Rueckfrage das aktuelle Setup. Die Leiste bleibt bis
 zum Schliessen im Journal oder ueber **×** offen.
 
 **Setup details** ausfuellen und **Save setup…** anklicken. Beim ersten Speichern
-einen Journalordner waehlen; er wird danach gemerkt. Ein Setup-Ordner enthaelt
-`setup.md`, `chart.png`, `chart-002.png` usw. **Open setup…** stellt Formular und
+einen Journalordner waehlen; er wird danach gemerkt. Den gemeinsamen Elternordner
+von `backtesting` und `live` waehlen, beispielsweise `Trading/journaling`.
+Trading journal legt nach dem **Marktdatum** ab, etwa:
+
+```text
+backtesting/2025/01/07/
+  2025-01-07 0930 TEST Short Example.md
+  chart-<Notiz-ID>-001.png
+```
+
+Aufnahmezeit und Marktdatum bleiben getrennt. Gleiche Notiznamen erhalten `(2)`,
+`(3)` usw.; jede Notiz hat eindeutige Bildnamen. Alte/eigene Formulare behalten
+ihre separaten `setup.md`-Ordner. Liegt der Journalordner bereits im Obsidian-Vault,
+sind die Dateien dort ohne eine zweite Verbindung zu demselben Vault sichtbar. **Open setup…** stellt Formular und
 Bilder wieder her. Weitere Ansicht aufnehmen und **Append screenshots** nutzen:
 Das erweitert dieselbe Datei, erhaelt deren bisherige Bytes und erstellt eine
 Markdown-Sicherung. Bestehende Werte/Bilder bleiben dabei unveraendert;
-**Save copy** legt fuer solche Aenderungen einen neuen Setup-Ordner an.
+**Save copy** legt fuer solche Aenderungen eine separate Notiz an.
 Fehler- und Wiederherstellungstests niemals mit echten Journalen ausfuehren.
 
 Vor dem Schliessen/Neuladen eines gefuellten Entwurfs erscheint eine Rueckfrage.
@@ -71,7 +86,7 @@ Sicherungen und Anhaenge-Sperren: [Lokale Setup-Dateien](docs/JOURNAL.md).
 [Aufnahme und Berechtigungen](docs/CAPTURE.md)
 
 Alte Dateien lassen sich unveraendert oeffnen. Fehlende Bild-Timeframes auswaehlen
-und einmal **Save copy** nutzen: Die separate Kopie verwendet Format 4 und kann
+und einmal **Save copy** nutzen: Die separate Kopie verwendet Format 5 und kann
 anschliessend weitere Bilder aufnehmen. Timeframes werden weder aus Beschriftungen
 noch aus Setup-Feldern geraten.
 

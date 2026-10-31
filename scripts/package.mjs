@@ -38,7 +38,7 @@ try {
   // Only compiled code and public metadata enter the distribution, never workspace data.
   await cp(path.join(root, 'dist'), path.join(application, 'dist'), { recursive: true });
   await mkdir(path.join(application, 'dist-electron'));
-  for (const module of ['main', 'preload', 'capture-types', 'journal', 'form-schema', 'schema-store', 'connections', 'onenote', 'append-store']) {
+  for (const module of ['main', 'preload', 'capture-types', 'journal', 'form-schema', 'schema-store', 'connections', 'onenote', 'append-store', 'journal-layout']) {
     await cp(path.join(root, 'dist-electron', `${module}.js`), path.join(application, 'dist-electron', `${module}.js`));
   }
   await writeFile(path.join(application, 'package.json'), JSON.stringify({
@@ -51,7 +51,7 @@ try {
   for (const document of ['README.md', 'README.de.md', 'GLOSSARY.md', 'AGENTS.md',
     'docs/RELEASE.md', 'docs/RELEASE_NOTES.md', 'docs/JOURNAL.md', 'docs/CAPTURE.md', 'docs/SYNC.md', 'docs/CONTEXT.md',
     'docs/ROADMAP.md', 'docs/DESIGN.md', 'docs/adr/0001-local-first-journal.md',
-    'docs/adr/0002-versioned-form-schemas.md', 'docs/adr/0003-deliver-local-setups-to-independent-destinations.md']) {
+    'docs/adr/0002-versioned-form-schemas.md', 'docs/adr/0003-deliver-local-setups-to-independent-destinations.md', 'docs/adr/0004-organize-journals-by-market-date.md']) {
     await mkdir(path.dirname(path.join(staging, document)), { recursive: true });
     await cp(path.join(root, document), path.join(staging, document));
   }

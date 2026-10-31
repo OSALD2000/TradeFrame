@@ -8,19 +8,31 @@ remain in Markdown and screenshots remain PNG files. See the
 ## Save flow
 
 1. Select a form under Setup details, or use **New form** / **Edit form**.
-   The included Trading setup form contains the original trading fields.
+   Trading journal is selected for new work. It includes market date, New York
+   HH:mm time, session, instrument, direction (including No Trade), model, daily
+   bias, result (pending/win/loss/breakeven/notrade) and optional signed R.
+   The original Trading setup and custom forms remain unchanged/selectable.
+   Journal identity fields must remain present when editing this template.
 2. Capture one or more charts and fill in the visible fields below the images.
    Choose a required timeframe for each image, such as `1m`, `2m` or `1h`.
-   Captions remain optional. The setup-level Timeframe answer is separate.
+   Each image has optional multiline notes (up to 20,000 characters).
+   The original Trading setup form retains its separate setup-level Timeframe.
 3. Click **Save setup…** and choose a journal folder with the native picker
    if none is configured. Connections remembers the folder for subsequent saves.
-4. A new `setup-<UTC timestamp>-<random suffix>` directory contains `setup.md`
-   and `chart.png`, `chart-002.png`, etc. Success shows the Markdown path; a second save makes a new
-   setup, even if the form is unchanged. No existing files are overwritten.
+4. Trading journal saves to `<root>/backtesting|live/YYYY/MM/DD/` using the market
+   date, not the capture day. A note name contains date, optional HHmm New York
+   time, instrument, direction and model, for example
+   `2025-01-07 0930 TEST Short Example.md`. Names are made safe for all target OSes;
+   the original values stay unchanged in metadata. Collisions create `(2)`, `(3)`,
+   etc. Images use `chart-<note-UUID>-001.png`, so multiple notes share one day.
+   The root is the parent of `backtesting` and `live`; it may itself be in Obsidian.
+   Earlier/custom forms still create separate `setup-<UTC timestamp>-<suffix>`
+   directories with `setup.md` and the original fixed image names.
+   Every save creates a separate note; no existing note or image is overwritten.
 
 **Open setup…** restores an explicitly chosen TradeFrame Markdown file, its
 schema snapshot, typed values and all sibling chart PNGs. **Save copy** creates a
-new directory with a new creation timestamp and leaves the source unchanged.
+new note with a new creation timestamp and leaves the source unchanged.
 **New setup** asks before clearing current fields/screenshots. Removing an image
 affects the draft only. Closing/reloading a populated draft prompts before discard;
 there is no automatic draft recovery after a crash.
@@ -30,7 +42,8 @@ after reopening it. Existing fields and images must remain unchanged; edits to
 those require Save copy. The app checks the original Markdown/image fingerprint,
 prepares a Markdown backup as `<file>.<UUID>.bak` and stages complete image files
 plus the exact Markdown suffix in an owned `.tradeframe-append-<UUID>/` folder.
-A complete `.tradeframe-write.lock` record is published only after that data has
+A complete recovery record (`.tradeframe-write.lock` for `setup.md`, or
+`<note>.tradeframe-write.lock` for named notes) is published only after that data has
 been written and flushed. New images are linked exclusively into place; only
 then is the Markdown suffix appended. Original text/images are not rewritten.
 
@@ -102,16 +115,23 @@ accepts comma-separated tags with or without a leading `#`. Empty answers do not
 emit tags. Boolean `false` and numeric `0` are explicit answers, so configured
 field tags apply to them. Option tags apply only to selected options.
 
-## Markdown format version 4
+## Markdown format version 5
 
-`setup.md` is UTF-8 with YAML frontmatter. Each value is a single-line JSON
+Each note is UTF-8 with YAML frontmatter. Each value is a single-line JSON
 literal (valid YAML), preserving strings, finite numbers, booleans, null, and
-ordered string lists. Reserved entries: `schemaVersion: 4`, `createdAt` (UTC ISO),
+ordered string lists. Reserved entries: `schemaVersion: 5`, `createdAt` (UTC ISO),
 `tradeframe` (form format version, complete schema snapshot and ordered screenshot
-references), and `tags`. Each reference includes its fixed local filename, caption
+references), and `tags`. Each reference includes its validated local filename, screenshot text
 and UTC capture timestamp, plus a required per-image `timeframe`. It accepts
 a positive integer (1–9999) followed by `s`, `m`, `h`, `D`, `W` or `M`; `m` is
-minutes and `M` is months. The image heading includes this value.
+minutes and `M` is months. The image heading includes this value and capture time; multiline notes come
+before the linked PNG. New calendar notes also record a UUID inside `tradeframe`,
+`captured` (the first screenshot's UTC date, preserved on copies) and Obsidian `cssclasses` for journal/direction/result. Their schema
+uses familiar keys such as `date`, `time_ny`, `type`, `instrument`, `session`,
+`result`, `r` and `d_bias`. Tags are derived consistently from the mode and values;
+No Trade cannot have an R result. An explicit R of zero remains distinct from empty.
+There is no duplicate aggregate timeframe field: each image reference remains
+authoritative even when later images are appended.
 User-defined keys hold answers; stable field IDs are recovered through the
 snapshot's key mapping. Optional missing fields remain distinguishable from
 explicit empty strings, empty lists, false, zero, and null in the document API.
@@ -130,14 +150,17 @@ Bounds: 100 fields, 100 options per choice field, 20,000 characters per text
 answer, 1 MB UTF-8 per schema, 5 MB per Markdown file, 20 images, 32 MB per PNG and 128 MB total image bytes.
 PNG resolution limits remain those of [CAPTURE](CAPTURE.md).
 
-Versions 1, 2 and 3 remain readable without modifying their files. Missing image
+Versions 1–4 remain readable without modifying their files. Missing image
 timeframes stay empty; the app does not guess from setup answers or captions.
 Choose a timeframe for every legacy image and use Save copy once to produce a
-separate version-4 file before appending. Versions 1/2 retain their original
+separate version-5 file before appending. Versions 1/2 retain their original
 trading fields and New York wall-clock semantics. Appending preserves the original
 metadata/body and adds a `tradeframe-screenshot` JSON comment followed by its
 exact rendered image section. The reader validates the full chain and file order.
 Appending never changes the original creation timestamp or previous field values.
+Version-4 appends retain their original short-caption rendering/limit; use Save
+copy to use version-5 multiline notes. Old non-TradeFrame Obsidian notes are
+reference material, not an import format. No source note is automatically moved.
 Unknown versions/keys, duplicate keys, invalid types/options/dates, or hidden
 answers in a file are rejected instead of guessed or silently discarded.
 

@@ -9,19 +9,19 @@ export type FieldDefinition = {
 };
 export type FormSchema = { formatVersion: 1; id: string; revision: number; name: string; fields: FieldDefinition[] };
 export type ScreenshotReference = { file: string; caption: string; capturedAt: string; timeframe?: string };
-export type SetupDocument = { schema: FormSchema; values: FormValues; createdAt: string; screenshots?: ScreenshotReference[]; schemaVersion?: 2 | 3 | 4 };
+export type SetupDocument = { schema: FormSchema; values: FormValues; createdAt: string; screenshots?: ScreenshotReference[]; schemaVersion?: 2 | 3 | 4 | 5; journalId?: string };
 export const MAX_SCREENSHOTS = 20;
 export const TIMEFRAME_PATTERN = '[1-9][0-9]{0,3}[smhDWM]';
 export const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '45m', '1h', '2h', '4h', '1D', '1W', '1M'];
 export const validTimeframe = (value: unknown): value is string => typeof value === 'string' && new RegExp(`^${TIMEFRAME_PATTERN}$`).test(value);
 
-export function validateScreenshots(input: unknown, requireTimeframe = false): ScreenshotReference[] {
+export function validateScreenshots(input: unknown, requireTimeframe = false, version = 4, journalId?: string): ScreenshotReference[] {
   check(Array.isArray(input) && input.length > 0 && input.length <= MAX_SCREENSHOTS, 'A setup needs 1–20 screenshots');
   return input.map((item, index) => {
     check(record(item), 'Invalid screenshot metadata');
     keys(item, ['file', 'caption', 'capturedAt', 'timeframe']);
-    check(item.file === screenshotFile(index), 'Invalid screenshot filename or order');
-    check(typeof item.caption === 'string' && item.caption.length <= 200 && !/[\r\n\0]/.test(item.caption), 'Invalid screenshot caption');
+    check(item.file === screenshotFile(index, journalId), 'Invalid screenshot filename or order');
+    check(typeof item.caption === 'string' && item.caption.length <= (version >= 5 ? 20000 : 200) && !(version >= 5 ? /\0/ : /[\r\n\0]/).test(item.caption), 'Invalid screenshot caption');
     check(typeof item.capturedAt === 'string' && Number.isFinite(Date.parse(item.capturedAt))
       && new Date(item.capturedAt).toISOString() === item.capturedAt, 'Invalid screenshot timestamp');
     check((!requireTimeframe && item.timeframe === undefined) || validTimeframe(item.timeframe), 'Every screenshot needs a timeframe such as 1m, 2m or 1h');
@@ -29,16 +29,18 @@ export function validateScreenshots(input: unknown, requireTimeframe = false): S
   });
 }
 
-export function screenshotFile(index: number): string {
+export function screenshotFile(index: number, journalId?: string): string {
+  if (journalId) return `chart-${journalId}-${String(index + 1).padStart(3, '0')}.png`;
   return index === 0 ? 'chart.png' : `chart-${String(index + 1).padStart(3, '0')}.png`;
 }
 
-function renderScreenshot(shot: ScreenshotReference, index: number): string {
+function renderScreenshot(shot: ScreenshotReference, index: number, version = 4): string {
+  if (version >= 5) return `## ${shot.timeframe} · captured ${shot.capturedAt}\n\n${shot.caption ? `${shot.caption}\n\n` : ''}![Chart ${index + 1}](${shot.file})\n\n`;
   return `## Screenshot ${index + 1}${shot.timeframe ? ` · ${shot.timeframe}` : ''}\n\n![Chart ${index + 1}](${shot.file})\n\n${shot.caption ? `${shot.caption}\n\n` : ''}Captured: ${shot.capturedAt}\n\n`;
 }
 
-export function screenshotAddition(shot: ScreenshotReference, index: number): string {
-  return `\n<!-- tradeframe-screenshot: ${JSON.stringify(shot)} -->\n\n${renderScreenshot(shot, index)}`;
+export function screenshotAddition(shot: ScreenshotReference, index: number, version = 4): string {
+  return `\n<!-- tradeframe-screenshot: ${JSON.stringify(shot)} -->\n\n${renderScreenshot(shot, index, version)}`;
 }
 
 const RESERVED_KEYS = new Set(['schemaVersion', 'createdAt', 'tradeframe', 'tags', 'image', '__proto__', 'constructor', 'prototype']);
@@ -205,23 +207,67 @@ export const DEFAULT_SCHEMA: FormSchema = {
   ],
 };
 
+export const JOURNAL_SCHEMA: FormSchema = {
+  formatVersion: 1, id: 'journal', revision: 1, name: 'Trading journal', fields: [
+    { ...field('mode', 'Mode', 'select', true), key: 'type', options: [option('live', 'Live'), option('backtest', 'Backtest')] },
+    field('date', 'Market date', 'date', true), field('time_ny', 'Time · New York (HH:mm)', 'text'),
+    field('session', 'Session', 'text'), { ...field('symbol', 'Instrument', 'text', true), key: 'instrument' },
+    { ...field('direction', 'Direction', 'select', true), options: [option('long', 'Long'), option('short', 'Short'), option('notrade', 'No Trade')] },
+    field('model', 'Model', 'text', true), field('d_bias', 'Daily bias', 'text'),
+    { ...field('result', 'Result', 'select', true), options: [option('pending', 'Pending'), option('win', 'Win'), option('loss', 'Loss'), option('breakeven', 'Break-even'), option('notrade', 'No Trade')] },
+    field('r', 'Result · R', 'number'), field('note', 'Notes', 'textarea'),
+  ],
+};
+
+export function journalValues(schema: FormSchema, values: FormValues) {
+  if (schema.id !== JOURNAL_SCHEMA.id) return null;
+  check(schema.fields.every((item) => !['captured', 'cssclasses'].includes(item.key)), 'Reserved journal presentation key');
+  for (const item of JOURNAL_SCHEMA.fields) {
+    if (item.required || Object.hasOwn(values, item.id)) validateValue(item, values[item.id]);
+  }
+  for (const id of ['symbol', 'model', 'session', 'd_bias']) if (values[id]) text(values[id], 200, id);
+  check(!values.time_ny || (typeof values.time_ny === 'string' && /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(values.time_ny)), 'New York time must use HH:mm');
+  check(values.direction !== 'notrade' || values.result === 'notrade', 'No Trade direction needs a No Trade result');
+  check(values.result !== 'notrade' || values.r === null || values.r === undefined, 'No Trade has no R result');
+  return { mode: values.mode as string, date: values.date as string, time: (values.time_ny || '') as string,
+    instrument: values.symbol as string, direction: values.direction as string, model: values.model as string,
+    session: (values.session || '') as string, result: values.result as string };
+}
+
+export const directionLabel = (value: string) => value === 'notrade' ? 'No Trade' : value === 'long' ? 'Long' : 'Short';
+const tagPart = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}_/-]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 70);
+export function journalTags(schema: FormSchema, values: FormValues): string[] {
+  const info = journalValues(schema, values);
+  if (!info) return valueTags(schema, values);
+  return [...new Set(['trading', 'journal', `journal/${info.mode}`, `direction/${info.direction}`, `result/${info.result}`,
+    ...[['session', info.session], ['instrument', info.instrument], ['model', info.model]].flatMap(([key, value]) => tagPart(value) ? [`${key}/${tagPart(value)}`] : []),
+    ...valueTags(schema, values)])];
+}
+
 export function serializeSetup(document: SetupDocument): string {
   const schema = validateSchema(document.schema);
   const values = validateValues(schema, document.values);
   check(typeof document.createdAt === 'string' && Number.isFinite(Date.parse(document.createdAt))
     && new Date(document.createdAt).toISOString() === document.createdAt, 'Invalid creation timestamp');
-  const exportedTags = valueTags(schema, values);
-  const version = document.schemaVersion ?? (document.screenshots ? 4 : 2);
-  check([2, 3, 4].includes(version), 'Unsupported setup version');
-  const screenshots = document.screenshots === undefined ? undefined : validateScreenshots(document.screenshots, version === 4);
+  const info = journalValues(schema, values);
+  const version = document.schemaVersion ?? (document.screenshots ? 5 : 2);
+  const exportedTags = version === 5 ? journalTags(schema, values) : valueTags(schema, values);
+  check([2, 3, 4, 5].includes(version), 'Unsupported setup version');
+  const screenshots = document.screenshots === undefined ? undefined : validateScreenshots(document.screenshots, version >= 4, version, document.journalId);
+  check(document.journalId === undefined || (version === 5 && !!info && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(document.journalId)), 'Invalid journal identity');
   check((version >= 3) === !!screenshots, 'Setup version does not match screenshot metadata');
   const metadata: Record<string, unknown> = { schemaVersion: version, createdAt: document.createdAt,
-    tradeframe: { formatVersion: 1, schema, ...(screenshots ? { screenshots } : {}) }, tags: exportedTags };
+    tradeframe: { formatVersion: 1, schema, ...(screenshots ? { screenshots } : {}), ...(document.journalId ? { journalId: document.journalId } : {}) }, tags: exportedTags };
   for (const field of schema.fields) if (Object.hasOwn(values, field.id)) metadata[field.key] = values[field.id];
+  if (version === 5 && info) {
+    metadata.captured = screenshots![0].capturedAt.slice(0, 10);
+    metadata.cssclasses = ['journal', `dir-${info.direction}`, `result-${info.result}`];
+  }
   const notes = schema.fields.filter((field) => field.type === 'textarea' && typeof values[field.id] === 'string')
     .map((field) => `## ${field.label}\n\n${values[field.id]}\n`).join('\n');
-  const charts = screenshots ? screenshots.map(renderScreenshot).join('') : '![Chart](chart.png)\n\n';
-  const markdown = `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n# Setup\n\n${charts}${exportedTags.length ? `${exportedTags.map((tag) => `#${tag}`).join(' ')}\n\n` : ''}${notes}`;
+  const charts = screenshots ? screenshots.map((shot, index) => renderScreenshot(shot, index, version)).join('') : '![Chart](chart.png)\n\n';
+  const title = version === 5 && info ? `${info.date}${info.time ? ` ${info.time} NY` : ''} – ${info.instrument} ${directionLabel(info.direction)} ${info.model}` : 'Setup';
+  const markdown = `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n# ${title}\n\n${charts}${exportedTags.length ? `${exportedTags.map((tag) => `#${tag}`).join(' ')}\n\n` : ''}${notes}`;
   check(new TextEncoder().encode(markdown).byteLength <= 5_000_000, 'Setup export is too large');
   return markdown;
 }
@@ -248,19 +294,24 @@ function deserializeBase(markdown: string): SetupDocument {
     values.note = notes[1].replace(/\r?\n$/, '');
     return { schema: validateSchema(DEFAULT_SCHEMA), values: validateValues(DEFAULT_SCHEMA, values), createdAt: metadata.createdAt };
   }
-  check((metadata.schemaVersion === 2 || metadata.schemaVersion === 3 || metadata.schemaVersion === 4) && record(metadata.tradeframe) && metadata.tradeframe.formatVersion === 1, 'Unsupported setup format');
-  keys(metadata.tradeframe, metadata.schemaVersion >= 3 ? ['formatVersion', 'schema', 'screenshots'] : ['formatVersion', 'schema']);
-  const screenshots = metadata.schemaVersion >= 3 ? validateScreenshots(metadata.tradeframe.screenshots, metadata.schemaVersion === 4) : undefined;
+  check((metadata.schemaVersion === 2 || metadata.schemaVersion === 3 || metadata.schemaVersion === 4 || metadata.schemaVersion === 5) && record(metadata.tradeframe) && metadata.tradeframe.formatVersion === 1, 'Unsupported setup format');
+  keys(metadata.tradeframe, metadata.schemaVersion >= 3 ? ['formatVersion', 'schema', 'screenshots', ...(metadata.schemaVersion === 5 ? ['journalId'] : [])] : ['formatVersion', 'schema']);
+  const screenshots = metadata.schemaVersion >= 3 ? validateScreenshots(metadata.tradeframe.screenshots, metadata.schemaVersion >= 4, metadata.schemaVersion, metadata.tradeframe.journalId as string | undefined) : undefined;
   const schema = validateSchema(metadata.tradeframe.schema);
-  check(Object.keys(metadata).every((key) => ['schemaVersion', 'createdAt', 'tradeframe', 'tags', ...schema.fields.map((field) => field.key)].includes(key)), 'Unknown Markdown field');
+  check(Object.keys(metadata).every((key) => ['schemaVersion', 'createdAt', 'tradeframe', 'tags', ...(metadata.schemaVersion === 5 && schema.id === JOURNAL_SCHEMA.id ? ['captured', 'cssclasses'] : []), ...schema.fields.map((field) => field.key)].includes(key)), 'Unknown Markdown field');
   const values: FormValues = Object.fromEntries(schema.fields.filter((field) => Object.hasOwn(metadata, field.key))
     .map((field) => [field.id, metadata[field.key]])) as FormValues;
   const validated = validateValues(schema, values);
   check(Object.keys(validated).length === Object.keys(values).length, 'Hidden field values must not be saved');
-  check(JSON.stringify(metadata.tags) === JSON.stringify(valueTags(schema, validated)), 'Markdown tags do not match the schema values');
+  check(JSON.stringify(metadata.tags) === JSON.stringify(metadata.schemaVersion === 5 ? journalTags(schema, validated) : valueTags(schema, validated)), 'Markdown tags do not match the schema values');
   const document: SetupDocument = { schema, values: validated, createdAt: metadata.createdAt,
-    ...(metadata.schemaVersion >= 3 ? { schemaVersion: metadata.schemaVersion } : {}), ...(screenshots ? { screenshots } : {}) };
+    ...(metadata.schemaVersion >= 3 ? { schemaVersion: metadata.schemaVersion } : {}), ...(screenshots ? { screenshots } : {}), ...(metadata.tradeframe.journalId === undefined ? {} : { journalId: metadata.tradeframe.journalId as string }) };
   const canonical = serializeSetup(document);
+  if (metadata.schemaVersion === 5 && schema.id === JOURNAL_SCHEMA.id) {
+    const info = journalValues(schema, validated)!;
+    const expected = ['journal', `dir-${info.direction}`, `result-${info.result}`];
+    check(metadata.captured === screenshots![0].capturedAt.slice(0, 10) && JSON.stringify(metadata.cssclasses) === JSON.stringify(expected), 'Journal presentation metadata does not match');
+  }
   const body = canonical.slice(canonical.indexOf('\n---\n') + '\n---\n'.length);
   check(body.replace(/\r\n/g, '\n') === match[2].replace(/\r\n/g, '\n'), 'Markdown body does not match its field values');
   return document;
@@ -277,8 +328,8 @@ function readWithAdditions(markdown: string, depth: number): SetupDocument {
     if (!header) throw error;
     const document = readWithAdditions(markdown.slice(0, marker), depth + 1);
     const previous = document.screenshots ?? [{ file: 'chart.png', caption: '', capturedAt: document.createdAt }];
-    const screenshots = validateScreenshots([...previous, JSON.parse(header[1])], document.schemaVersion === 4);
-    if (screenshotAddition(screenshots.at(-1)!, previous.length).replace(/\r\n/g, '\n') !== addition.replace(/\r\n/g, '\n')) throw new Error('Invalid appended screenshot');
+    const screenshots = validateScreenshots([...previous, JSON.parse(header[1])], (document.schemaVersion ?? 2) >= 4, document.schemaVersion, document.journalId);
+    if (screenshotAddition(screenshots.at(-1)!, previous.length, document.schemaVersion).replace(/\r\n/g, '\n') !== addition.replace(/\r\n/g, '\n')) throw new Error('Invalid appended screenshot');
     return { ...document, screenshots };
   }
 }

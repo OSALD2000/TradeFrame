@@ -1,17 +1,20 @@
 import { mkdtemp, rm, readFile, lstat } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 import type { SetupInput, Screenshot } from './capture-types';
-import { validateSchema, validateValues, emptyValues, serializeSetup, deserializeSetup, validateScreenshots, screenshotFile, screenshotAddition } from './form-schema';
+import { validateSchema, validateValues, emptyValues, serializeSetup, deserializeSetup, validateScreenshots, screenshotFile, screenshotAddition, journalValues } from './form-schema';
 import { appendDocument, createFile, recoverAppend } from './append-store';
+import { calendarPath, journalDirectory, journalFilename } from './journal-layout';
 
 export function validateSetup(input: unknown): SetupInput {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid setup');
   const data = input as Record<string, unknown>;
   if (Object.keys(data).some((key) => key !== 'schema' && key !== 'values')) throw new Error('Unknown setup property');
   const schema = validateSchema(data.schema);
-  return { schema, values: validateValues(schema, data.values) };
+  const values = validateValues(schema, data.values);
+  journalValues(schema, values);
+  return { schema, values };
 }
 
 export function pngBytes(image: string): Buffer {
@@ -23,13 +26,36 @@ export function pngBytes(image: string): Buffer {
 
 export async function writeSetup(folder: string, setup: SetupInput, screenshots: Screenshot[]): Promise<string> {
   const validated = validateSetup(setup);
+  const createdAt = new Date().toISOString();
+  const journalId = journalValues(validated.schema, validated.values) ? randomUUID() : undefined;
   const references = validateScreenshots(screenshots.map((shot, index) => ({
-    file: screenshotFile(index), caption: shot.caption, capturedAt: shot.capturedAt, timeframe: shot.timeframe,
-  })), true);
+    file: screenshotFile(index, journalId), caption: shot.caption, capturedAt: shot.capturedAt, timeframe: shot.timeframe,
+  })), true, 5, journalId);
   const images = screenshots.map((shot) => pngBytes(shot.image));
   if (images.reduce((sum, png) => sum + png.length, 0) > 128_000_000) throw new Error('Screenshots exceed 128 MB');
-  const createdAt = new Date().toISOString();
-  const markdown = serializeSetup({ ...validated, createdAt, screenshots: references });
+  const document = { ...validated, createdAt, screenshots: references, schemaVersion: 5 as const, ...(journalId ? { journalId } : {}) };
+  const markdown = serializeSetup(document);
+  const calendar = calendarPath(document);
+  if (calendar) {
+    const directory = await journalDirectory(folder, calendar);
+    const created: string[] = [];
+    try {
+      for (let index = 0; index < images.length; index++) {
+        const file = path.join(directory, references[index].file);
+        await createFile(file, images[index]); created.push(file);
+      }
+      const filename = journalFilename(document);
+      for (let index = 1; index <= 1000; index++) {
+        const file = path.join(directory, index === 1 ? filename : `${filename.slice(0, -3)} (${index}).md`);
+        try { await createFile(file, Buffer.from(markdown)); return file; }
+        catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
+      }
+      throw new Error('Too many matching journal names');
+    } catch (error) {
+      for (const file of created) await rm(file, { force: true });
+      throw error;
+    }
+  }
   // Publish complete Markdown last: it is the completion marker for the new setup.
   const directory = await mkdtemp(path.join(folder, `setup-${createdAt.replace(/[:.]/g, '-')}-`));
   try {
@@ -77,10 +103,12 @@ export async function appendScreenshots(file: string, fingerprint: string, setup
   const validated = validateSetup(setup);
   if (original.fingerprint !== fingerprint && !original.recoveredBackup) throw new Error('The saved setup changed. Reopen it before adding screenshots.');
   const originalValues = validateValues(original.schema, { ...emptyValues(original.schema), ...original.values });
-  if (JSON.stringify(original.schema) !== JSON.stringify(validated.schema) || JSON.stringify(originalValues) !== JSON.stringify(validated.values)) {
+  const currentValues = validateValues(validated.schema, { ...emptyValues(validated.schema), ...validated.values });
+  if (JSON.stringify(original.schema) !== JSON.stringify(validated.schema) || JSON.stringify(originalValues) !== JSON.stringify(currentValues)) {
     throw new Error('Use Save copy to keep changes to the existing setup fields.');
   }
-  const references = validateScreenshots(screenshots.map((shot, index) => ({ file: screenshotFile(index), caption: shot.caption, capturedAt: shot.capturedAt, timeframe: shot.timeframe })), true);
+  const document = deserializeSetup(original.markdown);
+  const references = validateScreenshots(screenshots.map((shot, index) => ({ file: screenshotFile(index, document.journalId), caption: shot.caption, capturedAt: shot.capturedAt, timeframe: shot.timeframe })), true, document.schemaVersion, document.journalId);
   if (screenshots.length < original.screenshots.length) throw new Error('The saved setup changed. Reopen it before adding screenshots.');
   for (const [index, shot] of original.screenshots.entries()) {
     const current = screenshots[index];
@@ -95,7 +123,7 @@ export async function appendScreenshots(file: string, fingerprint: string, setup
   const bytes = screenshots.map((shot) => pngBytes(shot.image));
   if (bytes.reduce((sum, image) => sum + image.length, 0) > 128_000_000) throw new Error('Screenshots exceed 128 MB');
   const markdown = original.markdown;
-  const addition = references.slice(original.screenshots.length).map((shot, index) => screenshotAddition(shot, original.screenshots.length + index)).join('');
+  const addition = references.slice(original.screenshots.length).map((shot, index) => screenshotAddition(shot, original.screenshots.length + index, document.schemaVersion)).join('');
   deserializeSetup(markdown + addition);
   return appendDocument(file, Buffer.from(markdown), Buffer.from(addition), bytes.map((bytes, index) => ({ name: references[index].file, bytes })));
 }

@@ -253,7 +253,7 @@ test('repeated captures append distinct screenshots and validate caption/removal
   assert.equal((await invoke('capture:state')).screenshots.length, 20);
   assert.match((await invoke('capture:state')).error, /20 screenshots/);
   await assert.rejects(invoke('capture:caption', windows[1], shots[0].id, 'Wrong window'), /Untrusted/);
-  await assert.rejects(invoke('capture:caption', windows[0], shots[0].id, 'x'.repeat(201)), /Invalid/);
+  await assert.rejects(invoke('capture:caption', windows[0], shots[0].id, 'x'.repeat(20001)), /Invalid/);
   await assert.rejects(invoke('capture:remove', windows[0], 'missing'), /Invalid/);
   await invoke('capture:caption', windows[0], shots[0].id, '5m entry');
   assert.equal((await invoke('capture:state')).screenshots[0].caption, '5m entry');
@@ -446,6 +446,23 @@ test('schema commands validate the journal sender and preserve previous revision
   app.emit('will-quit');
 });
 
+test('native journal save uses the historical day and preserves multiline screenshot notes', async (t) => {
+  const fs = require('node:fs/promises');
+  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-calendar-ipc-')));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const { windows, invoke } = await boot(undefined, async () => ({ canceled: false, filePaths: [root] }));
+  const schema = (await invoke('forms:list')).find((item) => item.id === 'journal');
+  assert.ok(schema, 'New template is available alongside the original');
+  await invoke('capture:open-bar'); await captureReady(invoke, windows);
+  const shot = (await invoke('capture:state')).screenshots[0];
+  const caption = 'First paragraph\n\n' + 'A'.repeat(400);
+  await invoke('capture:caption', windows[0], shot.id, caption);
+  const saved = await invoke('journal:save', windows[0], { schema, values: { mode: 'backtest', date: '2025-01-07',
+    time_ny: '09:30', session: 'NY AM', symbol: 'TEST', direction: 'notrade', model: 'Example', result: 'notrade', r: null } });
+  assert.equal(path.relative(root, saved.path).split(path.sep).join('/'), 'backtesting/2025/01/07/2025-01-07 0930 TEST No Trade Example.md');
+  assert.equal((await require('../dist-electron/journal.js').readSetup(saved.path)).screenshots[0].caption, caption);
+});
+
 test('opening a setup restores its schema values and image without modifying the source', async (t) => {
   const fs = require('node:fs/promises');
   const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-open-'));
@@ -463,7 +480,7 @@ test('opening a setup restores its schema values and image without modifying the
   assert.match((await invoke('capture:state')).screenshots[0].image, /^tradeframe-image:\/\/capture\//);
   assert.equal((await invoke('capture:state')).busy, false);
   assert.equal(await fs.readFile(file, 'utf8'), original);
-  assert.equal((await invoke('forms:list')).length, 1);
+  assert.equal((await invoke('forms:list')).length, 2);
   app.emit('will-quit');
 });
 

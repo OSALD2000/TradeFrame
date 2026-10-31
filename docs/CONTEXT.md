@@ -10,12 +10,14 @@ no private journals or account data were opened.
 ## Implemented state
 
 - Floating capture bar, native source snapshots, source selection, up to 20
-  ordered screenshots per setup, required per-image timeframes, optional captions, capture timestamps and removal.
+  ordered screenshots per setup, required per-image timeframes, optional multiline notes, capture timestamps and removal.
   The journal stays visible; the mapped bar becomes transparent during capture.
 - Native image bytes stay in memory behind opaque `tradeframe-image:` URLs.
   IPC updates carry image URLs rather than retransmitting PNG data. Removing a
   screenshot or closing/resetting the journal releases its cached bytes.
-- Explicit local save creates a fresh Markdown/PNG folder. Open restores the
+- New Trading journal notes share mode/year/month/day folders, using market date,
+  readable filenames and unique per-note image IDs. Same-name saves are numbered.
+  Earlier/custom forms keep separate Markdown/PNG folders. Open restores the
   original schema, values and screenshots. New setup resets the draft with a
   confirmation. Closing/reloading a draft prompts before discarding it.
 - Append screenshots extends the current saved Markdown file without rewriting
@@ -23,9 +25,10 @@ no private journals or account data were opened.
   fingerprint, writes a Markdown backup and stages complete files before a
   durable recovery record. Reopening/retrying resumes only the verified missing
   suffix, waits for live writers and preserves external conflicts. Save copy remains available for changes to earlier fields or images.
-- Version-4 Markdown requires a timeframe on every screenshot reference and
-  renders it in the image heading. Versions 1–3 remain readable unchanged; missing
-  timeframes require an explicit Save copy before appending. Later captures can
+- Version-5 Markdown adds multiline image sections, calendar identity, familiar
+  journal fields/tags and Obsidian classes. Versions 1–4 remain readable unchanged; missing
+  timeframes require an explicit Save copy before appending. New and original form definitions remain
+  separate; existing schema revisions are not changed. Later captures can
   be validated append-only blocks. Unknown or
   contradictory content is rejected. Details: [JOURNAL](JOURNAL.md).
 - Forms support eight field types, stable IDs, keys/tags, choices and conditional
@@ -55,7 +58,8 @@ lifecycle and one process per local profile. Sandboxing/context isolation remain
 new windows and off-app navigation remain blocked. `preload.ts` exposes only
 named commands; form, path, source and value validation remain native.
 
-`journal.ts` owns file persistence and append preservation; `append-store.ts`
+`journal.ts` owns file persistence and append preservation; `journal-layout.ts`
+owns safe calendar paths and filenames; `append-store.ts`
 owns staged file publication, prepared intents and process-crash recovery; `form-schema.ts`
 owns types, validation and Markdown. `schema-store.ts` owns form revisions;
 `connections.ts` owns folder delivery and its queue; `onenote.ts` owns OAuth,
@@ -134,3 +138,27 @@ still fail without writing to its new destination. Production code is unchanged.
 The same eight failures were reproduced on Linux with a symlinked TMPDIR;
 build and all 68 tests then passed through that alias. This reproduces the path
 condition, not macOS execution. A new GitHub run is pending the owner's fix push.
+
+31 October calendar journal work: the owner explicitly selected the entire old
+backtesting structure after a read-only inspection of their selected folder.
+Only structure and metadata semantics were used; real note text/images were not
+copied into source, demos, tests or packages. Trading journal is a separate built-in
+form; it adds market date, New York HH:mm time, session, instrument, No Trade,
+daily bias, result and signed optional R. Multiline image notes retain their own
+timeframes. New version-5 journal notes share mode/year/month/day directories with
+readable collision-safe names and UUID images. New recovery locks belong to each
+named note; legacy setup.md locks and version-1–4 parsing/rendering are retained.
+Folder delivery keeps the same hierarchy and names at both destinations.
+The earlier macOS fix 073a04f passed GitHub Check on all three OSes; the new
+calendar changes still require their own native CI and owner desktop acceptance.
+Details and compatibility decision: [ADR 0004](adr/0004-organize-journals-by-market-date.md).
+
+The calendar build passes typecheck/build and 81 automated tests, including native
+IPC with the new form, historical dates, same-day names/collisions, No Trade/R,
+long image notes, refused redirected folders, rollback without deleting another
+note, both destination trees, preserved version-4 rendering and interrupted
+calendar appends at prepared/partial/committed stages. Renamed older notes can
+still recover directory-wide lock records. All 81 tests also pass with a symlinked
+TMPDIR, reproducing the path-alias condition that affected macOS. No real vault
+files were changed. Desktop layout/capture and actual installed 0.3.0 acceptance
+remain open; the automated tests do not establish a native Windows/macOS launch.

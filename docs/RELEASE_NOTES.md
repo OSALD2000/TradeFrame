@@ -1,31 +1,40 @@
-# TradeFrame 0.2.0 preview
+# TradeFrame 0.3.0 preview
 
-Each screenshot now has its own required timeframe, such as `1m`, `2m` or `1h`.
-The value is preserved in Markdown metadata, image headings, folder delivery and
-OneNote pages. Captions remain optional. Earlier files open unchanged: choose
-their missing image timeframes and use **Save copy** once before appending.
+New Trading journal form and calendar filing inspired by the owner's previous
+journal: market date, optional New York HH:mm time, session, instrument,
+direction including No Trade, model, daily bias, result and optional signed R.
 
-This combined preview targets Windows x64, Linux x64 (`.deb` and `.tar.gz`),
-macOS Apple Silicon and macOS Intel (`.zip`). Check the matching SHA-256 file.
-Packages contain the Electron runtime; Node/npm is not needed to run them.
-For Debian/Ubuntu, installing the `.deb` supplies the sandbox helper permissions.
+Notes use mode/year/month/day folders, for example
+`backtesting/2025/01/07/2025-01-07 0930 TEST Short Example.md`.
+The market date controls filing even when capturing a historical chart today.
+Same-name saves receive a numbered suffix; each note owns unique image names.
+Every screenshot retains its required timeframe and now supports multiline text
+(up to 20,000 characters), rendered before the image. Follow-ups preserve the
+previous Markdown bytes, with independent backups/recovery per named note.
 
-These are unsigned preview downloads (macOS uses ad-hoc signing). Trusted
-publisher signing/notarization and native acceptance on every platform remain
-open. The automated packaged-runtime check does not verify desktop capture or
-layout. Cloud and OneNote account acceptance is deferred; OneNote also needs the
-publisher's registered Microsoft application ID. See [release guidance](RELEASE.md).
+Version-1–4 TradeFrame files and existing/custom form revisions remain readable.
+The original Trading setup form remains available. Save copy creates version 5;
+old version-4 appends keep their short-caption limit until copied. Existing old
+Obsidian journals are reference data and are not moved or imported automatically.
+Obsidian/Dropbox folder delivery preserves the calendar hierarchy and filenames.
+OneNote includes the multiline text and journal fields/tags.
+
+The combined package workflow targets Windows x64, Linux x64 (Debian and tar),
+macOS Apple Silicon and macOS Intel. Check the matching SHA-256 file. Packages
+include Electron and need no Node/npm installation on the destination computer.
+These are unsigned previews (macOS uses ad-hoc signing). Native desktop/capture
+acceptance, trusted signing/notarization and cloud/account tests remain open.
+For publisher setup and platform builds, see [release guidance](RELEASE.md).
 
 ## Deutsch
 
-Jeder Screenshot hat jetzt einen eigenen verpflichtenden Timeframe, etwa `1m`,
-`2m` oder `1h`. Er bleibt in Markdown, Bildüberschriften, Ordnerzielen und
-OneNote erhalten. Alte Dateien bleiben unveraendert: fehlende Bild-Timeframes
-auswaehlen und einmal **Save copy** verwenden, danach an die Kopie anhaengen.
+Trading journal uebernimmt Datumsordner und lesbare Notiznamen nach dem
+Marktdatum. Das Formular enthaelt Session, No Trade, Result/R und Daily Bias.
+Jedes Bild hat einen verpflichtenden Timeframe und optionalen mehrzeiligen Text.
+Mehrere Setups koennen denselben Tag nutzen; Namenkollisionen erhalten eine
+Nummer, Bilder und Wiederherstellung bleiben je Notiz getrennt. Ordnerziele
+uebernehmen dieselbe Struktur. Alte TradeFrame-Dateien/Formulare und alte
+Obsidian-Ergebnisse bleiben erhalten; es gibt keine automatische Migration.
 
-Gemeinsame Vorschau fuer Windows x64, Linux x64 und macOS Apple Silicon/Intel.
-Pruefsummen liegen bei; die Electron-Runtime ist enthalten. Unter Debian/Ubuntu
-das `.deb` installieren, damit die Sandbox-Dateirechte korrekt gesetzt werden.
-Herausgebersignatur, Notarisierung und native Abnahme aller Plattformen sind noch
-offen. Cloud-/OneNote-Kontotests folgen spaeter; OneNote braucht die registrierte
-Microsoft-App-ID des Herausgebers.
+Die Vorschau ist noch ohne verifizierte Herausgebersignatur. Echte Desktop-,
+Windows-/Mac-Installations- und Kontotests sowie Notarisierung bleiben offen.

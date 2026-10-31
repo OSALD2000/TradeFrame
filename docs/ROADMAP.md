@@ -11,10 +11,13 @@ upload, account registration, real-journal access or signing identity is implied
 
 ## Implemented; acceptance still open
 
-1. Multi-image capture with a required timeframe per image, captions/removal, save/reopen, New setup and a draft-close
+1. Multi-image capture with a required timeframe and multiline notes per image,
+   removal, save/reopen, New setup and a draft-close
    warning. Append screenshots extends the same saved Markdown with a backup;
    changed earlier fields/images use Save copy. Prepared appends recover after
    process interruption, while external edits remain conflicts. Old formats remain readable.
+   The separate Trading journal form adds market date, session, No Trade, result/R
+   and calendar folders with readable note names and unique per-note images.
 2. Journal-folder preferences and simultaneous Obsidian/Dropbox desktop-folder
    delivery, durable jobs, explicit retry and external-conflict protection.
 3. OneNote device sign-in, refresh, encrypted-token calls and multipart pages;
@@ -22,7 +25,7 @@ upload, account registration, real-journal access or signing identity is implied
 4. Reviewed lockfile, npm ci CI, native package archives, Linux Debian installer,
    checksums, four native packaging jobs (Windows/Linux x64 and macOS arm64/x64),
    packaged runtime checks and one combined draft release gate. Actual Windows/macOS
-   artifacts remain pending until the owner pushes and the workflow succeeds.
+   artifacts remain pending until the package workflow succeeds.
 
 Architecture and current verification evidence: [CONTEXT](CONTEXT.md).
 File behavior: [JOURNAL](JOURNAL.md). Integration behavior: [SYNC](SYNC.md).
@@ -33,7 +36,8 @@ Build and publisher instructions: [RELEASE](RELEASE.md).
 - Verify the final package and checksum, clean extraction, absence of private
   files, and actual installed/downloaded launch with sandboxing enabled.
 - Inspect desktop/narrow layouts and execute native form, capture, multiple
-  screenshots, append, backup/reopen and recovery after terminating the process during append, new
+  screenshots, calendar filing by historical market date, name collisions,
+  long image notes, append, backup/reopen and recovery after terminating the process during append, new
   setup and close-warning flows. Verify that concurrent launches focus one window.
 - Register the publisher Microsoft app and test real delegated consent, page
   creation with several images, refresh/restart, duplicate retry and disconnect

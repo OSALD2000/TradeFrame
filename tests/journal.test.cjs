@@ -55,12 +55,12 @@ test('each screenshot needs a valid timeframe before new files are created', asy
   assert.deepEqual(await fs.readdir(root), []);
   const file = await writeSetup(root, input, [screenshots[0], { ...screenshots[0], id: 'second', timeframe: '2m' }]);
   const markdown = await fs.readFile(file, 'utf8');
-  assert.match(markdown, /## Screenshot 1 · 1m/);
-  assert.match(markdown, /## Screenshot 2 · 2m/);
+  assert.match(markdown, /## 1m · captured/);
+  assert.match(markdown, /## 2m · captured/);
   assert.throws(() => deserializeSetup(markdown.replace('"timeframe":"2m"', '"timeframe":""')), /timeframe/);
 });
 
-test('version 3 screenshots keep unknown timeframes until an explicit version 4 copy', async (t) => {
+test('version 3 screenshots keep unknown timeframes until an explicit version 5 copy', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-legacy-timeframe-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const { serializeSetup, screenshotAddition } = require('../dist-electron/form-schema.js');
@@ -78,7 +78,7 @@ test('version 3 screenshots keep unknown timeframes until an explicit version 4 
   const assigned = loaded.screenshots.map((shot) => ({ ...shot, timeframe: '2m' }));
   await assert.rejects(appendScreenshots(file, loaded.fingerprint, input, assigned), /Save copy/);
   const copy = await writeSetup(root, input, assigned);
-  assert.match(await fs.readFile(copy, 'utf8'), /schemaVersion: 4/);
+  assert.match(await fs.readFile(copy, 'utf8'), /schemaVersion: 5/);
   assert.equal((await readSetup(copy)).screenshots[0].timeframe, '2m');
   assert.equal(await fs.readFile(file, 'utf8'), markdown);
 });
@@ -140,7 +140,7 @@ test('each save creates its own Markdown and PNG without changing existing files
   assert.equal(path.dirname(path.dirname(first)), root);
   assert.equal(await fs.readFile(path.join(root, 'setup.md'), 'utf8'), 'Existing journal');
   const markdown = await fs.readFile(first, 'utf8');
-  assert.match(markdown, /schemaVersion: 4/);
+  assert.match(markdown, /schemaVersion: 5/);
   assert.ok(markdown.includes(`symbol: ${JSON.stringify(setup.values.symbol)}`));
   assert.deepEqual(deserializeSetup(markdown).values, setup.values);
   assert.ok(markdown.endsWith(`${values.note}\n`));

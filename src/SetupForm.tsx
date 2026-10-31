@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CaptureAPI, SetupInput } from '../electron/capture-types';
-import { DEFAULT_SCHEMA, emptyValues, fieldVisible, validateValues } from '../electron/form-schema';
+import { JOURNAL_SCHEMA, emptyValues, fieldVisible, validateValues, journalValues } from '../electron/form-schema';
 import type { FormSchema, FormValues } from '../electron/form-schema';
 import { FieldInput } from './FieldInput';
 import { SchemaEditor, newField } from './SchemaEditor';
@@ -9,9 +9,9 @@ import { SchemaEditor, newField } from './SchemaEditor';
 export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timeframesReady, requiresTimeframeCopy }: {
   api: CaptureAPI | undefined; busy: boolean; choosing: boolean; hasPreview: boolean; savedPath: string | null; timeframesReady: boolean; requiresTimeframeCopy: boolean;
 }) {
-  const [schema, setSchema] = useState(DEFAULT_SCHEMA);
+  const [schema, setSchema] = useState(JOURNAL_SCHEMA);
   const [schemas, setSchemas] = useState<FormSchema[]>([]);
-  const [values, setValues] = useState<FormValues>(() => emptyValues(DEFAULT_SCHEMA));
+  const [values, setValues] = useState<FormValues>(() => emptyValues(JOURNAL_SCHEMA));
   const [editing, setEditing] = useState<FormSchema | null>(null);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -30,8 +30,9 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
     api.getSchemas().then((list) => {
       if (!active) return;
       setSchemas(list);
-      setSchema(list[0]);
-      setValues(emptyValues(list[0]));
+      const initial = list.find((item) => item.id === JOURNAL_SCHEMA.id) ?? list[0];
+      setSchema(initial);
+      setValues(emptyValues(initial));
       setReady(true);
     }).catch(() => { if (active) setError('Could not load forms. Restart the app and check access to its data folder.'); });
     return () => { active = false; };
@@ -65,7 +66,7 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
     setMessage('');
     setError('');
     let input: SetupInput;
-    try { input = { schema, values: validateValues(schema, values) }; }
+    try { input = { schema, values: validateValues(schema, values) }; journalValues(schema, input.values); }
     catch (error) {
       setError(error instanceof Error ? error.message : 'Check the visible field values.');
       return;
@@ -129,7 +130,7 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
         {savedPath && !requiresTimeframeCopy && <button className="capture-button" type="submit" name="action" value="append" disabled={choosing || !hasPreview || !timeframesReady}>{saving ? 'Saving…' : 'Append screenshots'}</button>}
         <button className={savedPath && !requiresTimeframeCopy ? 'secondary-button' : 'capture-button'} type="submit" name="action" value="copy" disabled={choosing || !hasPreview || !timeframesReady}>{saving ? 'Saving…' : savedPath ? 'Save copy' : 'Save setup…'}</button>
       </fieldset>
-      <p className="preview-note">{requiresTimeframeCopy ? 'This older setup has no per-image timeframes. Choose them above and Save copy once. The original stays unchanged; future screenshots can be appended to the copy.' : savedPath ? 'Append adds only new screenshots to this file and keeps a Markdown backup. To change earlier fields or images, use Save copy.' : 'Each save creates a new setup.md with all chart images in its own folder. Your journal folder is remembered; manage destinations in Connections.'}</p>
+      <p className="preview-note">{requiresTimeframeCopy ? 'This older setup has no per-image timeframes. Choose them above and Save copy once. The original stays unchanged; future screenshots can be appended to the copy.' : savedPath ? 'Append adds only new screenshots to this file and keeps a Markdown backup. To change earlier fields or images, use Save copy.' : 'Trading journal saves use mode/year/month/day and a readable note name. Other forms keep separate setup folders. Your journal folder is remembered; manage destinations in Connections.'}</p>
       {!timeframesReady && hasPreview && <p className="preview-note" role="status">Choose a timeframe for every screenshot before saving.</p>}
     </form>}
     {message && <p className="save-message" role="status">{message}</p>}

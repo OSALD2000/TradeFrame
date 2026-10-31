@@ -5,6 +5,7 @@ import path from 'node:path';
 import { deserializeSetup } from './form-schema';
 import { readSetup, pngBytes } from './journal';
 import { appendDocument, createFile, recoverAppend } from './append-store';
+import { calendarPath, journalDirectory, safeNoteFilename } from './journal-layout';
 import type { FolderKind, SyncJob, Connections } from './capture-types';
 
 export function folderKind(value: unknown): asserts value is FolderKind {
@@ -111,18 +112,21 @@ export async function copySnapshot(source: string, targetRoot: string): Promise<
   if (root !== path.dirname(targetRoot)) throw new Error('Connection folder moved');
   await mkdir(targetRoot, { recursive: true });
   if (!(await lstat(targetRoot)).isDirectory() || (await lstat(targetRoot)).isSymbolicLink()) throw new Error('Invalid sync folder');
-  const target = path.join(targetRoot, name);
+  const calendar = calendarPath(document);
+  const target = calendar ? await journalDirectory(root, [path.basename(targetRoot), ...calendar]) : path.join(targetRoot, name);
+  const filename = calendar ? path.basename(source) : 'setup.md';
+  if (!safeNoteFilename(filename)) throw new Error('Invalid sync note filename');
   const files = loaded.screenshots.map((shot, index) => ({
     name: document.screenshots?.[index].file ?? 'chart.png', bytes: pngBytes(shot.image),
   }));
-  files.push({ name: 'setup.md', bytes: Buffer.from(markdown) });
+  files.push({ name: filename, bytes: Buffer.from(markdown) });
   let created = false;
   try {
-    try { await mkdir(target); created = true; }
+    try { await mkdir(target); created = !calendar; }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
     const info = await lstat(target);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('Invalid sync target');
-    await recoverAppend(path.join(target, 'setup.md'));
+    await recoverAppend(path.join(target, filename));
     const missing = [];
     let markdownAddition: Buffer | null = null;
     let previousMarkdown: Buffer | null = null;
@@ -134,7 +138,7 @@ export async function copySnapshot(source: string, targetRoot: string): Promise<
         if (!info.isFile() || info.isSymbolicLink() || info.size > file.bytes.length) throw new Error('Sync conflict');
         const existing = await readFile(destination);
         if (existing.equals(file.bytes)) continue;
-        if (file.name !== 'setup.md' || !file.bytes.subarray(0, existing.length).equals(existing)) throw new Error('Sync conflict');
+        if (file.name !== filename || !file.bytes.subarray(0, existing.length).equals(existing)) throw new Error('Sync conflict');
         const earlier = deserializeSetup(existing.toString('utf8'));
         const suffix = file.bytes.subarray(existing.length);
         if (!suffix.toString('utf8').startsWith('\n<!-- tradeframe-screenshot: ') || (earlier.screenshots?.length ?? 1) >= loaded.screenshots.length) throw new Error('Sync conflict');
@@ -150,9 +154,9 @@ export async function copySnapshot(source: string, targetRoot: string): Promise<
       for (const image of files.slice(0, oldCount)) {
         if (missing.includes(image)) await createFile(path.join(target, image.name), image.bytes);
       }
-      await appendDocument(path.join(target, 'setup.md'), previousMarkdown!, markdownAddition, files.slice(0, -1));
+      await appendDocument(path.join(target, filename), previousMarkdown!, markdownAddition, files.slice(0, -1));
     } else for (const file of missing) await createFile(path.join(target, file.name), file.bytes);
-    return path.join(target, 'setup.md');
+    return path.join(target, filename);
   } catch (error) {
     if (created) await rm(target, { recursive: true, force: true });
     throw error;

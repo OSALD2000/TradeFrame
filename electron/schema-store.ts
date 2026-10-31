@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { DEFAULT_SCHEMA, validateSchema } from './form-schema';
+import { DEFAULT_SCHEMA, JOURNAL_SCHEMA, validateSchema } from './form-schema';
 import type { FormSchema } from './form-schema';
 
 export class SchemaStore {
@@ -28,6 +28,7 @@ export class SchemaStore {
       }
       this.db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL;');
       this.remember(DEFAULT_SCHEMA);
+      this.remember(JOURNAL_SCHEMA);
     } catch (error) {
       this.db.close();
       throw error;

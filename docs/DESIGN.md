@@ -91,3 +91,13 @@ Native suggestions include `1m` and `2m`; custom numeric intervals use the same
 input. At narrow widths the two fields stack. Missing timeframes disable save
 and show an inline explanation. Legacy images start empty and explain Save copy.
 This follows the same locked Linear form hierarchy; no additional style source.
+
+## Calendar journal extension
+
+The owner's selected old journal supplies the content reference: market date,
+New York time, session, instrument, direction/model, result/R, and a paragraph
+per image. Reuse the locked Linear layout, native labeled controls and existing
+full-width form below the images. A multiline screenshot note replaces the short
+caption; the required timeframe stays beside it. The new Trading journal form
+is selected for new work; earlier/custom schemas remain selectable and unchanged.
+Keep neutral surfaces and one accent action. No new navigation or visual system.

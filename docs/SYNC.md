@@ -4,7 +4,7 @@ TradeFrame keeps the local journal as the source. Every explicit save creates
 a Markdown/PNG setup copy; later screenshots can append to the same file. Connections deliver that state to any
 combination of Obsidian, Dropbox and OneNote. External edits are not imported,
 overwritten or deleted. Append screenshots preserves existing text/images and extends matching folder
-copies with the same suffix. Save copy creates a new independent setup folder.
+copies with the same suffix. Save copy creates a new independent note.
 
 ## Folder connections
 
@@ -14,12 +14,19 @@ Obsidian and Dropbox can be active together. Target folders are selected using
 the native picker. No filesystem scanning or account discovery takes place.
 
 Obsidian is a [folder of local notes](https://help.obsidian.md/Files+and+folders/Manage+vaults).
-TradeFrame writes each setup into `<vault>/TradeFrame/<setup-folder>/` with relative
-image links. Obsidian needs no plugin. Dropbox receives the same structure under
+Trading journal delivers to `<vault>/TradeFrame/backtesting|live/YYYY/MM/DD/`
+with the same named Markdown and UUID image files as the source. Multiple notes
+can share a day; their locks, images and backups remain independent. Earlier/custom
+forms still use `<vault>/TradeFrame/<setup-folder>/`. All image links are relative. Obsidian needs no plugin. Dropbox receives the same structure under
 `<selected-folder>/TradeFrame/`. The [Dropbox desktop app](https://help.dropbox.com/sync/sync-overview)
 handles cloud synchronization; TradeFrame does not authenticate to Dropbox or
 claim that writing the local Dropbox folder proves cloud delivery. The desktop
 client must be installed, signed in and syncing the selected folder.
+
+If the local journal folder is already in the vault, its files are directly
+visible to Obsidian; connecting the same vault as another destination would
+create an additional copy under TradeFrame. Choose the parent of backtesting/live
+as the local journal root.
 
 The app remembers the local journal folder. The first save asks for it if unset.
 Changing/resetting it does not move old files. Connecting a destination affects

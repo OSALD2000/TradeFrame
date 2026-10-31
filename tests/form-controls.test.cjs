@@ -23,7 +23,7 @@ if (previous.tsx) require.extensions['.tsx'] = previous.tsx; else delete require
 const field = (type, extra = {}) => ({ id: 'test', key: 'test', label: 'Test', type, required: false, tags: [], ...extra });
 const render = (definition, value) => renderToStaticMarkup(React.createElement(FieldInput, { field: definition, value, onChange: () => {} }));
 
-test('each screenshot has an independent required timeframe control and optional caption', () => {
+test('each screenshot has an independent required timeframe control and multiline notes', () => {
   const markup = renderToStaticMarkup(React.createElement(ScreenshotFields, {
     screenshot: { id: 'second', timeframe: '2m', caption: '<entry>' }, busy: false, onTimeframe: () => {}, onCaption: () => {},
   }));
@@ -32,8 +32,9 @@ test('each screenshot has an independent required timeframe control and optional
   assert.match(markup, /value="2m"/);
   assert.match(markup, /<option value="1m"/);
   assert.match(markup, /<option value="2m"/);
-  assert.match(markup, /Caption \(optional\)/);
+  assert.match(markup, /Screenshot notes \(optional\)/);
   assert.match(markup, /&lt;entry&gt;/);
+  assert.match(markup, /<textarea rows="4" maxLength="20000"/);
 });
 
 test('rendered controls preserve false zero empty values and selected options', () => {
