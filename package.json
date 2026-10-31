@@ -1,6 +1,6 @@
 {
   "name": "tradeframe",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A local-first desktop trading journal for capturing charts and documenting setups.",
   "main": "dist-electron/main.js",
@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.electron.json",
     "build": "npm run typecheck && vite build && tsc -p tsconfig.electron.json",
     "start": "npm run build && electron .",
-    "package": "npm run check && node scripts/package.mjs",
+    "package": "npm run check && node scripts/package.mjs && node scripts/verify-package.mjs",
     "check": "npm run build && npm test",
     "test": "node --test --test-isolation=none tests/*.test.cjs"
   },

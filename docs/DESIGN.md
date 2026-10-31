@@ -84,3 +84,10 @@ on focus states/forms informs native labels, visible keyboard focus, inline
 errors and disabled in-flight actions. At narrow widths, destination actions
 wrap below their descriptive text. Native/visual acceptance remains open because
 browser/Electron startup is blocked here by sandbox/socket restrictions.
+
+31 October extension: each image has a labeled required timeframe input beside
+its optional caption, using the existing compact controls and neutral surfaces.
+Native suggestions include `1m` and `2m`; custom numeric intervals use the same
+input. At narrow widths the two fields stack. Missing timeframes disable save
+and show an inline explanation. Legacy images start empty and explain Save copy.
+This follows the same locked Linear form hierarchy; no additional style source.

@@ -10,7 +10,7 @@ export type SetupInput = { schema: FormSchema; values: FormValues };
 export type SaveResult = { status: 'cancelled' } | { status: 'saved'; path: string; sync: SyncJob[]; warning?: string };
 
 export type CaptureSource = { id: string; name: string; image: string };
-export type Screenshot = { id: string; image: string; caption: string; capturedAt: string };
+export type Screenshot = { id: string; image: string; caption: string; capturedAt: string; timeframe: string };
 
 export type CaptureState = {
   barOpen: boolean;
@@ -18,6 +18,7 @@ export type CaptureState = {
   sources: CaptureSource[];
   screenshots: Screenshot[];
   savedPath: string | null;
+  requiresTimeframeCopy: boolean;
   error: string | null;
 };
 
@@ -29,6 +30,7 @@ export type CaptureAPI = {
   discard(): Promise<void>;
   removeScreenshot(id: string): Promise<void>;
   captionScreenshot(id: string, caption: string): Promise<void>;
+  setScreenshotTimeframe(id: string, timeframe: string): Promise<void>;
   newSetup(): Promise<void>;
   showJournal(): Promise<void>;
   saveSetup(input: SetupInput): Promise<SaveResult>;

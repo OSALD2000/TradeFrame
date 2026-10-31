@@ -12,7 +12,7 @@ const values = { mode: 'live', symbol: 'EURUSD', direction: 'long', model: 'Test
   timeframe: '5m', entryTimeNewYork: '2026-10-27T09:30', note: 'Synthetic note\nSecond line' };
 const input = { schema: DEFAULT_SCHEMA, values };
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
-const screenshots = [{ id: 'test', image, caption: '', capturedAt: '2026-10-30T12:00:00.000Z' }];
+const screenshots = [{ id: 'test', image, caption: '', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' }];
 
 test('follow-up screenshots append to the same file, preserve its original bytes and keep a backup', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-append-'));
@@ -20,14 +20,16 @@ test('follow-up screenshots append to the same file, preserve its original bytes
   const file = await writeSetup(root, input, screenshots);
   const original = await fs.readFile(file, 'utf8');
   const loaded = await readSetup(file);
-  const more = [...loaded.screenshots, { ...screenshots[0], id: 'second', caption: '1h follow-up' }];
+  const more = [...loaded.screenshots, { ...screenshots[0], id: 'second', timeframe: '2m', caption: 'Follow-up' }];
   const backup = await appendScreenshots(file, loaded.fingerprint, input, more);
   assert.equal(await fs.readFile(backup, 'utf8'), original);
   assert.ok((await fs.readFile(file, 'utf8')).startsWith(original));
   let reopened = await readSetup(file);
   assert.equal(reopened.screenshots.length, 2);
   assert.deepEqual(reopened.values, values);
-  assert.equal(reopened.screenshots[1].caption, '1h follow-up');
+  assert.equal(reopened.screenshots[1].caption, 'Follow-up');
+  assert.deepEqual(reopened.screenshots.map((shot) => shot.timeframe), ['1m', '2m']);
+  await assert.rejects(appendScreenshots(file, reopened.fingerprint, input, [{ ...more[0], timeframe: '5m' }, more[1]]), /Save copy/);
   await assert.rejects(appendScreenshots(file, loaded.fingerprint, input, more), /changed/);
   await assert.rejects(appendScreenshots(file, reopened.fingerprint, { ...input, values: { ...values, note: 'Changed' } }, [...more, more[1]]), /Save copy/);
   await appendScreenshots(file, reopened.fingerprint, input, [...reopened.screenshots, { ...more[1], id: 'third', caption: 'Exit' }]);
@@ -39,6 +41,46 @@ test('follow-up screenshots append to the same file, preserve its original bytes
   await assert.rejects(appendScreenshots(file, reopened.fingerprint, input, [...reopened.screenshots, more[1]]));
   assert.ok((await fs.readFile(file, 'utf8')).endsWith('External Obsidian note\n'));
   assert.equal((await fs.readFile(path.join(path.dirname(file), 'chart.png'))).toString('base64'), image.split(',')[1]);
+});
+
+test('each screenshot needs a valid timeframe before new files are created', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-timeframe-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const { validTimeframe } = require('../dist-electron/form-schema.js');
+  for (const value of ['1m', '2m', '30s', '4h', '1D', '1W', '1M', '9999m']) assert.equal(validTimeframe(value), true);
+  for (const value of [undefined, '', '0m', '01m', '1', '1mm', '10000m', '1m\n', 1]) {
+    assert.equal(validTimeframe(value), false);
+    await assert.rejects(writeSetup(root, input, [{ ...screenshots[0], timeframe: value }]), /timeframe/);
+  }
+  assert.deepEqual(await fs.readdir(root), []);
+  const file = await writeSetup(root, input, [screenshots[0], { ...screenshots[0], id: 'second', timeframe: '2m' }]);
+  const markdown = await fs.readFile(file, 'utf8');
+  assert.match(markdown, /## Screenshot 1 · 1m/);
+  assert.match(markdown, /## Screenshot 2 · 2m/);
+  assert.throws(() => deserializeSetup(markdown.replace('"timeframe":"2m"', '"timeframe":""')), /timeframe/);
+});
+
+test('version 3 screenshots keep unknown timeframes until an explicit version 4 copy', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-legacy-timeframe-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const { serializeSetup, screenshotAddition } = require('../dist-electron/form-schema.js');
+  const markdown = serializeSetup({ ...input, schemaVersion: 3, createdAt: screenshots[0].capturedAt,
+    screenshots: [{ file: 'chart.png', caption: 'Legacy', capturedAt: screenshots[0].capturedAt }] })
+    + screenshotAddition({ file: 'chart-002.png', caption: 'Old follow-up', capturedAt: screenshots[0].capturedAt }, 1);
+  const file = path.join(root, 'old.md');
+  await fs.writeFile(file, markdown);
+  await fs.writeFile(path.join(root, 'chart.png'), Buffer.from(image.split(',')[1], 'base64'));
+  await fs.writeFile(path.join(root, 'chart-002.png'), Buffer.from(image.split(',')[1], 'base64'));
+  const loaded = await readSetup(file);
+  assert.equal(loaded.screenshots[0].timeframe, '');
+  assert.equal(loaded.screenshots.length, 2);
+  assert.equal(deserializeSetup(markdown).schemaVersion, 3);
+  const assigned = loaded.screenshots.map((shot) => ({ ...shot, timeframe: '2m' }));
+  await assert.rejects(appendScreenshots(file, loaded.fingerprint, input, assigned), /Save copy/);
+  const copy = await writeSetup(root, input, assigned);
+  assert.match(await fs.readFile(copy, 'utf8'), /schemaVersion: 4/);
+  assert.equal((await readSetup(copy)).screenshots[0].timeframe, '2m');
+  assert.equal(await fs.readFile(file, 'utf8'), markdown);
 });
 
 test('multiple screenshots round trip in one Markdown file and follow-up saves preserve the original', async (t) => {
@@ -98,7 +140,7 @@ test('each save creates its own Markdown and PNG without changing existing files
   assert.equal(path.dirname(path.dirname(first)), root);
   assert.equal(await fs.readFile(path.join(root, 'setup.md'), 'utf8'), 'Existing journal');
   const markdown = await fs.readFile(first, 'utf8');
-  assert.match(markdown, /schemaVersion: 3/);
+  assert.match(markdown, /schemaVersion: 4/);
   assert.ok(markdown.includes(`symbol: ${JSON.stringify(setup.values.symbol)}`));
   assert.deepEqual(deserializeSetup(markdown).values, setup.values);
   assert.ok(markdown.endsWith(`${values.note}\n`));

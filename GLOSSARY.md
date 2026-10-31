@@ -53,3 +53,9 @@ _Avoid_: Formula for a visibility rule.
 A later chart view added to an already documented setup, preserving its earlier
 views and reasoning.
 _Avoid_: New setup when only adding another view of the same opportunity.
+
+**Screenshot timeframe**:
+The chart interval recorded for one captured view, such as 1m or 2m. Every new
+saved image requires its own interval. A form's setup-level timeframe answer
+remains independent; earlier files may have no recorded image interval.
+_Avoid_: Caption as a substitute for the structured timeframe.

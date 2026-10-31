@@ -86,7 +86,7 @@ test('OneNote sends escaped fields and all images; retry after a lost response f
   const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
   const file = await writeSetup(root, { schema: DEFAULT_SCHEMA, values: {
     mode: 'live', symbol: 'TEST', direction: 'long', model: 'Synthetic', timeframe: '5m', entryTimeNewYork: '', note: '<script>synthetic</script>\nSecond line',
-  } }, [1, 2].map((id) => ({ id: String(id), image, caption: '5m <entry>', capturedAt: '2026-10-30T12:00:00.000Z' })));
+  } }, [1, 2].map((id) => ({ id: String(id), image, caption: 'Entry <entry>', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: `${id}m` })));
   let now = 0;
   let created = false;
   let posts = 0;
@@ -103,6 +103,7 @@ test('OneNote sends escaped fields and all images; retry after a lost response f
     assert.match(html, /&lt;entry&gt;/);
     assert.doesNotMatch(html, /<script>/);
     assert.match(html, /src="name:chart0"/); assert.match(html, /src="name:chart1"/);
+    assert.match(html, /Screenshot 1 · 1m/); assert.match(html, /Screenshot 2 · 2m/);
     assert.equal(options.body.get('chart0').type, 'image/png');
     assert.equal(options.body.get('chart1').size, Buffer.from(image.split(',')[1], 'base64').length);
     title = /<title>(.*?)<\/title>/.exec(html)[1];

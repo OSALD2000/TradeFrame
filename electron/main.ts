@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import type { CaptureState, CaptureSource } from './capture-types';
-import { MAX_SCREENSHOTS } from './form-schema';
+import { MAX_SCREENSHOTS, validTimeframe } from './form-schema';
 import { validateSetup, writeSetup, readSetup, appendScreenshots, pngBytes } from './journal';
 import { SchemaStore } from './schema-store';
 import { ConnectionStore, folderKind } from './connections';
@@ -45,7 +45,7 @@ function oneNoteClient() {
   return oneNote = new OneNoteClient(app.getPath('userData'), safeStorage, clientId);
 }
 const deliverOneNote = (file: string, section: string, id: string) => oneNoteClient().deliver(file, section, id);
-let state: CaptureState = { barOpen: false, busy: false, sources: [], screenshots: [], savedPath: null, error: null };
+let state: CaptureState = { barOpen: false, busy: false, sources: [], screenshots: [], savedPath: null, requiresTimeframeCopy: false, error: null };
 let savedFingerprint = '';
 let capturedAt = '';
 const images = new Map<string, Buffer>();
@@ -62,7 +62,7 @@ function appendScreenshot(source: CaptureSource) {
   if (state.screenshots.length >= MAX_SCREENSHOTS) throw new Error('A setup can contain up to 20 screenshots');
   const bytes = [...state.screenshots, source].reduce((sum, shot) => sum + images.get(shot.image)!.length, 0);
   if (bytes > 128_000_000) throw new Error('Screenshots exceed 128 MB');
-  state.screenshots.push({ id: randomUUID(), image: source.image, caption: '', capturedAt });
+  state.screenshots.push({ id: randomUUID(), image: source.image, caption: '', timeframe: '', capturedAt });
   state.sources = [];
 }
 
@@ -183,7 +183,7 @@ function registerCapture() {
   ipcMain.handle('journal:new', (event) => {
     assertSender(event, journal);
     if (state.busy) throw new Error('Wait for the current operation to finish');
-    state = { ...state, sources: [], screenshots: [], savedPath: null, error: null };
+    state = { ...state, sources: [], screenshots: [], savedPath: null, requiresTimeframeCopy: false, error: null };
     savedFingerprint = '';
     publish();
   });
@@ -265,7 +265,7 @@ function registerCapture() {
       if (journal !== owner) return null;
       schemaStore().remember(loaded.schema);
       const screenshots = loaded.screenshots.map((shot) => ({ ...shot, image: cacheImage(shot.image) }));
-      state = { ...state, sources: [], screenshots, savedPath: selection.filePaths[0], error: null };
+      state = { ...state, sources: [], screenshots, savedPath: selection.filePaths[0], requiresTimeframeCopy: loaded.screenshots.some((shot) => !shot.timeframe), error: null };
       savedFingerprint = loaded.fingerprint;
       return { schema: loaded.schema, values: loaded.values };
     } finally {
@@ -278,6 +278,7 @@ function registerCapture() {
     if (!owner || state.busy || !state.screenshots.length || state.sources.length) {
       throw new Error('Choose a screenshot before saving');
     }
+    if (!state.screenshots.every((shot) => validTimeframe(shot.timeframe))) throw new Error('Choose a timeframe for every screenshot before saving');
     const setup = validateSetup(input);
     schemaStore().remember(setup.schema);
     const screenshots = state.screenshots.map((shot) => ({ ...shot, image: `data:image/png;base64,${images.get(shot.image)!.toString('base64')}` }));
@@ -302,6 +303,7 @@ function registerCapture() {
         savedPath = state.savedPath;
       } else savedPath = await writeSetup(folder!, setup, screenshots);
       state.savedPath = savedPath;
+      state.requiresTimeframeCopy = false;
       savedFingerprint = (await readSetup(savedPath)).fingerprint;
       try {
         const oneNoteState = await oneNoteClient().getState();
@@ -358,6 +360,13 @@ function registerCapture() {
     shot.caption = caption;
     publish();
   });
+  ipcMain.handle('capture:timeframe', (event, id: unknown, timeframe: unknown) => {
+    assertSender(event, journal);
+    const shot = state.screenshots.find((shot) => shot.id === id);
+    if (state.busy || !shot || typeof timeframe !== 'string' || timeframe.length > 5 || /[\r\n\0]/.test(timeframe)) throw new Error('Invalid screenshot timeframe');
+    shot.timeframe = timeframe;
+    publish();
+  });
   ipcMain.handle('capture:journal', (event) => {
     assertSender(event);
     if (!state.busy) showJournal();
@@ -385,7 +394,7 @@ function createWindow() {
   window.on('closed', () => {
     journal = null;
     bar?.close();
-    state = { barOpen: false, busy: false, sources: [], screenshots: [], savedPath: null, error: null };
+    state = { barOpen: false, busy: false, sources: [], screenshots: [], savedPath: null, requiresTimeframeCopy: false, error: null };
     savedFingerprint = '';
     images.clear();
   });

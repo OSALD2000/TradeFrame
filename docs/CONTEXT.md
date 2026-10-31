@@ -10,7 +10,7 @@ no private journals or account data were opened.
 ## Implemented state
 
 - Floating capture bar, native source snapshots, source selection, up to 20
-  ordered screenshots per setup, optional captions, capture timestamps and removal.
+  ordered screenshots per setup, required per-image timeframes, optional captions, capture timestamps and removal.
   The journal stays visible; the mapped bar becomes transparent during capture.
 - Native image bytes stay in memory behind opaque `tradeframe-image:` URLs.
   IPC updates carry image URLs rather than retransmitting PNG data. Removing a
@@ -23,8 +23,10 @@ no private journals or account data were opened.
   fingerprint, writes a Markdown backup and stages complete files before a
   durable recovery record. Reopening/retrying resumes only the verified missing
   suffix, waits for live writers and preserves external conflicts. Save copy remains available for changes to earlier fields or images.
-- Version-3 Markdown includes ordered screenshot references; later captures can
-  be validated append-only blocks. Versions 1 and 2 remain readable. Unknown or
+- Version-4 Markdown requires a timeframe on every screenshot reference and
+  renders it in the image heading. Versions 1–3 remain readable unchanged; missing
+  timeframes require an explicit Save copy before appending. Later captures can
+  be validated append-only blocks. Unknown or
   contradictory content is rejected. Details: [JOURNAL](JOURNAL.md).
 - Forms support eight field types, stable IDs, keys/tags, choices and conditional
   visibility. Only definitions live in SQLite. The DB is now in Electron's
@@ -41,8 +43,10 @@ no private journals or account data were opened.
   OneNote creates a new page per saved delivery, including a follow-up delivery.
 - Packaging produces native runtime archives/checksums; Linux also builds a
   Debian installer with a desktop entry and sandbox metadata. No dependency was
-  added. The lockfile was reviewed and adopted; CI uses npm ci. A manual package
-  workflow builds artifacts on three OS runners without publishing releases.
+  added. The lockfile was reviewed and adopted; CI uses npm ci. Packaging targets
+  Windows x64, Linux x64 and macOS arm64/x64 on four native runners. Each runs
+  build/tests and checks the packaged Electron/SQLite runtime. Tag builds prepare
+  one draft release only after all jobs and checksums pass; publication stays manual.
 
 ## Code ownership
 
@@ -89,7 +93,7 @@ the user; installing the Debian package supplies root ownership and mode 4755.
 This confirms the current Linux installer launch. Capture, multi-image save/open/
 append, layout and actual connected-service delivery still need native acceptance.
 
-The current recovery build passes 59 automated tests. Child processes stop before
+The 30 October recovery build passed 59 automated tests. Child processes stop before
 image installation, midway through a suffix and after the suffix is complete;
 reopening and delivery retry finish exactly once. Live writers are checked through
 process liveness and left alone. Old empty records and changed recovery/source
@@ -107,3 +111,16 @@ hashes match the source, as do the typed field values. Simultaneous folder deliv
 is therefore verified. Image contents were not inspected. Visible previews,
 reopening inside the UI, actual Obsidian rendering, Dropbox cloud delivery and
 OneNote authorization remain unconfirmed by these local folder checks.
+
+31 October timeframe/release update: version 0.2.0 passes the build and 67 tests,
+including distinct required image timeframes, legacy appended-file reading,
+explicit Save copy, native IPC/save enforcement and OneNote image headings. The
+Linux archive and Debian installer were built; embedded Electron 45.0.0/SQLite,
+checksums, compiled modules, public contents, offline guide links and Debian
+sandbox ownership/mode were verified. The four-runner workflow YAML and shell
+syntax were checked. Synthetic release checks reject missing platforms, changed
+checksums, mismatched tags and edits to published releases, and allow draft
+creation/update. Windows/macOS runner execution and artifacts remain pending
+until the owner pushes. No push, release creation or publication occurred here.
+Cloud/OneNote account acceptance is deferred at the owner's request. Desktop
+layout and native use of the new timeframe controls still need owner acceptance.

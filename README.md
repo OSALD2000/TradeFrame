@@ -8,7 +8,7 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 ## Current preview
 
 - Floating capture bar and native screen/window selection.
-- Up to 20 screenshots, captions and capture timestamps in one setup Markdown.
+- Up to 20 screenshots, each with a required timeframe, optional caption and capture timestamp in one setup Markdown.
 - Save/reopen, append follow-up screenshots to the same file with a Markdown
   backup and prepared crash recovery, or save a separate copy to change earlier fields/images.
 - Configurable forms: eight input types, keys/tags, choices and visibility rules.
@@ -16,8 +16,9 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 - Remembered journal folder and simultaneous Obsidian/Dropbox folder connections,
   with persisted delivery jobs, explicit retry and protection for external edits.
 - OneNote device sign-in and multi-image page delivery through Microsoft Graph.
-- Downloadable runtime archives, Linux Debian installer and SHA-256 checksums;
-  a manual workflow prepares Windows/macOS/Linux artifacts without publishing.
+- Packaging targets Windows x64, Linux x64 (also Debian),
+  and macOS Apple Silicon/Intel, with SHA-256 checksums. All four builds must pass
+  before a draft release is prepared. Windows/macOS artifacts await the first workflow run.
 
 This is an early preview. Build/tests pass; native capture, layout, installer
 launch, real cloud delivery and other operating systems still need acceptance.
@@ -45,7 +46,9 @@ those systems. The archive includes public guides with working relative links.
 ## Journal workflow
 
 Click **Capture chart**, then **Screenshot** on the floating bar. Choose a source
-if prompted. Each capture adds a view; captions can identify its timeframe.
+if prompted. Each capture adds a view. Choose its **Timeframe (required)**, such
+as `1m`, `2m` or `1h`; add an optional caption for its purpose. Every image needs
+its own timeframe before saving. The setup-level Timeframe field remains separate.
 Remove individual draft images or use **New setup** to clear the current setup.
 The bar stays open until closed from the journal or with **×**.
 
@@ -56,6 +59,10 @@ Capture another view and **Append screenshots** to extend that same file while
 preserving its original bytes and creating a Markdown backup. Earlier values
 and images must stay unchanged; **Save copy** creates a new setup directory for
 those edits. Never use a real journal to test failure/recovery behavior.
+
+Older files still open unchanged. Choose the missing image timeframes and use
+**Save copy** once to create a version-4 file; future screenshots can append to
+that copy. Timeframes are never guessed from captions or setup fields.
 
 Closing/reloading a populated draft asks before discarding it. A crash can lose
 unsaved drafts. Prepared screenshot appends resume when reopened or retried;

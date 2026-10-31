@@ -8,20 +8,24 @@ export type FieldDefinition = {
   tags: string[]; options?: FieldOption[]; when?: { fieldId: string; equals: FieldValue };
 };
 export type FormSchema = { formatVersion: 1; id: string; revision: number; name: string; fields: FieldDefinition[] };
-export type ScreenshotReference = { file: string; caption: string; capturedAt: string };
-export type SetupDocument = { schema: FormSchema; values: FormValues; createdAt: string; screenshots?: ScreenshotReference[] };
+export type ScreenshotReference = { file: string; caption: string; capturedAt: string; timeframe?: string };
+export type SetupDocument = { schema: FormSchema; values: FormValues; createdAt: string; screenshots?: ScreenshotReference[]; schemaVersion?: 2 | 3 | 4 };
 export const MAX_SCREENSHOTS = 20;
+export const TIMEFRAME_PATTERN = '[1-9][0-9]{0,3}[smhDWM]';
+export const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '45m', '1h', '2h', '4h', '1D', '1W', '1M'];
+export const validTimeframe = (value: unknown): value is string => typeof value === 'string' && new RegExp(`^${TIMEFRAME_PATTERN}$`).test(value);
 
-export function validateScreenshots(input: unknown): ScreenshotReference[] {
+export function validateScreenshots(input: unknown, requireTimeframe = false): ScreenshotReference[] {
   check(Array.isArray(input) && input.length > 0 && input.length <= MAX_SCREENSHOTS, 'A setup needs 1–20 screenshots');
   return input.map((item, index) => {
     check(record(item), 'Invalid screenshot metadata');
-    keys(item, ['file', 'caption', 'capturedAt']);
+    keys(item, ['file', 'caption', 'capturedAt', 'timeframe']);
     check(item.file === screenshotFile(index), 'Invalid screenshot filename or order');
     check(typeof item.caption === 'string' && item.caption.length <= 200 && !/[\r\n\0]/.test(item.caption), 'Invalid screenshot caption');
     check(typeof item.capturedAt === 'string' && Number.isFinite(Date.parse(item.capturedAt))
       && new Date(item.capturedAt).toISOString() === item.capturedAt, 'Invalid screenshot timestamp');
-    return { file: item.file, caption: item.caption, capturedAt: item.capturedAt };
+    check((!requireTimeframe && item.timeframe === undefined) || validTimeframe(item.timeframe), 'Every screenshot needs a timeframe such as 1m, 2m or 1h');
+    return { file: item.file, caption: item.caption, capturedAt: item.capturedAt, ...(item.timeframe === undefined ? {} : { timeframe: item.timeframe as string }) };
   });
 }
 
@@ -30,7 +34,7 @@ export function screenshotFile(index: number): string {
 }
 
 function renderScreenshot(shot: ScreenshotReference, index: number): string {
-  return `## Screenshot ${index + 1}\n\n![Chart ${index + 1}](${shot.file})\n\n${shot.caption ? `${shot.caption}\n\n` : ''}Captured: ${shot.capturedAt}\n\n`;
+  return `## Screenshot ${index + 1}${shot.timeframe ? ` · ${shot.timeframe}` : ''}\n\n![Chart ${index + 1}](${shot.file})\n\n${shot.caption ? `${shot.caption}\n\n` : ''}Captured: ${shot.capturedAt}\n\n`;
 }
 
 export function screenshotAddition(shot: ScreenshotReference, index: number): string {
@@ -207,8 +211,11 @@ export function serializeSetup(document: SetupDocument): string {
   check(typeof document.createdAt === 'string' && Number.isFinite(Date.parse(document.createdAt))
     && new Date(document.createdAt).toISOString() === document.createdAt, 'Invalid creation timestamp');
   const exportedTags = valueTags(schema, values);
-  const screenshots = document.screenshots === undefined ? undefined : validateScreenshots(document.screenshots);
-  const metadata: Record<string, unknown> = { schemaVersion: screenshots ? 3 : 2, createdAt: document.createdAt,
+  const version = document.schemaVersion ?? (document.screenshots ? 4 : 2);
+  check([2, 3, 4].includes(version), 'Unsupported setup version');
+  const screenshots = document.screenshots === undefined ? undefined : validateScreenshots(document.screenshots, version === 4);
+  check((version >= 3) === !!screenshots, 'Setup version does not match screenshot metadata');
+  const metadata: Record<string, unknown> = { schemaVersion: version, createdAt: document.createdAt,
     tradeframe: { formatVersion: 1, schema, ...(screenshots ? { screenshots } : {}) }, tags: exportedTags };
   for (const field of schema.fields) if (Object.hasOwn(values, field.id)) metadata[field.key] = values[field.id];
   const notes = schema.fields.filter((field) => field.type === 'textarea' && typeof values[field.id] === 'string')
@@ -241,9 +248,9 @@ function deserializeBase(markdown: string): SetupDocument {
     values.note = notes[1].replace(/\r?\n$/, '');
     return { schema: validateSchema(DEFAULT_SCHEMA), values: validateValues(DEFAULT_SCHEMA, values), createdAt: metadata.createdAt };
   }
-  check((metadata.schemaVersion === 2 || metadata.schemaVersion === 3) && record(metadata.tradeframe) && metadata.tradeframe.formatVersion === 1, 'Unsupported setup format');
-  keys(metadata.tradeframe, metadata.schemaVersion === 3 ? ['formatVersion', 'schema', 'screenshots'] : ['formatVersion', 'schema']);
-  const screenshots = metadata.schemaVersion === 3 ? validateScreenshots(metadata.tradeframe.screenshots) : undefined;
+  check((metadata.schemaVersion === 2 || metadata.schemaVersion === 3 || metadata.schemaVersion === 4) && record(metadata.tradeframe) && metadata.tradeframe.formatVersion === 1, 'Unsupported setup format');
+  keys(metadata.tradeframe, metadata.schemaVersion >= 3 ? ['formatVersion', 'schema', 'screenshots'] : ['formatVersion', 'schema']);
+  const screenshots = metadata.schemaVersion >= 3 ? validateScreenshots(metadata.tradeframe.screenshots, metadata.schemaVersion === 4) : undefined;
   const schema = validateSchema(metadata.tradeframe.schema);
   check(Object.keys(metadata).every((key) => ['schemaVersion', 'createdAt', 'tradeframe', 'tags', ...schema.fields.map((field) => field.key)].includes(key)), 'Unknown Markdown field');
   const values: FormValues = Object.fromEntries(schema.fields.filter((field) => Object.hasOwn(metadata, field.key))
@@ -251,7 +258,8 @@ function deserializeBase(markdown: string): SetupDocument {
   const validated = validateValues(schema, values);
   check(Object.keys(validated).length === Object.keys(values).length, 'Hidden field values must not be saved');
   check(JSON.stringify(metadata.tags) === JSON.stringify(valueTags(schema, validated)), 'Markdown tags do not match the schema values');
-  const document = { schema, values: validated, createdAt: metadata.createdAt, ...(screenshots ? { screenshots } : {}) };
+  const document: SetupDocument = { schema, values: validated, createdAt: metadata.createdAt,
+    ...(metadata.schemaVersion >= 3 ? { schemaVersion: metadata.schemaVersion } : {}), ...(screenshots ? { screenshots } : {}) };
   const canonical = serializeSetup(document);
   const body = canonical.slice(canonical.indexOf('\n---\n') + '\n---\n'.length);
   check(body.replace(/\r\n/g, '\n') === match[2].replace(/\r\n/g, '\n'), 'Markdown body does not match its field values');
@@ -269,7 +277,7 @@ function readWithAdditions(markdown: string, depth: number): SetupDocument {
     if (!header) throw error;
     const document = readWithAdditions(markdown.slice(0, marker), depth + 1);
     const previous = document.screenshots ?? [{ file: 'chart.png', caption: '', capturedAt: document.createdAt }];
-    const screenshots = validateScreenshots([...previous, JSON.parse(header[1])]);
+    const screenshots = validateScreenshots([...previous, JSON.parse(header[1])], document.schemaVersion === 4);
     if (screenshotAddition(screenshots.at(-1)!, previous.length).replace(/\r\n/g, '\n') !== addition.replace(/\r\n/g, '\n')) throw new Error('Invalid appended screenshot');
     return { ...document, screenshots };
   }

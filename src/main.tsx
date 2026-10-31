@@ -4,6 +4,8 @@ import { useCapture } from './capture';
 import { CaptureBar } from './CaptureBar';
 import { SetupForm } from './SetupForm';
 import { Connections } from './Connections';
+import { ScreenshotFields } from './ScreenshotFields';
+import { validTimeframe } from '../electron/form-schema';
 
 function App() {
   const { state, api, run, error } = useCapture();
@@ -71,9 +73,9 @@ function App() {
                     <button className="secondary-button" disabled={state.busy} aria-label={`Remove screenshot ${index + 1}`} onClick={() => api && run(() => api.removeScreenshot(shot.id))}>Remove</button>
                   </div>
                   <img className="preview-image" src={shot.image} alt={`Chart screenshot ${index + 1}${shot.caption ? `: ${shot.caption}` : ''}`} />
-                  <label className="screenshot-caption">Caption (optional)
-                    <input maxLength={200} disabled={state.busy} value={shot.caption} placeholder="For example, 15m entry or 1h follow-up…" onChange={(event) => api && run(() => api.captionScreenshot(shot.id, event.target.value))} />
-                  </label>
+                  <ScreenshotFields screenshot={shot} busy={state.busy}
+                    onTimeframe={(timeframe) => api && run(() => api.setScreenshotTimeframe(shot.id, timeframe))}
+                    onCaption={(caption) => api && run(() => api.captionScreenshot(shot.id, caption))} />
                 </article>)}</div>
                 <div className="preview-actions">
                   <button className="secondary-button" disabled={state.busy || state.screenshots.length >= 20} onClick={() => api && run(api.openBar)}>Add screenshot</button>
@@ -95,7 +97,8 @@ function App() {
             </section>}
             <section className="setup-details" hidden={state.sources.length > 0} aria-labelledby="details-title">
               <h2 id="details-title">Setup details</h2>
-              <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} hasPreview={state.screenshots.length > 0} savedPath={state.savedPath} />
+              <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} hasPreview={state.screenshots.length > 0} savedPath={state.savedPath}
+                timeframesReady={state.screenshots.every((shot) => validTimeframe(shot.timeframe))} requiresTimeframeCopy={state.requiresTimeframeCopy} />
             </section>
             <Connections api={api} busy={state.busy} />
             <footer className="journal-footer"><span>Saved setups stay in your chosen folder</span><span>Capture the chart. Remember the trade.</span></footer>

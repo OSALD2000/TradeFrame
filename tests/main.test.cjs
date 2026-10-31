@@ -83,6 +83,13 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
   return { app, windows, handlers, invoke };
 }
 
+async function captureReady(invoke, windows) {
+  await invoke('capture:screenshot', windows[1]);
+  for (const shot of (await invoke('capture:state')).screenshots) {
+    if (!shot.timeframe) await invoke('capture:timeframe', windows[0], shot.id, '1m');
+  }
+}
+
 test('startup loads only local UI with isolation and blocks navigation/new windows', async () => {
   const { app, windows: [window] } = await boot();
   assert.equal(window.file, path.resolve(__dirname, '../dist/index.html'));
@@ -173,7 +180,7 @@ test('empty thumbnails restore the journal with an actionable error', async () =
   empty.thumbnail.isEmpty = () => true;
   const { windows, invoke } = await boot(async () => [empty]);
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   const state = await invoke('capture:state');
   assert.equal(state.screenshots.length, 0);
   assert.equal(state.sources.length, 0);
@@ -187,7 +194,7 @@ test('empty thumbnails restore the journal with an actionable error', async () =
 test('image URLs serve only current in-memory PNGs and state updates do not transmit image bytes', async () => {
   const { windows, handlers, invoke } = await boot();
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   const state = await invoke('capture:state');
   const url = state.screenshots[0].image;
   assert.ok(JSON.stringify(state).length < 1000);
@@ -213,14 +220,36 @@ test('OneNote operations and login browser are unavailable to the capture bar', 
   await assert.rejects(invoke('onenote:browser'), /Start OneNote sign-in/);
 });
 
+test('native save requires an explicitly chosen timeframe for every screenshot', async () => {
+  let dialogs = 0;
+  const { windows, invoke } = await boot(undefined, async () => { dialogs++; return { canceled: true, filePaths: [] }; });
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1]);
+  await invoke('capture:screenshot', windows[1]);
+  const shots = (await invoke('capture:state')).screenshots;
+  assert.deepEqual(Array.from(shots, (shot) => shot.timeframe), ['', '']);
+  await assert.rejects(invoke('capture:timeframe', windows[1], shots[0].id, '1m'), /Untrusted/);
+  for (const value of [null, '100000m', '1m\n']) await assert.rejects(invoke('capture:timeframe', windows[0], shots[0].id, value), /Invalid/);
+  await assert.rejects(invoke('capture:timeframe', windows[0], 'unknown', '1m'), /Invalid/);
+  await invoke('capture:timeframe', windows[0], shots[0].id, '1');
+  await assert.rejects(invoke('journal:save', windows[0], setupInput()), /timeframe/);
+  await invoke('capture:timeframe', windows[0], shots[0].id, '1m');
+  await assert.rejects(invoke('journal:save', windows[0], setupInput()), /timeframe/);
+  assert.equal(dialogs, 0, 'Validation precedes the folder picker');
+  await invoke('capture:timeframe', windows[0], shots[1].id, '2m');
+  assert.deepEqual(Array.from((await invoke('capture:state')).screenshots, (shot) => shot.timeframe), ['1m', '2m']);
+  assert.equal((await invoke('journal:save', windows[0], setupInput())).status, 'cancelled');
+  assert.equal(dialogs, 1);
+});
+
 test('repeated captures append distinct screenshots and validate caption/removal commands', async () => {
   const { windows, invoke } = await boot();
   await invoke('capture:open-bar');
-  for (let i = 0; i < 20; i++) await invoke('capture:screenshot', windows[1]);
+  for (let i = 0; i < 20; i++) await captureReady(invoke, windows);
   const shots = (await invoke('capture:state')).screenshots;
   assert.equal(shots.length, 20);
   assert.equal(new Set(shots.map((shot) => shot.id)).size, 20);
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   assert.equal((await invoke('capture:state')).screenshots.length, 20);
   assert.match((await invoke('capture:state')).error, /20 screenshots/);
   await assert.rejects(invoke('capture:caption', windows[1], shots[0].id, 'Wrong window'), /Untrusted/);
@@ -230,7 +259,7 @@ test('repeated captures append distinct screenshots and validate caption/removal
   assert.equal((await invoke('capture:state')).screenshots[0].caption, '5m entry');
   await invoke('capture:remove', windows[0], shots[1].id);
   assert.equal((await invoke('capture:state')).screenshots.length, 19);
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   assert.equal((await invoke('capture:state')).screenshots.length, 20);
   await assert.rejects(invoke('journal:new', windows[1]), /Untrusted/);
   await invoke('journal:new');
@@ -243,16 +272,16 @@ test('source selection rejects stale ids and cancellation keeps the previous pre
     ? [source('screen:0:0')]
     : [source('screen:0:0'), source('window:42:0')]);
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   assert.equal((await invoke('capture:state')).sources.length, 2);
   await assert.rejects(invoke('capture:choose', windows[0], 'window:unknown:0'), /no longer available/);
   await assert.rejects(invoke('capture:choose', windows[0], { id: 'screen:0:0' }), /Invalid/);
   await invoke('capture:discard');
   assert.equal((await invoke('capture:state')).screenshots.length, 1);
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   await invoke('capture:choose', windows[0], 'window:42:0');
   assert.equal((await invoke('capture:state')).screenshots.length, 2);
   assert.equal(windows[1].visible, true, 'Selecting a snapshot keeps the bar open');
@@ -265,9 +294,9 @@ test('permission failure restores the journal and preserves an earlier screensho
     return [source('screen:0:0')];
   });
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   const state = await invoke('capture:state');
   assert.equal(state.screenshots.length, 1);
   assert.match(state.error, /cancelled or screen access/);
@@ -303,7 +332,7 @@ test('duplicate capture requests do not start parallel captures', async () => {
   await invoke('capture:open-bar');
   const first = invoke('capture:screenshot', windows[1]);
   await new Promise(setImmediate);
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   assert.equal(calls, 1);
   resolve([source('screen:0:0')]);
   await first;
@@ -354,7 +383,7 @@ test('saving requires a journal screenshot and cancellation preserves it while b
   const input = setupInput();
   await assert.rejects(invoke('journal:save', windows[0], input), /Choose a screenshot/);
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   await assert.rejects(invoke('journal:save', windows[1], input), /Untrusted/);
   await assert.rejects(invoke('journal:save', windows[0], setupInput({ symbol: '' })), /Symbol/);
   const pending = invoke('journal:save', windows[0], input);
@@ -370,7 +399,7 @@ test('saving requires a journal screenshot and cancellation preserves it while b
 test('save failures preserve the preview and unlock the controls for retry', async () => {
   const { windows, invoke } = await boot(undefined, async () => { throw new Error('Synthetic folder failure'); });
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   await assert.rejects(invoke('journal:save', windows[0], setupInput({ mode: 'backtest', direction: 'short' })), /Could not save/);
   assert.equal((await invoke('capture:state')).screenshots.length, 1);
   assert.equal((await invoke('capture:state')).busy, false);
@@ -389,7 +418,7 @@ test('journal save writes the selected native snapshot to the chosen folder', as
     return { canceled: false, filePaths: [root] };
   });
   await invoke('capture:open-bar');
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   const saved = await invoke('journal:save', windows[0], setupInput({ note: 'Synthetic' }));
   assert.equal(saved.status, 'saved');
   assert.equal(path.dirname(path.dirname(saved.path)), root);
@@ -417,7 +446,7 @@ test('opening a setup restores its schema values and image without modifying the
   const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-open-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
-  const file = await require('../dist-electron/journal.js').writeSetup(root, setupInput({ note: 'Restore 🕯' }), [{ id: 'test', image, caption: 'Entry', capturedAt: '2026-10-30T12:00:00.000Z' }]);
+  const file = await require('../dist-electron/journal.js').writeSetup(root, setupInput({ note: 'Restore 🕯' }), [{ id: 'test', image, caption: 'Entry', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' }]);
   const original = await fs.readFile(file, 'utf8');
   const { windows, invoke, app } = await boot(undefined, async (_, options) => {
     assert.ok(options.properties.includes('openFile'));
@@ -431,6 +460,36 @@ test('opening a setup restores its schema values and image without modifying the
   assert.equal(await fs.readFile(file, 'utf8'), original);
   assert.equal((await invoke('forms:list')).length, 1);
   app.emit('will-quit');
+});
+
+test('legacy opening requires a separate timeframe copy and enables appending only after saving it', async (t) => {
+  const fs = require('node:fs/promises');
+  const { serializeSetup } = require('../dist-electron/form-schema.js');
+  const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-legacy-copy-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const file = path.join(root, 'old.md');
+  const input = setupInput();
+  const original = serializeSetup({ ...input, schemaVersion: 3, createdAt: '2026-10-30T12:00:00.000Z',
+    screenshots: [{ file: 'chart.png', caption: 'Legacy', capturedAt: '2026-10-30T12:00:00.000Z' }] });
+  await fs.writeFile(file, original);
+  await fs.writeFile(path.join(root, 'chart.png'), Buffer.from(source('synthetic').thumbnail.toDataURL().split(',')[1], 'base64'));
+  const { windows, invoke } = await boot(undefined, async (_, options) => ({ canceled: false,
+    filePaths: [options.properties.includes('openFile') ? file : root] }));
+  await invoke('journal:open');
+  let state = await invoke('capture:state');
+  assert.equal(state.requiresTimeframeCopy, true);
+  assert.equal(state.screenshots[0].timeframe, '');
+  await invoke('capture:timeframe', windows[0], state.screenshots[0].id, '2m');
+  await assert.rejects(invoke('journal:append', windows[0], input), /Could not append/);
+  const copy = await invoke('journal:save', windows[0], input);
+  assert.notEqual(copy.path, file);
+  state = await invoke('capture:state');
+  assert.equal(state.requiresTimeframeCopy, false);
+  assert.equal(state.savedPath, copy.path);
+  await invoke('capture:open-bar');
+  await captureReady(invoke, windows);
+  assert.equal((await invoke('journal:append', windows[0], input)).path, copy.path);
+  assert.equal(await fs.readFile(file, 'utf8'), original);
 });
 
 test('folder connections are journal-only and save sends all screenshots to both targets', async (t) => {
@@ -448,12 +507,12 @@ test('folder connections are journal-only and save sends all screenshots to both
   await assert.rejects(invoke('connections:folder', windows[0], 'arbitrary'), /Invalid/);
   await invoke('connections:folder', windows[0], 'obsidian');
   await invoke('connections:folder', windows[0], 'dropbox');
-  for (let i = 0; i < 2; i++) await invoke('capture:screenshot', windows[1]);
+  for (let i = 0; i < 2; i++) await captureReady(invoke, windows);
   const saved = await invoke('journal:save', windows[0], setupInput());
   assert.equal(saved.sync.length, 2);
   assert.ok(saved.sync.every((job) => job.status === 'synced'));
   assert.equal((await invoke('connections:get')).folders.journal, folders[2]);
-  await invoke('capture:screenshot', windows[1]);
+  await captureReady(invoke, windows);
   const appended = await invoke('journal:append', windows[0], setupInput());
   assert.equal(appended.path, saved.path);
   assert.equal((await require('../dist-electron/journal.js').readSetup(saved.path)).screenshots.length, 3);

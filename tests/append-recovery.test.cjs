@@ -11,7 +11,7 @@ const { DEFAULT_SCHEMA } = require('../dist-electron/form-schema.js');
 const { createFile } = require('../dist-electron/append-store.js');
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 const input = { schema: DEFAULT_SCHEMA, values: { mode: 'live', symbol: 'TEST', direction: 'long', model: 'Synthetic', timeframe: '5m', entryTimeNewYork: '', note: 'Keep all original text 🕯' } };
-const screenshot = { id: 'test', image, caption: 'Entry', capturedAt: '2026-10-30T12:00:00.000Z' };
+const screenshot = { id: 'test', image, caption: 'Entry', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' };
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-recovery-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

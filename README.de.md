@@ -8,7 +8,7 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 ## Aktuelle Vorschau
 
 - Schwebende Aufnahmeleiste und native Bildschirm-/Fensterauswahl.
-- Bis zu 20 Screenshots mit Beschriftung und Aufnahmezeit in einer Setup-Markdown-Datei.
+- Bis zu 20 Screenshots mit jeweils verpflichtendem Timeframe, optionaler Beschriftung und Aufnahmezeit in einer Setup-Markdown-Datei.
 - Speichern/Oeffnen, weitere Bilder an dieselbe Datei anhaengen mit Markdown-Sicherung,
   mit vorbereiteter Wiederherstellung nach Prozessabbruch, oder eine eigene Kopie fuer Aenderungen an bisherigen Feldern/Bildern speichern.
 - Konfigurierbare Formulare: acht Feldtypen, Schluessel/Tags, Optionen und Abhaengigkeiten.
@@ -16,8 +16,9 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 - Gemerkter Journalordner und parallele Obsidian-/Dropbox-Ordnerverbindungen mit
   dauerhafter Auftragsliste, manuellem Wiederholen und Schutz externer Aenderungen.
 - OneNote-Anmeldung per Microsoft-Code und Seiten mit mehreren Bildern ueber Graph.
-- Download-Archive mit Runtime, Linux-Debian-Installer und SHA-256-Pruefsummen;
-  ein manueller Workflow bereitet Windows-/macOS-/Linux-Artefakte ohne Veroeffentlichung vor.
+- Paketbau fuer Windows x64, Linux x64 (auch Debian)
+  sowie macOS Apple Silicon/Intel mit SHA-256-Pruefsummen. Erst nach vier erfolgreichen
+  Builds entsteht ein Release-Entwurf. Windows-/macOS-Artefakte brauchen noch den ersten Workflow-Lauf.
 
 Dies ist eine fruehe Vorschau. Build und Tests bestehen; echte Aufnahme, Layout,
 Installerstart, Cloud-Uebertragung und weitere Betriebssysteme brauchen noch Abnahme.
@@ -46,8 +47,10 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 ## Journal bedienen
 
 **Capture chart** und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
-eine Quelle auswaehlen. Jede Aufnahme fuegt eine Ansicht hinzu; eine Beschriftung
-kann deren Timeframe nennen. Einzelne Entwurfsbilder lassen sich entfernen;
+eine Quelle auswaehlen. Unter jedem Bild **Timeframe (required)** auswaehlen,
+zum Beispiel `1m`, `2m` oder `1h`. Jedes Bild braucht vor dem Speichern einen
+eigenen Timeframe; eine Beschriftung ist optional. Das Timeframe-Feld des gesamten
+Setups bleibt davon getrennt. Einzelne Entwurfsbilder lassen sich entfernen;
 **New setup** leert nach Rueckfrage das aktuelle Setup. Die Leiste bleibt bis
 zum Schliessen im Journal oder ueber **×** offen.
 
@@ -66,6 +69,11 @@ Bildergaenzungen werden beim Oeffnen oder Wiederholen vervollstaendigt; fremde
 Aenderungen bleiben Konflikte. Grenzen,
 Sicherungen und Anhaenge-Sperren: [Lokale Setup-Dateien](docs/JOURNAL.md).
 [Aufnahme und Berechtigungen](docs/CAPTURE.md)
+
+Alte Dateien lassen sich unveraendert oeffnen. Fehlende Bild-Timeframes auswaehlen
+und einmal **Save copy** nutzen: Die separate Kopie verwendet Format 4 und kann
+anschliessend weitere Bilder aufnehmen. Timeframes werden weder aus Beschriftungen
+noch aus Setup-Feldern geraten.
 
 ## Verbindungen
 

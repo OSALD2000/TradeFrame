@@ -173,7 +173,7 @@ export class OneNoteClient {
     if (pages.value.length > 1) throw new Error('Multiple OneNote pages found for this delivery');
     const fields = loaded.schema.fields.filter((field) => Object.hasOwn(loaded.values, field.id)).map((field) =>
       `<h2>${escapeHtml(field.label)}</h2><p>${escapeHtml(Array.isArray(loaded.values[field.id]) ? (loaded.values[field.id] as string[]).join(', ') : loaded.values[field.id] ?? '').replace(/\r?\n/g, '<br />')}</p>`).join('');
-    const images = loaded.screenshots.map((shot, index) => `<h2>Screenshot ${index + 1}</h2><p>${escapeHtml(shot.caption)}</p><img src="name:chart${index}" alt="Chart ${index + 1}" /><p>${escapeHtml(shot.capturedAt)}</p>`).join('');
+    const images = loaded.screenshots.map((shot, index) => `<h2>Screenshot ${index + 1} · ${escapeHtml(shot.timeframe || 'Timeframe not recorded')}</h2><p>${escapeHtml(shot.caption)}</p><img src="name:chart${index}" alt="Chart ${index + 1}" /><p>${escapeHtml(shot.capturedAt)}</p>`).join('');
     const html = `<!DOCTYPE html><html><head><title>${escapeHtml(title)}</title></head><body>${images}${fields}<p>${escapeHtml(valueTags(loaded.schema, loaded.values).map((tag) => `#${tag}`).join(' '))}</p></body></html>`;
     const body = new FormData();
     body.append('Presentation', new Blob([html], { type: 'text/html' }));

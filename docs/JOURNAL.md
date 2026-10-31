@@ -10,7 +10,8 @@ remain in Markdown and screenshots remain PNG files. See the
 1. Select a form under Setup details, or use **New form** / **Edit form**.
    The included Trading setup form contains the original trading fields.
 2. Capture one or more charts and fill in the visible fields below the images.
-   Each capture adds another view; captions can identify its timeframe or purpose.
+   Choose a required timeframe for each image, such as `1m`, `2m` or `1h`.
+   Captions remain optional. The setup-level Timeframe answer is separate.
 3. Click **Save setup…** and choose a journal folder with the native picker
    if none is configured. Connections remembers the folder for subsequent saves.
 4. A new `setup-<UTC timestamp>-<random suffix>` directory contains `setup.md`
@@ -101,14 +102,16 @@ accepts comma-separated tags with or without a leading `#`. Empty answers do not
 emit tags. Boolean `false` and numeric `0` are explicit answers, so configured
 field tags apply to them. Option tags apply only to selected options.
 
-## Markdown format version 3
+## Markdown format version 4
 
 `setup.md` is UTF-8 with YAML frontmatter. Each value is a single-line JSON
 literal (valid YAML), preserving strings, finite numbers, booleans, null, and
-ordered string lists. Reserved entries: `schemaVersion: 3`, `createdAt` (UTC ISO),
+ordered string lists. Reserved entries: `schemaVersion: 4`, `createdAt` (UTC ISO),
 `tradeframe` (form format version, complete schema snapshot and ordered screenshot
 references), and `tags`. Each reference includes its fixed local filename, caption
-and UTC capture timestamp.
+and UTC capture timestamp, plus a required per-image `timeframe`. It accepts
+a positive integer (1–9999) followed by `s`, `m`, `h`, `D`, `W` or `M`; `m` is
+minutes and `M` is months. The image heading includes this value.
 User-defined keys hold answers; stable field IDs are recovered through the
 snapshot's key mapping. Optional missing fields remain distinguishable from
 explicit empty strings, empty lists, false, zero, and null in the document API.
@@ -127,9 +130,11 @@ Bounds: 100 fields, 100 options per choice field, 20,000 characters per text
 answer, 1 MB UTF-8 per schema, 5 MB per Markdown file, 20 images, 32 MB per PNG and 128 MB total image bytes.
 PNG resolution limits remain those of [CAPTURE](CAPTURE.md).
 
-The original version-1 and version-2 TradeFrame exports can be opened with their fixed trading
-schema and New York wall-clock semantics. Original files are never migrated or
-rewritten automatically. Save copy produces a separate version-3 copy. Appending preserves the original
+Versions 1, 2 and 3 remain readable without modifying their files. Missing image
+timeframes stay empty; the app does not guess from setup answers or captions.
+Choose a timeframe for every legacy image and use Save copy once to produce a
+separate version-4 file before appending. Versions 1/2 retain their original
+trading fields and New York wall-clock semantics. Appending preserves the original
 metadata/body and adds a `tradeframe-screenshot` JSON comment followed by its
 exact rendered image section. The reader validates the full chain and file order.
 Appending never changes the original creation timestamp or previous field values.

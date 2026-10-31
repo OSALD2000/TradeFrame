@@ -9,6 +9,7 @@ const capture: CaptureAPI = {
   discard: () => ipcRenderer.invoke('capture:discard'),
   removeScreenshot: (id) => ipcRenderer.invoke('capture:remove', id),
   captionScreenshot: (id, caption) => ipcRenderer.invoke('capture:caption', id, caption),
+  setScreenshotTimeframe: (id, timeframe) => ipcRenderer.invoke('capture:timeframe', id, timeframe),
   newSetup: () => ipcRenderer.invoke('journal:new'),
   showJournal: () => ipcRenderer.invoke('capture:journal'),
   saveSetup: (input) => ipcRenderer.invoke('journal:save', input),

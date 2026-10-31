@@ -5,12 +5,13 @@
 Build a professional downloadable trading journal, connect it to Obsidian,
 OneNote or Dropbox, allow multiple destinations together, and keep multiple
 screenshots in the same setup Markdown file like the personal Super+Ctrl+j flow.
-The owner authorized implementation of this scope on 30 October 2026. No public
+The owner authorized implementation of this scope on 30 October 2026, adding
+required per-image timeframes and releases for all three systems on 31 October. No public
 upload, account registration, real-journal access or signing identity is implied.
 
 ## Implemented; acceptance still open
 
-1. Multi-image capture, captions/removal, save/reopen, New setup and a draft-close
+1. Multi-image capture with a required timeframe per image, captions/removal, save/reopen, New setup and a draft-close
    warning. Append screenshots extends the same saved Markdown with a backup;
    changed earlier fields/images use Save copy. Prepared appends recover after
    process interruption, while external edits remain conflicts. Old formats remain readable.
@@ -19,7 +20,9 @@ upload, account registration, real-journal access or signing identity is implied
 3. OneNote device sign-in, refresh, encrypted-token calls and multipart pages;
    registration is configurable in-app or bundled with the publisher ID.
 4. Reviewed lockfile, npm ci CI, native package archives, Linux Debian installer,
-   checksums and a manual Windows/macOS/Linux artifact workflow.
+   checksums, four native packaging jobs (Windows/Linux x64 and macOS arm64/x64),
+   packaged runtime checks and one combined draft release gate. Actual Windows/macOS
+   artifacts remain pending until the owner pushes and the workflow succeeds.
 
 Architecture and current verification evidence: [CONTEXT](CONTEXT.md).
 File behavior: [JOURNAL](JOURNAL.md). Integration behavior: [SYNC](SYNC.md).
@@ -41,7 +44,8 @@ Build and publisher instructions: [RELEASE](RELEASE.md).
   local Linux checks do not prove Windows/macOS behavior.
 - Decide the source license, trusted signing/notarization and stable installer
   policy, then present concrete artifacts and limitations for owner publication.
-  The owner performs pushes and release uploads.
+  The owner performs pushes, reviews the combined draft and publishes the release.
+  Cloud and OneNote account acceptance is deferred at the owner's request (31 October).
 
 The goal remains active until the required workflows are demonstrated. Missing
 native access, account configuration and other-OS evidence are open acceptance

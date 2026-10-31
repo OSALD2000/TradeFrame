@@ -8,7 +8,7 @@ const { writeSetup, readSetup, appendScreenshots } = require('../dist-electron/j
 const { DEFAULT_SCHEMA } = require('../dist-electron/form-schema.js');
 const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 const input = { schema: DEFAULT_SCHEMA, values: { mode: 'live', symbol: 'TEST', direction: 'long', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: 'Synthetic' } };
-const screenshots = [1, 2].map((i) => ({ id: String(i), image, caption: `View ${i}`, capturedAt: '2026-10-30T12:00:00.000Z' }));
+const screenshots = [1, 2].map((i) => ({ id: String(i), image, caption: `View ${i}`, capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' }));
 async function fixture(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-connections-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

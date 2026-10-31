@@ -6,7 +6,9 @@ import type { FormSchema, FormValues } from '../electron/form-schema';
 import { FieldInput } from './FieldInput';
 import { SchemaEditor, newField } from './SchemaEditor';
 
-export function SetupForm({ api, busy, choosing, hasPreview, savedPath }: { api: CaptureAPI | undefined; busy: boolean; choosing: boolean; hasPreview: boolean; savedPath: string | null }) {
+export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timeframesReady, requiresTimeframeCopy }: {
+  api: CaptureAPI | undefined; busy: boolean; choosing: boolean; hasPreview: boolean; savedPath: string | null; timeframesReady: boolean; requiresTimeframeCopy: boolean;
+}) {
   const [schema, setSchema] = useState(DEFAULT_SCHEMA);
   const [schemas, setSchemas] = useState<FormSchema[]>([]);
   const [values, setValues] = useState<FormValues>(() => emptyValues(DEFAULT_SCHEMA));
@@ -59,7 +61,7 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath }: { api:
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const append = (event.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'append';
-    if (!api || !ready || !hasPreview || saving || busy || choosing) return;
+    if (!api || !ready || !hasPreview || !timeframesReady || saving || busy || choosing || (append && requiresTimeframeCopy)) return;
     setMessage('');
     setError('');
     let input: SetupInput;
@@ -124,10 +126,11 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath }: { api:
           {field.label}{!field.required && ' (optional)'}
           <FieldInput field={field} value={values[field.id]} onChange={(value) => setValues((current) => ({ ...current, [field.id]: value }))} />
         </label>)}
-        {savedPath && <button className="capture-button" type="submit" name="action" value="append" disabled={choosing || !hasPreview}>{saving ? 'Saving…' : 'Append screenshots'}</button>}
-        <button className={savedPath ? 'secondary-button' : 'capture-button'} type="submit" name="action" value="copy" disabled={choosing || !hasPreview}>{saving ? 'Saving…' : savedPath ? 'Save copy' : 'Save setup…'}</button>
+        {savedPath && !requiresTimeframeCopy && <button className="capture-button" type="submit" name="action" value="append" disabled={choosing || !hasPreview || !timeframesReady}>{saving ? 'Saving…' : 'Append screenshots'}</button>}
+        <button className={savedPath && !requiresTimeframeCopy ? 'secondary-button' : 'capture-button'} type="submit" name="action" value="copy" disabled={choosing || !hasPreview || !timeframesReady}>{saving ? 'Saving…' : savedPath ? 'Save copy' : 'Save setup…'}</button>
       </fieldset>
-      <p className="preview-note">{savedPath ? 'Append adds only new screenshots to this file and keeps a Markdown backup. To change earlier fields or images, use Save copy.' : 'Each save creates a new setup.md with all chart images in its own folder. Your journal folder is remembered; manage destinations in Connections.'}</p>
+      <p className="preview-note">{requiresTimeframeCopy ? 'This older setup has no per-image timeframes. Choose them above and Save copy once. The original stays unchanged; future screenshots can be appended to the copy.' : savedPath ? 'Append adds only new screenshots to this file and keeps a Markdown backup. To change earlier fields or images, use Save copy.' : 'Each save creates a new setup.md with all chart images in its own folder. Your journal folder is remembered; manage destinations in Connections.'}</p>
+      {!timeframesReady && hasPreview && <p className="preview-note" role="status">Choose a timeframe for every screenshot before saving.</p>}
     </form>}
     {message && <p className="save-message" role="status">{message}</p>}
     {error && <p className="save-message" role="alert">{error}</p>}

@@ -14,7 +14,9 @@ npm run package
 ```
 
 This runs the build and tests, bundles the installed, pinned Electron runtime,
-and writes a native package and SHA-256 checksum in `release/`:
+writes a native package and SHA-256 checksum in `release/`, then executes that
+package's embedded Node runtime to check its platform/architecture, compiled code
+and in-memory SQLite. This does not open the desktop UI or access user data.
 
 - Linux: `TradeFrame-<version>-linux-<arch>.tar.gz`.
 - Debian/Ubuntu x64/arm64: `TradeFrame-<version>-<debian-arch>.deb` (requires `dpkg-deb` at build time).
@@ -28,11 +30,31 @@ journals, settings, credentials, `.todo`, source control or `node_modules`.
 React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
-The **Download packages** GitHub Actions workflow is manually triggered. It builds
-on all three operating systems and retains archives/checksums as workflow artifacts.
-It does not create a release, publish binaries, or push commits. The owner reviews
-the result, tests each claimed platform, and uploads approved artifacts to a
-GitHub Release. A successful workflow proves packaging, not native acceptance.
+The **Download packages** GitHub Actions workflow can run manually for artifacts
+only, or when the owner pushes a version tag such as `v0.2.0`. The tag must match
+`package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
+arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
+The macOS bundle and helper identifiers are branded before ad-hoc signing; package
+validation uses the renamed `TradeFrame.app` resource path.
+
+On a version tag, a final job waits for every platform job and requires all five
+archives/installers and their matching checksums. It verifies SHA-256 values before
+creating one **draft** GitHub Release with every download. A rerun may replace
+assets only on an existing draft; it refuses to alter a published release. No job
+publishes the draft. A manual run never creates a release. The owner reviews the
+draft, tests each claimed platform and publishes it. A successful workflow proves
+packaging and the embedded runtime check, not desktop/capture acceptance.
+
+After reviewing the local result, the owner can push the prepared commit and tag:
+
+```sh
+git push origin main
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Review **Actions → Download packages**, then the combined draft under **Releases**.
+Keep the release in draft if any platform fails. See [preview notes](RELEASE_NOTES.md).
 
 ## Run a downloaded package
 
@@ -77,7 +99,7 @@ delivery title before retrying a page creation. See [connections](SYNC.md).
 
 On each claimed OS and architecture, use synthetic data to verify extraction,
 launch with sandboxing enabled, capture permissions, source selection, repeated
-screenshots, captions/removal, save/reopen after restart, form persistence,
+screenshots with different required timeframes, captions/removal, save/reopen after restart, form persistence,
 Obsidian and Dropbox together, a disconnected destination and retry, and OneNote
 sign-in/page creation/disconnect. Inspect desktop and narrow-window layouts.
 Terminate a process during a prepared screenshot append, reopen the file and

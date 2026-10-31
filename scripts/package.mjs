@@ -6,10 +6,12 @@ import { createReadStream } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { brandApp } from './package-platform.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const manifest = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+if (process.env.GITHUB_REF_TYPE === 'tag') assert.equal(process.env.GITHUB_REF_NAME, `v${manifest.version}`, 'Release tag must match the application version');
 const platform = process.platform;
 assert(['linux', 'win32', 'darwin'].includes(platform), 'Package on Linux, Windows or macOS');
 const name = `TradeFrame-${manifest.version}-${platform}-${process.arch}`;
@@ -31,7 +33,7 @@ try {
   let resources = path.join(staging, 'resources');
   if (platform === 'darwin') resources = path.join(staging, 'Electron.app', 'Contents', 'Resources');
   await rm(path.join(resources, 'default_app.asar'), { force: true });
-  const application = path.join(resources, 'app');
+  let application = path.join(resources, 'app');
   await mkdir(application);
   // Only compiled code and public metadata enter the distribution, never workspace data.
   await cp(path.join(root, 'dist'), path.join(application, 'dist'), { recursive: true });
@@ -47,7 +49,7 @@ try {
   assert(!clientId || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clientId), 'Invalid public Microsoft application ID');
   await writeFile(path.join(application, 'dist-electron', 'integrations.json'), JSON.stringify({ microsoftClientId: clientId }));
   for (const document of ['README.md', 'README.de.md', 'GLOSSARY.md', 'AGENTS.md',
-    'docs/RELEASE.md', 'docs/JOURNAL.md', 'docs/CAPTURE.md', 'docs/SYNC.md', 'docs/CONTEXT.md',
+    'docs/RELEASE.md', 'docs/RELEASE_NOTES.md', 'docs/JOURNAL.md', 'docs/CAPTURE.md', 'docs/SYNC.md', 'docs/CONTEXT.md',
     'docs/ROADMAP.md', 'docs/DESIGN.md', 'docs/adr/0001-local-first-journal.md',
     'docs/adr/0002-versioned-form-schemas.md', 'docs/adr/0003-deliver-local-setups-to-independent-destinations.md']) {
     await mkdir(path.dirname(path.join(staging, document)), { recursive: true });
@@ -58,26 +60,7 @@ try {
     notices += `\n${dependency}\n${await readFile(path.join(path.dirname(require.resolve(`${dependency}/package.json`)), 'LICENSE'), 'utf8')}\n`;
   }
   await writeFile(path.join(staging, 'THIRD_PARTY_NOTICES.txt'), notices);
-  if (platform === 'linux') {
-    await rename(path.join(staging, 'electron'), path.join(staging, 'tradeframe'));
-    await writeFile(path.join(staging, 'tradeframe.desktop'), '[Desktop Entry]\nType=Application\nName=TradeFrame\nComment=Local-first trading journal\nExec=tradeframe\nIcon=tradeframe\nCategories=Office;Finance;\nTerminal=false\n');
-  } else if (platform === 'win32') {
-    await rename(path.join(staging, 'electron.exe'), path.join(staging, 'TradeFrame.exe'));
-    try { await rename(path.join(staging, 'electron_wer.dll'), path.join(staging, 'TradeFrame_wer.dll')); }
-    catch (error) { if (error.code !== 'ENOENT') throw error; }
-  } else {
-    const bundle = path.join(staging, 'Electron.app');
-    const plist = path.join(bundle, 'Contents', 'Info.plist');
-    for (const [key, value] of Object.entries({ CFBundleName: 'TradeFrame', CFBundleDisplayName: 'TradeFrame',
-      CFBundleIdentifier: 'io.github.osald2000.tradeframe', CFBundleShortVersionString: manifest.version, CFBundleVersion: manifest.version })) {
-      execFileSync('/usr/libexec/PlistBuddy', ['-c', `Set :${key} ${value}`, plist]);
-    }
-    try { execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Set :NSScreenCaptureUsageDescription TradeFrame captures charts only when you request a screenshot.', plist], { stdio: 'pipe' }); }
-    catch { execFileSync('/usr/libexec/PlistBuddy', ['-c', 'Add :NSScreenCaptureUsageDescription string TradeFrame captures charts only when you request a screenshot.', plist]); }
-    await rename(bundle, path.join(staging, 'TradeFrame.app'));
-    // Re-sign the changed bundle locally; public notarization still requires the owner's Apple identity.
-    execFileSync('codesign', ['--force', '--deep', '--sign', '-', path.join(staging, 'TradeFrame.app')]);
-  }
+  application = await brandApp(staging, platform, manifest.version);
   const packagedManifest = JSON.parse(await readFile(path.join(application, 'package.json'), 'utf8'));
   assert.equal(packagedManifest.main, 'dist-electron/main.js');
   await access(path.join(application, packagedManifest.main));

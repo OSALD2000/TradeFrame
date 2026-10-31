@@ -104,6 +104,7 @@ button { font-family: inherit; }
 .screenshot-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .screenshot-heading h3 { font-size: 13px; font-weight: 500; }
 .screenshot-caption { display: grid; gap: 6px; color: var(--secondary); font-size: 12px; margin-top: 12px; }
+.screenshot-fields { display: grid; grid-template-columns: minmax(110px, 160px) minmax(0, 1fr); gap: 14px; }
 .screenshot-caption input { width: 100%; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--text); padding: 9px; font: inherit; }
 .source-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
 .source-option { padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; min-width: 0; }
@@ -166,6 +167,7 @@ button { font-family: inherit; }
 .publisher-settings input { background: var(--canvas); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 9px; font: inherit; }
 @media (max-width: 800px) { .connection-row { flex-direction: column; gap: 12px; } }
 @media (max-width: 520px) {
+  .screenshot-fields { grid-template-columns: 1fr; gap: 0; }
   .preview-heading { flex-wrap: wrap; }
   .capture-preview, .source-picker, .setup-details, .connections { padding: 22px; }
 }
