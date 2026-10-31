@@ -99,8 +99,11 @@ Downloaded packages now include the explicitly selected public guides/ADRs with
 their original relative paths, so README and recovery links remain usable offline.
 
 31 October 2026: read-only inspection of the owner's selected saved setup verified
-valid typed Markdown with three image references and three existing PNG files.
-The complete Markdown backup remains an exact prefix of the extended document;
-no recovery record remains. This verifies native multi-image output and append
-preservation for that setup. Image contents were not inspected. Visible previews,
-reopening inside the UI and actual connected-service delivery remain unconfirmed.
+native multi-image output and append preservation: the complete Markdown backup
+remained an exact prefix and no recovery record remained. A subsequent inspection
+verified four images and identical Markdown bytes in the source and both selected
+local Obsidian/Dropbox test destinations. All image filenames, sizes and SHA-256
+hashes match the source, as do the typed field values. Simultaneous folder delivery
+is therefore verified. Image contents were not inspected. Visible previews,
+reopening inside the UI, actual Obsidian rendering, Dropbox cloud delivery and
+OneNote authorization remain unconfirmed by these local folder checks.
