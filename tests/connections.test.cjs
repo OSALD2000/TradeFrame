@@ -10,7 +10,7 @@ const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAw
 const input = { schema: DEFAULT_SCHEMA, values: { mode: 'live', symbol: 'TEST', direction: 'long', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: 'Synthetic' } };
 const screenshots = [1, 2].map((i) => ({ id: String(i), image, caption: `View ${i}`, capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' }));
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-connections-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-connections-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const [journal, obsidian, dropbox] = ['journal', 'obsidian', 'dropbox'].map((name) => path.join(root, name));
   for (const folder of [journal, obsidian, dropbox]) await fs.mkdir(folder);
@@ -97,4 +97,15 @@ test('unrelated or malformed configuration is preserved and symlink destinations
     await assert.rejects(copySnapshot(f.file, path.join(f.obsidian, 'TradeFrame')), /Invalid sync/);
     assert.deepEqual(await fs.readdir(f.dropbox), []);
   }
+});
+
+test('a connected folder redirected after selection cannot receive deliveries', async (t) => {
+  const f = await fixture(t);
+  const store = new ConnectionStore(f.config);
+  store.setFolder('obsidian', f.obsidian);
+  store.enqueue(f.file);
+  await fs.rename(f.obsidian, `${f.obsidian}-moved`);
+  await fs.symlink(f.dropbox, f.obsidian, process.platform === 'win32' ? 'junction' : 'dir');
+  assert.equal((await store.retry())[0].status, 'failed');
+  assert.deepEqual(await fs.readdir(f.dropbox), []);
 });

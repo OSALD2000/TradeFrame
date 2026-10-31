@@ -13,7 +13,7 @@ const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAw
 const input = { schema: DEFAULT_SCHEMA, values: { mode: 'live', symbol: 'TEST', direction: 'long', model: 'Synthetic', timeframe: '5m', entryTimeNewYork: '', note: 'Keep all original text 🕯' } };
 const screenshot = { id: 'test', image, caption: 'Entry', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' };
 async function fixture(t) {
-  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-recovery-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-recovery-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = await writeSetup(root, input, [screenshot]);
   const data = { file, input, screenshot: { ...screenshot, id: 'follow-up', caption: 'Follow-up 🕯' } };

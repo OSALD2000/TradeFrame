@@ -124,3 +124,13 @@ creation/update. Windows/macOS runner execution and artifacts remain pending
 until the owner pushes. No push, release creation or publication occurred here.
 Cloud/OneNote account acceptance is deferred at the owner's request. Desktop
 layout and native use of the new timeframe controls still need owner acceptance.
+
+31 October macOS CI correction: the owner pushed 38d8757 and reported failed
+Check tests on macOS. Temporary test paths used `/var/...`, while native folder
+selection resolves them to `/private/var/...`. Sync/recovery fixtures now use
+canonical roots, matching the app's existing realpath boundary. Native-save tests
+also cover selecting a directory alias, and a redirected connected folder must
+still fail without writing to its new destination. Production code is unchanged.
+The same eight failures were reproduced on Linux with a symlinked TMPDIR;
+build and all 68 tests then passed through that alias. This reproduces the path
+condition, not macOS execution. A new GitHub run is pending the owner's fix push.

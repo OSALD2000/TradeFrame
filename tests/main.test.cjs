@@ -405,23 +405,28 @@ test('save failures preserve the preview and unlock the controls for retry', asy
   assert.equal((await invoke('capture:state')).busy, false);
 });
 
-test('journal save writes the selected native snapshot to the chosen folder', async (t) => {
+test('journal save resolves a selected folder alias and writes the native snapshot', async (t) => {
   const fs = require('node:fs/promises');
-  const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-ipc-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-ipc-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const folder = path.join(root, 'journal');
+  const alias = path.join(root, 'journal-alias');
+  await fs.mkdir(folder);
+  await fs.symlink(folder, alias, process.platform === 'win32' ? 'junction' : 'dir');
   const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
   const snapshot = source('screen:0:0');
   snapshot.thumbnail.toDataURL = () => image;
   const { windows, invoke } = await boot(async () => [snapshot], async (owner, options) => {
     assert.equal(owner, windows[0]);
     assert.ok(options.properties.includes('openDirectory'));
-    return { canceled: false, filePaths: [root] };
+    return { canceled: false, filePaths: [alias] };
   });
   await invoke('capture:open-bar');
   await captureReady(invoke, windows);
   const saved = await invoke('journal:save', windows[0], setupInput({ note: 'Synthetic' }));
   assert.equal(saved.status, 'saved');
-  assert.equal(path.dirname(path.dirname(saved.path)), root);
+  assert.equal(path.dirname(path.dirname(saved.path)), folder);
+  assert.equal((await invoke('connections:get')).folders.journal, folder);
   assert.match(await fs.readFile(saved.path, 'utf8'), /Synthetic/);
   assert.equal((await fs.readFile(path.join(path.dirname(saved.path), 'chart.png'))).toString('base64'), image.split(',')[1]);
   assert.equal((await invoke('capture:state')).busy, false);
@@ -494,7 +499,7 @@ test('legacy opening requires a separate timeframe copy and enables appending on
 
 test('folder connections are journal-only and save sends all screenshots to both targets', async (t) => {
   const fs = require('node:fs/promises');
-  const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-destinations-'));
+  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-destinations-')));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const folders = ['obsidian', 'dropbox', 'journal'].map((name) => path.join(root, name));
   for (const folder of folders) await fs.mkdir(folder);
