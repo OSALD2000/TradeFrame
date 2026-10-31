@@ -97,3 +97,10 @@ files are preserved for inspection. Hard-link-capable local filesystems are
 required. Power-loss and concurrent multi-device writers are not verified.
 Downloaded packages now include the explicitly selected public guides/ADRs with
 their original relative paths, so README and recovery links remain usable offline.
+
+31 October 2026: read-only inspection of the owner's selected saved setup verified
+valid typed Markdown with three image references and three existing PNG files.
+The complete Markdown backup remains an exact prefix of the extended document;
+no recovery record remains. This verifies native multi-image output and append
+preservation for that setup. Image contents were not inspected. Visible previews,
+reopening inside the UI and actual connected-service delivery remain unconfirmed.
