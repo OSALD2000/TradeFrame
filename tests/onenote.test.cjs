@@ -71,6 +71,7 @@ test('Linux initializes and uses the checked keyring provider before persisting 
   secure.getSelectedStorageBackend = () => 'basic_text';
   await client.begin(); now += 1000;
   const session = await client.poll(); assert.equal(session.connected, true); assert.equal(session.durable, false);
+  assert.match(session.error, /Start and unlock your system keyring/);
   await assert.rejects(fs.stat(path.join(root, 'onenote-token.bin')), { code: 'ENOENT' });
 });
 

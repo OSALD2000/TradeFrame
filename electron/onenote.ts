@@ -85,7 +85,11 @@ export class OneNoteClient {
   }
   private async persistToken() {
     this.durable = false;
-    if (!this.refreshToken || !await this.secureStorage()) return;
+    if (!this.refreshToken) return;
+    if (!await this.secureStorage()) {
+      this.error = 'Connected for this session. Secure sign-in storage is unavailable. Start and unlock your system keyring, then reconnect to keep sign-in after closing the app.';
+      return;
+    }
     const value = JSON.stringify({ clientId: this.clientId, refreshToken: this.refreshToken });
     const encrypted = process.platform === 'linux' ? this.encryption.encryptString(value) : await this.encryption.encryptStringAsync(value);
     await this.atomicWrite(path.join(this.directory, 'onenote-token.bin'), encrypted);

@@ -1,4 +1,32 @@
-# TradeFrame 0.6.2 preview
+# TradeFrame 0.6.3 preview
+
+The owner confirms OneNote imports now work with 0.6.2. The remaining issue is
+sign-in ending after every app restart. The owner's Sway desktop has libsecret
+and GNOME Keyring installed, but no saved sign-in file exists.
+
+On Linux/Sway, TradeFrame now selects `gnome-libsecret` before Electron readiness.
+Explicit `--password-store` choices and other platforms/desktops are preserved.
+The provider must still be available and unlocked; insecure fallback encryption
+is rejected. If storage is unavailable, Connections explains that sign-in lasts
+only this session and asks to start/unlock the system keyring before reconnecting.
+No credential/settings format change is introduced. Real restart persistence on
+the owner's desktop still requires verification; this environment cannot access
+the desktop Secret Service. The Electron 45 deprecation warning remains separate.
+
+## Deutsch — 0.6.3
+
+Der Nutzer bestaetigt, dass OneNote-Import und die anderen Verbindungen mit
+0.6.2 funktionieren. Offen ist die Anmeldung nach Schliessen und Neustart.
+Unter Sway waehlt TradeFrame jetzt den installierten sicheren Schluesselbund
+ausdruecklich vor dem Start. Eigene Startparameter bleiben erhalten.
+
+Der Schluesselbund muss laufen und entsperrt sein. Ist er nicht verfuegbar,
+erklaert Connections die Sitzungs-Anmeldung und den naechsten Schritt.
+Unsichere Ablage bleibt ausgeschlossen. Einmal mit 0.6.3 verbinden, Notizbuch
+waehlen und nach vollstaendigem Schliessen/Neustart pruefen. Dieser echte
+Neustarttest ist noch offen; die separate Electron-Warnung bleibt bestehen.
+
+## Previous preview — 0.6.2
 
 The owner's 0.6.1 diagnostic identifies the rejected path as
 `/v1.0/users(…)/onenote/resources/…/$value`. Resource downloads now parse OData

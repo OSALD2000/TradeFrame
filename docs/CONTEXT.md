@@ -7,6 +7,17 @@ simultaneous destinations and multiple screenshots per setup on 30 October 2026.
 The original Super+Ctrl+j script was inspected as a workflow reference only;
 no private journals or account data were opened.
 
+0.6.3: the owner confirms OneNote opening and the other destinations work with
+0.6.2. Sign-in still ends on app restart. Safe metadata checks show no saved token
+file, a Sway session, and installed libsecret/GNOME Keyring; no secrets were read.
+Linux/Sway now selects gnome-libsecret before Electron readiness, preserving
+explicit overrides. Unavailable secure storage produces an actionable session-only
+message. Existing encryption/persistence formats stay unchanged. The native
+Secret Service cannot be inspected from this execution environment; real saved
+sign-in after restart and the separate Electron 45 API replacement remain open.
+Build/typecheck and all 119 tests pass, including pre-readiness provider selection,
+platform/explicit-override isolation and secure session-only failure feedback.
+
 0.6.2: the owner supplied the redacted live path rejected by 0.6.1:
 `/v1.0/users(…)/onenote/resources/…/$value`. The same error was reproduced before
 the fix. Resource parsing now accepts OData owner keys, validates quoted/unquoted

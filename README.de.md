@@ -49,7 +49,7 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.2`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.3`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →
@@ -121,6 +121,8 @@ werden bei geeigneter Systemverschluesselung geschuetzt gespeichert; sonst gilt
 die Anmeldung nur fuer diese Sitzung.
 Normale Updates behalten das Profil. Bei Sitzungs-Anmeldung den System-
 Schluesselbund entsperren und neu verbinden; danach das Notizbuch erneut waehlen.
+Unter Linux/Sway waehlt TradeFrame libsecret ausdruecklich; der Schluesselbund
+muss laufen und entsperrt sein. Connections erklaert eine fehlende sichere Ablage.
 Eine neue Folge-Uebertragung erstellt eine neue OneNote-Seite; vorhandene Seiten
 bleiben erhalten. Fehlgeschlagene Auftraege
 ueberleben Neustarts und stehen unter **Retry sync**. Trennen beendet offene

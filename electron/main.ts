@@ -13,6 +13,10 @@ import { ConnectionStore, folderKind } from './connections';
 import { OneNoteClient, OneNoteError } from './onenote';
 import type { SaveResult } from './capture-types';
 
+// Chromium does not automatically select a system keyring for Sway.
+if (process.platform === 'linux' && /(?:^|:)sway(?:$|:)/i.test(process.env.XDG_CURRENT_DESKTOP ?? '')
+  && !app.commandLine.hasSwitch('password-store')) app.commandLine.appendSwitch('password-store', 'gnome-libsecret');
+
 app.setName('TradeFrame');
 const primaryInstance = app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();

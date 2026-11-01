@@ -16,7 +16,7 @@ const source = (id, name = 'Synthetic chart') => ({ id, name,
   thumbnail: { isEmpty: () => false, toDataURL: () => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=' },
 });
 
-async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] }), primaryInstance = true, oneNoteOptions) {
+async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] }), primaryInstance = true, oneNoteOptions, runtime = {}) {
   const fsSync = require('node:fs');
   const dataRoot = fsSync.mkdtempSync(path.join(require('node:os').tmpdir(), 'tradeframe-main-test-'));
   dataRoots.push(dataRoot);
@@ -25,7 +25,9 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
   app.isPackaged = true;
   app.setName = () => {};
   app.requestSingleInstanceLock = () => primaryInstance;
-  app.whenReady = () => Promise.resolve();
+  const switches = new Map(runtime.passwordStore === undefined ? [] : [['password-store', runtime.passwordStore]]);
+  app.commandLine = { hasSwitch: (name) => switches.has(name), appendSwitch: (name, value) => switches.set(name, value) };
+  app.whenReady = () => { app.readySwitches = new Map(switches); return Promise.resolve(); };
   app.quit = () => { app.quitCalled = true; };
   const windows = [];
   const handlers = new Map();
@@ -69,7 +71,7 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
   };
   const dirname = path.resolve(__dirname, '../dist-electron');
   vm.runInNewContext(readFileSync(path.join(dirname, 'main.js'), 'utf8'), {
-    exports: {}, __dirname: dirname, process: { platform: 'linux', env: {} },
+    exports: {}, __dirname: dirname, process: { platform: runtime.platform ?? 'linux', env: runtime.env ?? {} },
     Buffer, Response, Uint8Array,
     setTimeout: (callback) => queueMicrotask(callback),
     require: (name) => name === 'electron' ? electron : name === './schema-store'
@@ -113,6 +115,21 @@ test('startup loads only local UI with isolation and blocks navigation/new windo
   assert.equal(discarded, false, 'The draft-close dialog keeps editing by default');
   app.emit('window-all-closed');
   assert.equal(app.quitCalled, true);
+});
+
+test('Sway chooses libsecret before Electron readiness and respects platform and explicit keyring overrides', async () => {
+  for (const [runtime, expected] of [
+    [{ env: { XDG_CURRENT_DESKTOP: 'sway:wlroots' } }, 'gnome-libsecret'],
+    [{ env: { XDG_CURRENT_DESKTOP: 'SWAY' } }, 'gnome-libsecret'],
+    [{ env: { XDG_CURRENT_DESKTOP: 'GNOME' } }, undefined],
+    [{ env: { XDG_CURRENT_DESKTOP: 'sway' }, passwordStore: 'kwallet6' }, 'kwallet6'],
+    [{ env: { XDG_CURRENT_DESKTOP: 'sway' }, passwordStore: 'basic' }, 'basic'],
+    [{ env: { XDG_CURRENT_DESKTOP: 'sway' }, platform: 'darwin' }, undefined],
+    [{ env: { XDG_CURRENT_DESKTOP: 'sway' }, platform: 'win32' }, undefined],
+  ]) {
+    const { app } = await boot(undefined, undefined, true, undefined, runtime);
+    assert.equal(app.readySwitches.get('password-store'), expected);
+  }
 });
 
 test('a second launch focuses the existing journal and a secondary process creates no windows or IPC handlers', async () => {

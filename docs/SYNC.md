@@ -106,7 +106,13 @@ No tokens are stored in the form-definition SQLite database.
 
 Normal package updates retain this profile and its encrypted token file. If
 Connections says **Connected for this session**, closing the app ends sign-in;
-unlock a supported system keyring and reconnect. A new sign-in clears the old
+start/unlock a supported system keyring and reconnect. Sway does not automatically
+select Chromium's libsecret backend. TradeFrame selects `gnome-libsecret` on
+Linux when `XDG_CURRENT_DESKTOP` includes `sway`, before Electron readiness.
+Explicit `--password-store` overrides remain in effect. This cannot start or
+unlock a missing/locked keyring; unavailable providers still mean session-only
+sign-in, with a visible explanation. No fallback/plaintext credentials are saved.
+A new sign-in clears the old
 notebook selection to avoid reusing another account's target; choose it again.
 
 ## Open from OneNote
