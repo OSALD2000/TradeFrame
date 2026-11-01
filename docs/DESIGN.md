@@ -106,3 +106,8 @@ OneNote recovery: keep the application settings as a persistent neutral details
 section, prefill the saved public client ID and offer Save/Remove actions. Open
 it when setup is missing or sign-in fails. The owner's reported hidden-controls
 bug supplies the interaction requirement; retain the locked form/focus styling.
+
+Version label: show the manifest version next to the local-first status in the
+existing toolbar, using secondary text and tabular digits. It remains visible
+when the local-first label is hidden at narrow widths, so installed builds can
+be identified immediately. This follows the owner's 1 November version request.

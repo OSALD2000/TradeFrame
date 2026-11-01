@@ -6,6 +6,7 @@ import { SetupForm } from './SetupForm';
 import { Connections } from './Connections';
 import { ScreenshotFields } from './ScreenshotFields';
 import { validTimeframe } from '../electron/form-schema';
+import { version } from '../package.json';
 
 function App() {
   const { state, api, run, error } = useCapture();
@@ -36,7 +37,10 @@ function App() {
       <div className="main-area">
         <header className="toolbar">
           <span className="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong>Journal</strong></span>
-          <span className="local-label"><span aria-hidden="true" />Local-first</span>
+          <div className="app-info">
+            <span className="local-label"><span aria-hidden="true" />Local-first</span>
+            <span className="app-version" title="TradeFrame version">v{version}</span>
+          </div>
         </header>
         <div className="journal-layout">
           <main id="journal" tabIndex={-1}>

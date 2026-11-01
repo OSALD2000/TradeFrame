@@ -48,6 +48,9 @@ those systems. The archive includes public guides with working relative links.
 
 ## Journal workflow
 
+The top-right toolbar shows the installed app version, for example `v0.3.2`.
+
+
 Click **Capture chart**, then **Screenshot** on the floating bar. Choose a source
 if prompted. Each capture adds a view. Choose its **Timeframe (required)**, such
 as `1m`, `2m` or `1h`; add optional multiline notes for this view. Every image needs

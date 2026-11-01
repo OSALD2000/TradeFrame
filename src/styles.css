@@ -43,6 +43,8 @@ nav { margin-top: 37px; }
 .breadcrumb > span { color: #62666d; }
 .local-label { display: flex; gap: 7px; align-items: center; color: var(--secondary); }
 .local-label > span { width: 6px; height: 6px; border: 1px solid var(--muted); border-radius: 50%; }
+.app-info { display: flex; align-items: center; gap: 14px; }
+.app-version { color: var(--secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .journal-layout { display: grid; grid-template-columns: minmax(0, 1fr); flex: 1; }
 main { min-width: 0; display: flex; flex-direction: column; }
 main:focus { outline: none; }

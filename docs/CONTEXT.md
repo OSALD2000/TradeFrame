@@ -175,3 +175,10 @@ Build and 86 tests pass, including configured/error-state controls, invalid-ID
 correction, removal/restart, publisher fallback, credential deletion, malformed
 config, network failure and independent pending folder jobs. Actual Microsoft
 account consent/upload and desktop visual acceptance remain open.
+
+1 November version-label update (0.3.2): the journal toolbar shows the manifest
+version beside the local-first status and keeps it visible at narrow widths.
+The renderer imports only the version from package.json; the package builder
+uses that same manifest. No journal format, form revision or credential changes
+are part of this update. It includes the earlier calendar journal and OneNote
+ID correction/removal fixes. Native visual acceptance remains with the owner.

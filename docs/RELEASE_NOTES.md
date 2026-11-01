@@ -1,4 +1,7 @@
-# TradeFrame 0.3.1 preview
+# TradeFrame 0.3.2 preview
+
+The journal toolbar now shows the app version, including narrow windows. It is
+bundled directly from package.json, matching the version of the installer.
 
 OneNote application settings stay available after configuration and failed sign-in.
 You can edit the saved public Application (client) ID or remove your custom ID.
@@ -33,6 +36,9 @@ acceptance, trusted signing/notarization and cloud/account tests remain open.
 For publisher setup and platform builds, see [release guidance](RELEASE.md).
 
 ## Deutsch
+
+Die Journal-Kopfleiste zeigt jetzt die App-Version auch im schmalen Fenster.
+Die Nummer kommt aus package.json und entspricht der Installationsdatei.
 
 OneNote-App-ID bleibt nach Eingabe oder Anmeldefehler aenderbar und entfernbar.
 Entfernen loescht die lokale Anmeldung und offene OneNote-Auftraege, erhaelt

@@ -49,6 +49,9 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.3.2`.
+
+
 **Capture chart** und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
 eine Quelle auswaehlen. Unter jedem Bild **Timeframe (required)** auswaehlen,
 zum Beispiel `1m`, `2m` oder `1h`. Jedes Bild braucht vor dem Speichern einen
