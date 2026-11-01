@@ -95,11 +95,17 @@ redacted failures, Linux provider initialization/restart and picker prerequisite
 
 ## Code ownership
 
-The implemented pattern inventory, SOLID review rules and pending responsibility
-proposal are in [ARCHITECTURE](ARCHITECTURE.md). The pinned formatter and shared
+The implemented pattern inventory, SOLID review rules and approved responsibility
+extraction are in [ARCHITECTURE](ARCHITECTURE.md). The pinned formatter and shared
 development conventions are in [CODE_STYLE](CODE_STYLE.md). The formatting step
 preserves the accepted 0.6.3 behavior and existing directories; structural changes
 still require the owner's decision.
+
+The owner approved extracting pure OneNote resource URL validation and the shared
+safe error into `onenote-resource.ts` and `onenote-error.ts` inside `electron/`.
+The existing error export remains compatible; the delivery queue no longer imports
+the Microsoft client for its error type. Authentication and HTTP ownership stay
+unchanged. All 122 tests and 47 before/after resource comparisons pass.
 
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
 lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,

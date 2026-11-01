@@ -74,6 +74,8 @@ try {
     'schema-store',
     'connections',
     'onenote',
+    'onenote-error',
+    'onenote-resource',
     'onenote-content',
     'append-store',
     'journal-layout',

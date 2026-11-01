@@ -10,18 +10,19 @@ The existing directories and file paths stay in place. An approved extraction
 may add files inside an existing directory; it does not introduce a new folder
 hierarchy. Packaging must include every new native module it needs.
 
-| Location                                                   | Responsibility                                                         | Boundary                                                                       |
-| ---------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `src/`                                                     | React screens, form editing, capture subscriptions and user feedback   | Calls the named preload API; no direct filesystem, credentials or Graph access |
-| `electron/preload.ts` and `electron/capture-types.ts`      | Renderer-facing commands, events and their contracts                   | Expose individual commands rather than arbitrary IPC or native capabilities    |
-| `electron/main.ts`                                         | Electron startup, windows, capture state, trusted IPC and composition  | Verifies senders, owns in-memory image access and coordinates services         |
-| `electron/form-schema.ts` and `electron/journal-layout.ts` | Validation, document conversion and calendar identity                  | Pure rules are shared without importing Electron or account services           |
-| `electron/journal.ts` and `electron/append-store.ts`       | Markdown/PNG persistence, append preservation and recovery             | Filesystem operations validate inputs and preserve conflicting external data   |
-| `electron/schema-store.ts`                                 | Versioned form definitions in SQLite                                   | Setup values and screenshots do not enter this database                        |
-| `electron/connections.ts`                                  | Folder preferences, durable delivery jobs and folder copies            | Delivery failures do not undo a local save                                     |
-| `electron/onenote.ts` and `electron/onenote-content.ts`    | Microsoft authorization, Graph requests and validated cloud conversion | Tokens stay native; returned HTML is parsed as data, never rendered            |
-| `scripts/`                                                 | Native distribution, platform branding and runtime verification        | Uses an explicit public-file allowlist                                         |
-| `tests/`                                                   | Behavioral regressions using synthetic data and temporary folders      | Does not require real journals, accounts or desktop capture                    |
+| Location                                                       | Responsibility                                                         | Boundary                                                                                                            |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `src/`                                                         | React screens, form editing, capture subscriptions and user feedback   | Calls the named preload API; no direct filesystem, credentials or Graph access                                      |
+| `electron/preload.ts` and `electron/capture-types.ts`          | Renderer-facing commands, events and their contracts                   | Expose individual commands rather than arbitrary IPC or native capabilities                                         |
+| `electron/main.ts`                                             | Electron startup, windows, capture state, trusted IPC and composition  | Verifies senders, owns in-memory image access and coordinates services                                              |
+| `electron/form-schema.ts` and `electron/journal-layout.ts`     | Validation, document conversion and calendar identity                  | Pure rules are shared without importing Electron or account services                                                |
+| `electron/journal.ts` and `electron/append-store.ts`           | Markdown/PNG persistence, append preservation and recovery             | Filesystem operations validate inputs and preserve conflicting external data                                        |
+| `electron/schema-store.ts`                                     | Versioned form definitions in SQLite                                   | Setup values and screenshots do not enter this database                                                             |
+| `electron/connections.ts`                                      | Folder preferences, durable delivery jobs and folder copies            | Delivery failures do not undo a local save                                                                          |
+| `electron/onenote.ts` and `electron/onenote-content.ts`        | Microsoft authorization, Graph requests and validated cloud conversion | Tokens stay native; returned HTML is parsed as data, never rendered                                                 |
+| `electron/onenote-resource.ts` and `electron/onenote-error.ts` | Pure resource URL validation and the shared safe error type            | No HTTP, credentials, settings or account lifecycle; the existing public error export keeps the same class identity |
+| `scripts/`                                                     | Native distribution, platform branding and runtime verification        | Uses an explicit public-file allowlist                                                                              |
+| `tests/`                                                       | Behavioral regressions using synthetic data and temporary folders      | Does not require real journals, accounts or desktop capture                                                         |
 
 The UI and native code share validation rules and type definitions. This is a
 modular Electron application, not a claim that the current code implements a
@@ -145,23 +146,25 @@ class. A short module can still have several responsibilities; a long compositio
 root is not automatically wrong. Changes are judged by dependency direction,
 ownership and preserved contracts.
 
-## First structural proposal: awaiting owner decision
+## Approved responsibility extraction
 
-Extract only the pure OneNote resource URL validation/normalization into
-`electron/onenote-resource.ts`. Put the shared `OneNoteError` class in
-`electron/onenote-error.ts`, keeping its existing export from `onenote.ts`.
-Then `ConnectionStore` can depend on the error definition without importing the
-Microsoft client. `OneNoteClient` continues to own HTTP and authorization.
+The owner approved and the code now implements the extraction of pure OneNote
+resource URL validation/normalization into `electron/onenote-resource.ts`.
+The shared `OneNoteError` class lives in `electron/onenote-error.ts`, retaining
+its existing export from `onenote.ts`. `ConnectionStore` depends on the error
+definition without importing the Microsoft client. `OneNoteClient` continues to
+own HTTP and authorization.
 
 This uses existing modular functions and explicit dependencies; it adds no new
-pattern or framework. The alternatives are to keep these responsibilities in
-the client for now, or undertake the substantially larger authentication/Graph
-split. The latter is not part of this proposal.
+pattern or framework. Alternatives were to keep these responsibilities in the
+client or undertake the substantially larger authentication/Graph split. The
+latter remains a separate owner decision.
 
-If approved, preserve the same generation check before URL validation, error
-class identity and messages, URL reconstruction, request options and size limits.
-Update the native packaging allowlist and exercise both the pure parser and its
-existing open/retry callers. No account or file format migration is needed.
+The generation check still happens before URL validation. Error class identity,
+messages, URL reconstruction, request options and size limits are preserved.
+The native packaging allowlist includes both modules. Focused tests exercise the
+pure parser, delegation, cancellation precedence and public error export; existing
+open/retry tests remain in place. No account or file format migration is needed.
 
 ## Verification and limits
 
@@ -176,3 +179,9 @@ TSX and JS files, treating property-name quoting and adjacent JSX text fragments
 as equivalent. Prettier's AST/idempotence check and all 119 tests pass. These
 checks do not claim a complete proof of behavioral equivalence or a new native
 acceptance on Windows/macOS. See [CODE_STYLE](CODE_STYLE.md) for the formatter.
+
+After the approved extraction, all 122 tests pass. A direct comparison with the
+previous compiled client's resource method covers 47 cases, checking exact
+request URLs/headers/redirects, bytes, error types/messages and cancellation
+precedence. Larger responsibility changes in native orchestration, authorization
+or React form state have not been selected or implemented.

@@ -8,7 +8,7 @@ import { appendDocument, createFile, recoverAppend } from './append-store';
 import { calendarPath, journalDirectory, safeNoteFilename } from './journal-layout';
 import type { FolderKind, SyncJob, Connections } from './capture-types';
 import { validOneNoteId } from './capture-types';
-import { OneNoteError } from './onenote';
+import { OneNoteError } from './onenote-error';
 
 export function folderKind(value: unknown): asserts value is FolderKind {
   if (!['journal', 'obsidian', 'dropbox'].includes(String(value)))
