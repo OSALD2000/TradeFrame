@@ -191,3 +191,10 @@ preview survive and retry works. Add custom fields, keys/tags and a dependency;
 verify hidden values stay in the draft but not in the file. Open the saved file,
 then change the form and confirm the old file still restores its old fields.
 Do not use real account or employer data.
+
+0.6.0 local/cloud opening returns the complete screenshot state with the form
+values. The renderer applies that snapshot rather than relying only on a separate
+capture event, and stale initial state replies are ignored after a newer event
+or explicit restore. Empty responses cannot report a successful open. This
+changes the internal bridge response, not existing Markdown/PNG files. Restart
+the app fully after updating the package to keep native and renderer code aligned.

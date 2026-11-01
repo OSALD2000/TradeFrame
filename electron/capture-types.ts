@@ -11,6 +11,7 @@ export type OneNoteState = { configured: boolean; applicationId: string; customA
   notebook: OneNoteNotebook | null; notebooks: OneNoteNotebook[];
   login: { userCode: string; expiresAt: number } | null };
 export type SetupInput = { schema: FormSchema; values: FormValues };
+export type OpenedSetup = SetupInput & { capture: CaptureState };
 
 export type SaveResult = { status: 'cancelled' } | { status: 'saved'; path: string; sync: SyncJob[]; warning?: string };
 
@@ -42,7 +43,7 @@ export type CaptureAPI = {
   appendScreenshots(input: SetupInput): Promise<SaveResult>;
   getSchemas(): Promise<FormSchema[]>;
   saveSchema(schema: FormSchema): Promise<FormSchema>;
-  openSetup(): Promise<SetupInput | null>;
+  openSetup(): Promise<OpenedSetup | null>;
   getConnections(): Promise<Connections>;
   connectFolder(kind: FolderKind): Promise<Connections>;
   disconnectFolder(kind: FolderKind): Promise<Connections>;
@@ -55,7 +56,7 @@ export type CaptureAPI = {
   refreshOneNoteNotebooks(): Promise<OneNoteState>;
   selectOneNoteNotebook(id: string): Promise<OneNoteState>;
   listOneNoteSetups(): Promise<OneNotePage[]>;
-  openOneNoteSetup(id: string): Promise<SetupInput & { legacy: boolean }>;
+  openOneNoteSetup(id: string): Promise<OpenedSetup & { legacy: boolean }>;
   sendToOneNote(): Promise<SaveResult>;
   openMicrosoftLogin(): Promise<void>;
   onStateChange(listener: (state: CaptureState) => void): () => void;

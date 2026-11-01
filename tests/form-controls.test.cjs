@@ -22,11 +22,21 @@ const { DeliveryStatus } = require('../src/DeliveryStatus.tsx');
 const { DestinationSummary } = require('../src/SaveDestinations.tsx');
 const { App, viewFromHash } = require('../src/App.tsx');
 const { SetupForm } = require('../src/SetupForm.tsx');
+const { oneNoteMessage, oneNotePageTitle } = require('../src/OneNoteBrowser.tsx');
 if (previous.ts) require.extensions['.ts'] = previous.ts; else delete require.extensions['.ts'];
 if (previous.tsx) require.extensions['.tsx'] = previous.tsx; else delete require.extensions['.tsx'];
 
 const field = (type, extra = {}) => ({ id: 'test', key: 'test', label: 'Test', type, required: false, tags: [], ...extra });
 const render = (definition, value) => renderToStaticMarkup(React.createElement(FieldInput, { field: definition, value, onChange: () => {} }));
+
+test('OneNote opening keeps safe native diagnostics visible and hides raw network errors and delivery IDs', () => {
+  const safe = 'OneNote could not download setup content (HTTP 403). Check notebook access.';
+  assert.equal(oneNoteMessage(new Error(`Error invoking remote method 'onenote:open': Error: ${safe}`), 'fallback'), safe);
+  assert.equal(oneNoteMessage(new Error('private network details'), 'fallback'), 'fallback');
+  assert.equal(oneNoteMessage(new Error('OneNote '+ 'x'.repeat(700)), 'fallback'), 'fallback');
+  assert.equal(oneNotePageTitle('TradeFrame · TEST · 11111111-2222-3333-4444-555555555555'), 'TEST');
+  assert.equal(oneNotePageTitle('My setup title'), 'My setup title');
+});
 
 test('workspace routes accept only known screens and leave in-page skip anchors alone', () => {
   assert.equal(viewFromHash('#journal'), 'journal');

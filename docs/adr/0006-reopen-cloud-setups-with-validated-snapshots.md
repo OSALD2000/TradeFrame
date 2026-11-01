@@ -9,7 +9,8 @@ New pages include a small TradeFrame.setup.json attachment with the original
 Markdown, schema/values and image hashes. Read original PNG resources from the
 page output and validate them against that snapshot. Do not embed full image
 copies in JSON. Rebuild authenticated resource requests against Microsoft Graph;
-never forward tokens to arbitrary page URLs. Never render retrieved HTML. Page
+never forward tokens to arbitrary page URLs. Accept modern content and older
+$value resource links, normalizing both to the documented Graph /content API. Never render retrieved HTML. Page
 IDs must come from the selected notebook's TradeFrame list. Downloads are bounded.
 
 Older pages have no snapshot. Recover known built-in forms from labels/values;
@@ -32,3 +33,11 @@ References: [Graph limits](https://learn.microsoft.com/en-us/graph/onenote-image
 [multipart updates](https://learn.microsoft.com/en-us/graph/onenote-update-page),
 [output resources](https://learn.microsoft.com/en-us/graph/onenote-input-output-html),
 [query encoding](https://learn.microsoft.com/en-us/graph/onenote-get-content).
+
+1 November follow-up: the owner confirmed upload but reported an apparently empty
+opened draft. `/content` resources were rejected by the earlier `$value`-only
+parser, and a late renderer state response could erase an opened capture. Return
+the complete capture snapshot with fields, apply it in the renderer, and ignore
+stale initial replies after an event or explicit restore. Retain image hashes,
+resource host/path checks and the current draft on failed import. Reference:
+[Get resource](https://learn.microsoft.com/en-us/graph/api/resource-get?view=graph-rest-1.0).

@@ -107,9 +107,15 @@ TradeFrame section. Listing does not create a section. Choose a page to restore
 an in-memory draft, then save a new local copy. Existing local files and the
 cloud page stay unchanged; the draft cannot append to an unchosen local file.
 
+Opening returns fields and the complete screenshot state in one trusted response;
+the renderer applies them together. A late initial state reply cannot erase the
+opened screenshots. Safe native OneNote error messages stay visible in the picker.
+
 New pages attach TradeFrame.setup.json with the validated original Markdown and
 PNG hashes. Original image resources are downloaded within bounded limits and
-checked before replacing the draft. Retrieved HTML is never rendered. Resource
+checked before replacing the draft. Both modern `/content` and older `/$value`
+resource links are accepted and normalized to the authenticated Graph `/content`
+endpoint. Retrieved HTML is never rendered. Resource
 links are validated and rebuilt on Graph; tokens never go to a page-supplied host.
 Old pages without a snapshot recover standard-form values and screenshots,
 keeping the complete original page text in Notes, including manual additions.

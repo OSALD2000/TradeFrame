@@ -1,5 +1,20 @@
 # TradeFrame visual direction
 
+Current owner choice, 1 November 2026: **guided dark workspace**, approved for
+implementation, with larger text/controls and more subtle micro-interactions.
+This resolves the pending choice recorded below. Preserve the existing black
+canvas, restrained sans-serif, fine stepped surfaces and lime primary action.
+Increase readability and spacing rather than adding decorative dashboards.
+
+Implementation lock: 16px base, 30px screen titles, 14–15px supporting/control
+text, 44px targets, 260px-minimum field columns, wider 232px navigation and
+roomier modal lists. Keep screenshot-first content and full-width details below.
+Use 120ms hover/press feedback, 180ms short state entries and 200ms modal entry;
+4–6px travel, no spring/bounce. Only active loading may loop, with explicit text.
+Respect prefers-reduced-motion by disabling animation/transition and smooth
+scroll. Use the bundled Refero motion guide; no animation dependency or imagery.
+Route changes start at the workspace top; typing never replays route animation.
+
 Approved direction: Linear-inspired desktop workspace, 26 October 2026.
 27 October 2026 owner revision: deeper black surfaces and setup fields below
 the image, using the full journal width instead of a narrow inspector.
@@ -127,7 +142,7 @@ invented trading statistics. Research: public Refero style systems above, plus
 [Linear onboarding](https://linear.app/docs/start-guide) and
 [Craft organization](https://www.craft.do/organize). Refero MCP remains unavailable.
 
-Three directions offered to the owner; the choice is pending:
+Three directions were offered; the owner selected the first on 1 November:
 
 1. Guided dark workspace (recommended). Linear owns black stepped surfaces,
    restrained typography, 6px controls and one primary action; borrow only Craft's
@@ -141,8 +156,7 @@ Three directions offered to the owner; the choice is pending:
    Dark primary buttons, cobalt only for focus/navigation. Reject dense terminal UI.
 
 Do not treat these as three copied apps or mix their token roles. No bitmap
-assets are needed. The selected direction must become the new reference lock
-before a substantial redesign. Existing approved styles cover the functional
+assets are needed. The first direction is now locked above for implementation. Existing approved styles cover the functional
 OneNote browser and save-result panel: native modal focus, short task copy,
 separate local/service results and a direct retry link. The browser never renders
 retrieved HTML. Local preview serving was rechecked and fails with listen EPERM;
@@ -152,8 +166,8 @@ rendered desktop/narrow QA remains blocked, not passed by SSR tests.
 
 Build target: the existing approved Linear dark design system. This work changes
 navigation/content grouping shared by all three offered directions, without
-choosing a new palette, typography or visual identity. The larger style choice
-remains pending. Preserve the black surfaces, 6px controls, accent-only primary
+choosing a new palette, typography or visual identity. At that stage the larger style choice was pending; the current owner choice
+above supersedes that state. Preserve the black surfaces, 6px controls, accent-only primary
 action and full-width fields below real screenshots. Borrow only Craft's
 separation of capture and organization and the user's explicit first-use goal.
 
@@ -164,3 +178,12 @@ behind optional customization, and actual destinations before saving. Show the
 capture/details/save sequence and a direct first capture action in the empty
 state. Automatically return to the setup when a native capture needs attention.
 No sample trades, decorative metrics, generated images or extra dependencies.
+
+0.6.0 verification: typecheck/build and 114 tests pass, including import state and
+safe picker copy. Declared text/surface contrast was checked (minimum 6.89:1 for
+the base palette); reduced-motion overrides are present. This is not a blanket
+accessibility or rendered-layout claim. The current preview-server attempt still
+fails with listen EPERM. Desktop/narrow, native capture-bar geometry, live focus
+and motion/reduced-motion behavior require desktop acceptance; no sandbox or
+browser protections were disabled. The owner has confirmed upload with 0.5.1;
+new import rendering is not yet confirmed on their account.

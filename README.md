@@ -48,11 +48,13 @@ those systems. The archive includes public guides with working relative links.
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.5.1`.
+The top-right toolbar shows the installed app version, for example `v0.6.0`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup
-shows Capture → Describe → Save & send. Form selection/editing is under
+shows Capture → Describe → Save & send. The guided dark layout uses larger
+text, 44px controls and subtle feedback for clicks, loading and opening panels.
+Animations respect the system reduced-motion preference. Form selection/editing is under
 **Customize the form (optional)**, leaving the first capture in focus.
 
 Click **Capture your first chart** (or **Capture chart**), then **Screenshot** on the floating bar. Choose a source

@@ -42,7 +42,7 @@ no private journals or account data were opened.
 - OneNote uses Microsoft device authorization, delegated Notes.ReadWrite and
   offline_access, refresh, encrypted refresh-token persistence where supported,
   multipart pages with all screenshots, and duplicate checks before retrying.
-  The owner reported successful connection; actual page upload remains unverified.
+  The owner reported successful connection; the owner has confirmed actual setup upload.
   New saves require selection of an existing notebook in Connections. Its ID is
   persisted and pinned to queued jobs; pages use its TradeFrame section. OneNote
   creates a new page per saved delivery, including a follow-up delivery.
@@ -253,3 +253,40 @@ or native capture routing; these remain owner acceptance with desktop/narrow QA.
 The new visual identity choice remains pending, not silently selected. The last
 installed version checked is still 0.4.0, with no new OneNote job; real account
 resolution and cloud opening remain unconfirmed. The full owner goal is active.
+
+1 November owner feedback and 0.6.0: the owner installed 0.5.1 and confirms that
+setups are now saved to OneNote. The local job list also records a synced OneNote
+job, without inspecting real note contents or tokens. Opening lists the setup but
+appears empty with no error. The owner selected guided dark, larger text/controls
+and subtle micro-interactions; the earlier style-choice blocker is resolved.
+
+A realistic resource regression failed against 0.5.1: modern Graph /content URLs
+were rejected by the $value-only resource parser. Both forms now normalize to
+the documented authenticated Graph /content endpoint, including allowed legacy
+OneNote-host resource paths. Arbitrary hosts, paths and redirects remain blocked.
+Local/cloud opening returns the complete capture snapshot with fields. The UI
+applies it explicitly, rejects an empty/mismatched response before declaring
+success, and ignores stale initial capture replies after an event or restore.
+A focused asynchronous test reproduced the stale-reply screenshot loss before
+the guard. Unsubscribe now returns void across the narrow context bridge.
+The picker shows safe native diagnostics, a specific opening status and readable
+titles while retaining opaque IDs for page selection. No local/cloud note format
+or credential change is introduced; failed opening preserves the prior draft.
+
+Guided dark now uses 16px base, 30px titles, larger controls/spacing, 44px targets,
+560x128 floating capture controls and 120–200ms functional motion with a reduced-
+motion override. Route entry returns to the workspace top; typing does not replay
+route transitions. Existing black surfaces and lime primary-action roles remain.
+The local preview server was rechecked in this resumed session and still fails
+with listen EPERM. No sandbox protections were weakened. Automated checks do not
+establish native visual quality or prove the owner's cloud import is fixed.
+
+The 0.6.0 build passes 114 tests. Both /content and legacy resource references
+restore the original schema/values/PNGs; alias tests verify tokens stay on Graph.
+Native local/cloud open responses include their full capture state, unsubscribe
+returns void, and hook tests cover stale initial replies, explicit restoration
+without an event, and late callbacks after cleanup. Picker tests keep safe native
+errors and remove technical delivery IDs from visible titles. A regression was
+observed before each resource/state fix. Base text/surface contrast was checked
+at minimum 6.89:1; reduced-motion overrides are present in the stylesheet. This
+does not replace real rendering, focus, motion or account import acceptance.

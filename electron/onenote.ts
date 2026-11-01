@@ -292,11 +292,11 @@ export class OneNoteClient {
   private async resource(value: string, headers: Record<string, string>, generation: number, limit: number) {
     if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
     const url = new URL(value);
-    const match = url.pathname.match(/^\/(?:v1\.0\/(?:me\/onenote\/)?|api\/v1\.0\/(?:me\/notes\/)?)resources\/([^/]+)\/\$value$/);
+    const match = url.pathname.match(/^\/(?:v1\.0\/(?:me\/onenote\/)?|api\/v1\.0\/(?:me\/notes\/)?)resources\/([^/]+)\/(?:content|\$value)$/);
     if (url.protocol !== 'https:' || !['graph.microsoft.com', 'www.onenote.com'].includes(url.hostname) || url.port || url.username || url.password || !match
       || !validOneNoteId(decodeURIComponent(match[1]))) throw new OneNoteError('OneNote returned an unsupported resource link.');
     // Rebuild a Graph URL; never forward a token to a URL supplied in page HTML.
-    const response = await this.request(`${graph}resources/${encodeURIComponent(decodeURIComponent(match[1]))}/$value`, { headers, redirect: 'error', signal: AbortSignal.timeout(30_000) });
+    const response = await this.request(`${graph}resources/${encodeURIComponent(decodeURIComponent(match[1]))}/content`, { headers, redirect: 'error', signal: AbortSignal.timeout(30_000) });
     return this.bytes(response, limit, generation);
   }
   async listSetups(): Promise<OneNotePage[]> {

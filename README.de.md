@@ -49,11 +49,13 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.5.1`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.0`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →
-Beschreiben → Speichern und Senden. Formularwahl und Bearbeitung liegen unter
+Beschreiben → Speichern und Senden. Die gefuehrte dunkle Oberflaeche hat
+groessere Schrift, 44-Pixel-Bedienelemente und dezente Animationen bei Klicks,
+Ladevorgaengen und geoeffneten Bereichen. Reduzierte Bewegung wird beruecksichtigt. Formularwahl und Bearbeitung liegen unter
 **Customize the form (optional)**, damit der Einstieg uebersichtlich bleibt.
 
 **Capture your first chart** (oder **Capture chart**) und dann **Screenshot** in der Leiste anklicken. Bei Bedarf

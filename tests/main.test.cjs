@@ -437,7 +437,7 @@ test('preload exposes named commands and strips event objects from subscriptions
   const state = { preview: null };
   ipcRenderer.emit('capture:changed', { sender: 'privileged event' }, state);
   assert.deepEqual(received, [[state]]);
-  unsubscribe();
+  assert.equal(unsubscribe(), undefined);
   assert.equal(ipcRenderer.listenerCount('capture:changed'), 0);
 });
 
@@ -541,6 +541,8 @@ test('opening a setup restores its schema values and image without modifying the
   const opened = await invoke('journal:open');
   assert.equal(opened.values.note, 'Restore 🕯');
   assert.equal(opened.schema.revision, 1);
+  assert.deepEqual(opened.capture, await invoke('capture:state'));
+  assert.equal(opened.capture.screenshots.length, 1);
   assert.match((await invoke('capture:state')).screenshots[0].image, /^tradeframe-image:\/\/capture\//);
   assert.equal((await invoke('capture:state')).busy, false);
   assert.equal(await fs.readFile(file, 'utf8'), original);
@@ -621,8 +623,8 @@ test('saved setups can be sent after connecting and cloud opens restore a separa
     const resource = new URL(url).pathname;
     if (resource.endsWith('/notebooks')) return reply({ value: [{ id: 'book', displayName: 'Synthetic book', isDefault: false }] });
     if (resource.endsWith('/sections')) return reply({ value: [{ id: 'section', displayName: 'TradeFrame' }] });
-    if (resource.endsWith('/resources/setup/$value')) return new Response(snapshot);
-    if (resource.endsWith('/resources/chart0/$value')) return new Response(corrupt ? Buffer.from('invalid PNG') : png);
+    if (resource.endsWith('/resources/setup/content')) return new Response(snapshot);
+    if (resource.endsWith('/resources/chart0/content')) return new Response(corrupt ? Buffer.from('invalid PNG') : png);
     if (resource.endsWith('/content')) return new Response(html);
     if (options.method !== 'POST') return reply({ value: title ? [{ id: 'page', title }] : [] });
     html = await options.body.get('Presentation').text(); title = /<title>(.*?)<\/title>/.exec(html)[1];
@@ -652,6 +654,8 @@ test('saved setups can be sent after connecting and cloud opens restore a separa
   const loaded = await invoke('onenote:open', windows[0], 'page');
   assert.deepEqual(loaded.values, setupInput().values); assert.equal(loaded.legacy, false);
   const state = await invoke('capture:state'); assert.equal(state.savedPath, null); assert.equal(state.screenshots.length, 1);
+  assert.deepEqual(loaded.capture, state);
+  assert.equal(loaded.capture.busy, false);
   assert.ok(state.screenshots[0].image.startsWith('tradeframe-image:'));
   assert.deepEqual(await fs.readFile(saved.path), original);
   await assert.rejects(invoke('journal:append', windows[0], setupInput()), /Could not append/);

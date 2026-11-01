@@ -34,7 +34,7 @@ interface. Preserve all three requirements until actual acceptance.
 
 The shared Create/Open/Connections task flow is implemented using the existing
 approved style: draft-preserving navigation, optional form tools, capture/details/
-save guidance and destination review. A new visual direction remains pending.
+save guidance and destination review. Guided dark is now selected and implemented at the larger scale; rendered QA remains open.
 
 Cloud browsing now opens a separate draft with validated snapshots/PNG resources,
 including text/image recovery for older pages. Direct send supports setups saved
@@ -53,14 +53,15 @@ Build and publisher instructions: [RELEASE](RELEASE.md).
   screenshots, calendar filing by historical market date, name collisions,
   long image notes, append, backup/reopen and recovery after terminating the process during append, new
   setup and close-warning flows. Verify that concurrent launches focus one window.
-- The owner reported successful Microsoft connection. Verify real notebook
-  discovery/selection, page creation with several images in the chosen notebook,
+- The owner confirms notebook listing and actual setup upload. Verify the
+  remaining account flows, including several images in the chosen notebook,
   refresh/restart, target switching, duplicate retry and disconnect
   using synthetic data and an explicitly chosen account.
-- Confirm the missing-delivery problem is resolved on the real account; verify
+- The owner confirmed that setups now save to OneNote. Verify the new import
+  fixes on the real account, including
   cloud opening, old/new forms and interrupted multi-request uploads.
-- Choose a workspace direction from the researched options in [DESIGN](DESIGN.md),
-  implement it and verify first-use navigation and desktop/narrow layouts.
+- The owner chose guided dark with larger controls and subtle motion. Verify
+  its first-use flow, desktop/narrow layout, focus, animations and reduced motion.
 - Verify real Obsidian note/image visibility and Dropbox cloud delivery together,
   then unavailable-target retry and external-file conflict behavior.
 - Run the package workflow and test each OS/architecture claimed in a release;

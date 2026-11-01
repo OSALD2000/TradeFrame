@@ -35,7 +35,7 @@ const capture: CaptureAPI = {
   onStateChange: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, state: CaptureState) => listener(state);
     ipcRenderer.on('capture:changed', handler);
-    return () => ipcRenderer.removeListener('capture:changed', handler);
+    return () => { ipcRenderer.removeListener('capture:changed', handler); };
   },
 };
 

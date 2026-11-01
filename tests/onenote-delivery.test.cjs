@@ -20,11 +20,11 @@ async function fixture(t, count = 2) {
   const file = await writeSetup(root, { schema: DEFAULT_SCHEMA, values }, Array.from({ length: count }, (_, index) => ({ id: String(index), image,
     caption: `View ${index + 1}\nLine two`, timeframe: `${index + 1}m`, capturedAt: '2026-11-01T12:00:00.000Z' })));
   let now = 0;
-  const state = { html: '', title: '', creates: 0, patches: 0, requests: [], losePatch: 0, failure: 0, sectionPresent: true, resources: new Map() };
+  const state = { html: '', title: '', creates: 0, patches: 0, requests: [], losePatch: 0, failure: 0, sectionPresent: true, linkSuffix: '$value', resources: new Map() };
   async function output(input, body) {
     for (const [name, value] of body.entries()) if (!['Presentation', 'Commands'].includes(name)) state.resources.set(name, Buffer.from(await value.arrayBuffer()));
-    return input.replace(/src="name:([^"]+)"/g, (_, name) => `data-fullres-src="${graph}resources/${name}/$value"`)
-      .replace(/data="name:([^"]+)"/g, (_, name) => `data="${graph}resources/${name}/$value"`);
+    return input.replace(/src="name:([^"]+)"/g, (_, name) => `data-fullres-src="${graph}resources/${name}/${state.linkSuffix}"`)
+      .replace(/data="name:([^"]+)"/g, (_, name) => `data="${graph}resources/${name}/${state.linkSuffix}"`);
   }
   const request = async (url, options) => {
     if (url.endsWith('devicecode')) return json({ device_code: 'private-device', user_code: 'TEST', expires_in: 60, interval: 1 });
@@ -39,6 +39,7 @@ async function fixture(t, count = 2) {
     }
     if (state.failure) return json({ error: { code: 'accessDenied', message: 'private raw diagnostic must never escape' } }, state.failure);
     if (resource.includes('/resources/')) {
+      assert.ok(resource.endsWith('/content'), 'Download through the documented Graph content endpoint');
       const name = resource.split('/').at(-2); assert.ok(state.resources.has(name)); return new Response(state.resources.get(name));
     }
     if (resource.endsWith('/pages/page/content') && options.method !== 'PATCH') return new Response(state.html);
@@ -67,6 +68,26 @@ async function fixture(t, count = 2) {
   await client.begin(); now = 1000; await client.poll(); await client.refreshNotebooks(); await client.selectNotebook('book');
   return { root, file, values, state, client };
 }
+
+test('Graph content resource links restore both fields and original screenshots from a listed setup', async (t) => {
+  const f = await fixture(t); f.state.linkSuffix = 'content';
+  await f.client.deliver(f.file, 'TradeFrame', randomUUID(), 'book');
+  await f.client.listSetups();
+  const loaded = await f.client.openSetup('page');
+  assert.deepEqual(loaded.values, f.values); assert.equal(loaded.screenshots.length, 2);
+  assert.ok(loaded.screenshots.every((shot) => shot.image === image));
+});
+
+test('legacy OneNote-host resource links use authenticated Graph content downloads without forwarding tokens', async (t) => {
+  const f = await fixture(t); f.state.linkSuffix = 'content';
+  await f.client.deliver(f.file, 'TradeFrame', randomUUID(), 'book'); await f.client.listSetups();
+  const html = f.state.html;
+  for (const prefix of ['https://www.onenote.com/api/v1.0/me/notes/', 'https://www.onenote.com/api/v1.0/']) {
+    f.state.html = html.replaceAll(graph, prefix);
+    assert.equal((await f.client.openSetup('page')).screenshots.length, 2);
+  }
+  assert.ok(f.state.requests.every((url) => url.startsWith(graph)));
+});
 
 test('20 screenshot setups upload within Graph limits and open losslessly from the chosen notebook', async (t) => {
   const f = await fixture(t, 20);

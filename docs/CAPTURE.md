@@ -100,3 +100,8 @@ Automated checks cover lifecycle, trust boundaries, selection, discard,
 cancellation/failure recovery, parallel capture prevention, and pending capture
 cleanup. Real capture, layout, permissions, and stacking remain to be tested on
 Sway/Wayland, Windows, and macOS. Do not mark those checks complete from mocks.
+
+0.6.0 guided-dark controls use a 560x128 floating window with larger text and
+44px buttons. The transparent-during-capture behavior and position preservation
+remain in place. Verify text/button fit and screen placement on the target
+desktop; the automated lifecycle tests do not establish native geometry.

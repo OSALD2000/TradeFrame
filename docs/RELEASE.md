@@ -31,7 +31,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.5.1`. The tag must match
+only, or when the owner pushes a version tag such as `v0.6.0`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -49,8 +49,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.5.1
-git push origin v0.5.1
+git tag v0.6.0
+git push origin v0.6.0
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.

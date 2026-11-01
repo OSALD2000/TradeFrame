@@ -15,7 +15,7 @@ const descriptions = { journal: 'Capture a chart, add your reasoning, and save i
   connections: 'Choose your local journal and the services that receive saved setups.' };
 
 export function App() {
-  const { state, api, run, error } = useCapture();
+  const { state, api, run, restoreCapture, error } = useCapture();
   const [view, setView] = useState<WorkspaceView>(() => viewFromHash(window.location.hash) ?? 'journal');
   const main = useRef<HTMLElement>(null);
   const previousShots = useRef(state.screenshots.length);
@@ -25,7 +25,7 @@ export function App() {
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, []);
-  useEffect(() => { main.current?.focus({ preventScroll: true }); }, [view]);
+  useEffect(() => { main.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); }, [view]);
   useEffect(() => {
     if (state.sources.length || state.screenshots.length > previousShots.current) navigate('journal');
     previousShots.current = state.screenshots.length;
@@ -35,7 +35,7 @@ export function App() {
       <a className="skip-link" href="#workspace-content">Skip to workspace</a>
       <aside className="sidebar" aria-label="Workspace">
         <div className="brand">
-          <img src="./tradeframe-icon.png" alt="" width="28" height="28" />
+          <img src="./tradeframe-icon.png" alt="" width="32" height="32" />
           <span>TradeFrame</span>
         </div>
         <nav aria-label="Main navigation">
@@ -130,9 +130,9 @@ export function App() {
               {view === 'journal' && state.screenshots.length > 0 && <h2 id="details-title">2. Describe your setup</h2>}
               <SetupForm api={api} busy={state.busy} choosing={state.sources.length > 0} hasPreview={state.screenshots.length > 0} savedPath={state.savedPath}
                 timeframesReady={state.screenshots.every((shot) => validTimeframe(shot.timeframe))} requiresTimeframeCopy={state.requiresTimeframeCopy}
-                view={view} onOpened={() => navigate('journal')} />
+                view={view} onOpened={(capture) => { restoreCapture(capture); navigate('journal'); }} />
             </section>
-            <div hidden={view !== 'connections'}><Connections api={api} busy={state.busy} /></div>
+            <div className="connections-view" hidden={view !== 'connections'}><Connections api={api} busy={state.busy} /></div>
             <footer className="journal-footer"><span>Saved setups stay in your chosen folder</span><span>Drafts stay in memory until saved</span></footer>
           </main>
         </div>

@@ -159,7 +159,7 @@ test('OneNote sends escaped fields and all images; retry after a lost response f
     if (url.endsWith('token')) return json({ access_token: 'synthetic-access', refresh_token: 'synthetic-refresh', expires_in: 3600 });
     assert.equal(options.headers.Authorization, 'Bearer synthetic-access');
     const resource = new URL(url).pathname;
-    if (resource.endsWith('/content')) return new Response(cloudHtml);
+    if (resource.includes('/pages/') && resource.endsWith('/content')) return new Response(cloudHtml);
     if (resource.includes('/resources/setup/')) return new Response(snapshot);
     if (resource.includes('/resources/image')) return new Response(Buffer.from(image.split(',')[1], 'base64'));
     assert.ok(url.startsWith('https://graph.microsoft.com/v1.0/me/onenote/pages?'));

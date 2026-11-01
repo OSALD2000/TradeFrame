@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { CaptureAPI, SetupInput, SaveResult } from '../electron/capture-types';
+import type { CaptureAPI, CaptureState, SetupInput, SaveResult } from '../electron/capture-types';
 import { JOURNAL_SCHEMA, emptyValues, fieldVisible, validateValues, journalValues } from '../electron/form-schema';
 import type { FormSchema, FormValues } from '../electron/form-schema';
 import { FieldInput } from './FieldInput';
@@ -12,7 +12,7 @@ import type { WorkspaceView } from './App';
 
 export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timeframesReady, requiresTimeframeCopy, view, onOpened }: {
   api: CaptureAPI | undefined; busy: boolean; choosing: boolean; hasPreview: boolean; savedPath: string | null; timeframesReady: boolean; requiresTimeframeCopy: boolean;
-  view: WorkspaceView; onOpened(): void;
+  view: WorkspaceView; onOpened(capture: CaptureState): void;
 }) {
   const [schema, setSchema] = useState(JOURNAL_SCHEMA);
   const [schemas, setSchemas] = useState<FormSchema[]>([]);
@@ -58,11 +58,12 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
     try {
       const loaded = await api.openSetup();
       if (loaded) {
+        if (!loaded.capture?.screenshots.length) throw new Error('Restart TradeFrame to reconnect the setup controls.');
         setLastSaved(null);
         setSchema(loaded.schema);
         setValues({ ...emptyValues(loaded.schema), ...loaded.values });
         setMessage('Opened setup. Capture more views to append to this file, or save a separate copy.');
-        onOpened();
+        onOpened(loaded.capture);
       }
     } catch { setError('Could not open this setup. Keep its Markdown, chart PNGs and recovery files together. Check for an active writer or changes made outside TradeFrame. Your current draft is unchanged.'); }
     finally { setSaving(false); }
@@ -172,10 +173,11 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
     </div>
     {browsingOneNote && api && <OneNoteBrowser api={api} onClose={() => setBrowsingOneNote(false)} onOpen={async (id) => {
       const loaded = await api.openOneNoteSetup(id);
+      if (!loaded.capture?.screenshots.length) throw new Error('OneNote could not return screenshots. Restart TradeFrame and reopen the setup.');
       setLastSaved(null);
       setSchema(loaded.schema); setValues({ ...emptyValues(loaded.schema), ...loaded.values }); setError('');
       setMessage(loaded.legacy ? 'Opened an older OneNote setup. Check the imported details and timeframes, then save a new local copy.' : 'Opened OneNote setup as a draft. Save a local copy to continue; its OneNote page stays unchanged.');
-      onOpened();
+      onOpened(loaded.capture);
     }} />}
     {message && <p className="save-message" role="status">{message}</p>}
     {error && <p className="save-message" role="alert">{error}</p>}

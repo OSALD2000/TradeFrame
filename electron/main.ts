@@ -102,8 +102,8 @@ async function openBar() {
     const window = new BrowserWindow({
       title: 'TradeFrame Capture',
       icon,
-      width: 440,
-      height: 104,
+      width: 560,
+      height: 128,
       resizable: false,
       maximizable: false,
       fullscreenable: false,
@@ -207,7 +207,7 @@ function registerCapture() {
           schemaStore().remember(setup.schema);
           state = { ...state, sources: [], screenshots, savedPath: null, requiresTimeframeCopy: screenshots.some((shot) => !shot.timeframe), error: null };
           savedFingerprint = '';
-          return { ...setup, legacy: loaded.legacy };
+          return { ...setup, legacy: loaded.legacy, capture: { ...state, busy: false } };
         }
         if (operation === 'send') {
           if (!state.savedPath || (await readSetup(state.savedPath)).fingerprint !== savedFingerprint) throw new OneNoteError('OneNote needs an unchanged saved setup. Open or save it first.');
@@ -302,7 +302,7 @@ function registerCapture() {
       const screenshots = loaded.screenshots.map((shot) => ({ ...shot, image: cacheImage(shot.image) }));
       state = { ...state, sources: [], screenshots, savedPath: selection.filePaths[0], requiresTimeframeCopy: loaded.screenshots.some((shot) => !shot.timeframe), error: null };
       savedFingerprint = loaded.fingerprint;
-      return { schema: loaded.schema, values: loaded.values };
+      return { schema: loaded.schema, values: loaded.values, capture: { ...state, busy: false } };
     } finally {
       if (journal === owner) { state.busy = false; publish(); }
     }
