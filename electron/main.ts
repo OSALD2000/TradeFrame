@@ -1,4 +1,14 @@
-import { app, BrowserWindow, desktopCapturer, dialog, ipcMain, Menu, safeStorage, shell, protocol } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  desktopCapturer,
+  dialog,
+  ipcMain,
+  Menu,
+  safeStorage,
+  shell,
+  protocol,
+} from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -14,13 +24,19 @@ import { OneNoteClient, OneNoteError } from './onenote';
 import type { SaveResult } from './capture-types';
 
 // Chromium does not automatically select a system keyring for Sway.
-if (process.platform === 'linux' && /(?:^|:)sway(?:$|:)/i.test(process.env.XDG_CURRENT_DESKTOP ?? '')
-  && !app.commandLine.hasSwitch('password-store')) app.commandLine.appendSwitch('password-store', 'gnome-libsecret');
+if (
+  process.platform === 'linux' &&
+  /(?:^|:)sway(?:$|:)/i.test(process.env.XDG_CURRENT_DESKTOP ?? '') &&
+  !app.commandLine.hasSwitch('password-store')
+)
+  app.commandLine.appendSwitch('password-store', 'gnome-libsecret');
 
 app.setName('TradeFrame');
 const primaryInstance = app.requestSingleInstanceLock();
 if (!primaryInstance) app.quit();
-protocol.registerSchemesAsPrivileged([{ scheme: 'tradeframe-image', privileges: { standard: true, secure: true } }]);
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'tradeframe-image', privileges: { standard: true, secure: true } },
+]);
 const uiFile = path.join(__dirname, '../dist/index.html');
 const preload = path.join(__dirname, 'preload.js');
 const icon = path.join(__dirname, '../dist/tradeframe-icon.png');
@@ -33,40 +49,68 @@ function schemaStore() {
   try {
     const legacy = path.join(__dirname, '../data/form-schemas.sqlite');
     if (!app.isPackaged && existsSync(legacy)) store.importFrom(legacy);
-    return schemas = store;
-  } catch (error) { store.close(); throw error; }
+    return (schemas = store);
+  } catch (error) {
+    store.close();
+    throw error;
+  }
 }
 let connections: ConnectionStore | null = null;
 function connectionStore() {
-  return connections ??= new ConnectionStore(path.join(app.getPath('userData'), 'connections.json'));
+  return (connections ??= new ConnectionStore(
+    path.join(app.getPath('userData'), 'connections.json'),
+  ));
 }
 let oneNote: OneNoteClient | null = null;
 function oneNoteClient() {
   if (oneNote) return oneNote;
   const configuration = path.join(__dirname, 'integrations.json');
-  const clientId = process.env.TRADEFRAME_MICROSOFT_CLIENT_ID
-    ?? (existsSync(configuration) ? JSON.parse(readFileSync(configuration, 'utf8')).microsoftClientId : '');
-  return oneNote = new OneNoteClient(app.getPath('userData'), safeStorage, clientId);
+  const clientId =
+    process.env.TRADEFRAME_MICROSOFT_CLIENT_ID ??
+    (existsSync(configuration)
+      ? JSON.parse(readFileSync(configuration, 'utf8')).microsoftClientId
+      : '');
+  return (oneNote = new OneNoteClient(app.getPath('userData'), safeStorage, clientId));
 }
-const deliverOneNote = (file: string, section: string, id: string, notebookId?: string) => oneNoteClient().deliver(file, section, id, notebookId);
-let state: CaptureState = { barOpen: false, busy: false, sources: [], screenshots: [], savedPath: null, requiresTimeframeCopy: false, error: null };
+const deliverOneNote = (file: string, section: string, id: string, notebookId?: string) =>
+  oneNoteClient().deliver(file, section, id, notebookId);
+let state: CaptureState = {
+  barOpen: false,
+  busy: false,
+  sources: [],
+  screenshots: [],
+  savedPath: null,
+  requiresTimeframeCopy: false,
+  error: null,
+};
 let savedFingerprint = '';
 let capturedAt = '';
 const images = new Map<string, Buffer>();
 
 function cacheImage(image: string) {
   const bytes = pngBytes(image);
-  if ([...images.values()].reduce((sum, item) => sum + item.length, bytes.length) > 256_000_000) throw new Error('Capture images exceed the memory limit');
+  if ([...images.values()].reduce((sum, item) => sum + item.length, bytes.length) > 256_000_000)
+    throw new Error('Capture images exceed the memory limit');
   const url = `tradeframe-image://capture/${randomUUID()}`;
   images.set(url, bytes);
   return url;
 }
 
 function appendScreenshot(source: CaptureSource) {
-  if (state.screenshots.length >= MAX_SCREENSHOTS) throw new Error('A setup can contain up to 20 screenshots');
-  const bytes = [...state.screenshots, source].reduce((sum, shot) => sum + images.get(shot.image)!.length, 0);
+  if (state.screenshots.length >= MAX_SCREENSHOTS)
+    throw new Error('A setup can contain up to 20 screenshots');
+  const bytes = [...state.screenshots, source].reduce(
+    (sum, shot) => sum + images.get(shot.image)!.length,
+    0,
+  );
   if (bytes > 128_000_000) throw new Error('Screenshots exceed 128 MB');
-  state.screenshots.push({ id: randomUUID(), image: source.image, caption: '', timeframe: '', capturedAt });
+  state.screenshots.push({
+    id: randomUUID(),
+    image: source.image,
+    caption: '',
+    timeframe: '',
+    capturedAt,
+  });
   state.sources = [];
 }
 
@@ -76,11 +120,15 @@ function protectWindow(window: BrowserWindow) {
 }
 
 function assertSender(event: IpcMainInvokeEvent, expected?: BrowserWindow | null) {
-  const known = expected === undefined
-    ? event.sender === journal?.webContents || event.sender === bar?.webContents
-    : !!expected && event.sender === expected.webContents;
-  if (!known || event.senderFrame !== event.sender.mainFrame
-    || event.senderFrame?.url.split(/[?#]/)[0] !== pathToFileURL(uiFile).href) {
+  const known =
+    expected === undefined
+      ? event.sender === journal?.webContents || event.sender === bar?.webContents
+      : !!expected && event.sender === expected.webContents;
+  if (
+    !known ||
+    event.senderFrame !== event.sender.mainFrame ||
+    event.senderFrame?.url.split(/[?#]/)[0] !== pathToFileURL(uiFile).href
+  ) {
     throw new Error('Untrusted capture request');
   }
 }
@@ -163,7 +211,11 @@ async function takeScreenshot() {
     if (journal !== owner) return;
     state.sources = sources
       .filter((source) => !/^window:.*:1$/.test(source.id) && !source.thumbnail.isEmpty())
-      .map((source) => ({ id: source.id, name: source.name, image: cacheImage(source.thumbnail.toDataURL()) }));
+      .map((source) => ({
+        id: source.id,
+        name: source.name,
+        image: cacheImage(source.thumbnail.toDataURL()),
+      }));
     if (state.sources.length === 1) {
       appendScreenshot(state.sources[0]);
     } else if (state.sources.length === 0) {
@@ -171,7 +223,8 @@ async function takeScreenshot() {
     }
   } catch {
     if (journal !== owner) return;
-    state.error = 'Capture was cancelled or screen access was unavailable. You can try again; your screenshots are unchanged.';
+    state.error =
+      'Capture was cancelled or screen access was unavailable. You can try again; your screenshots are unchanged.';
   } finally {
     if (journal === owner) {
       state.busy = false;
@@ -187,39 +240,83 @@ function registerCapture() {
   ipcMain.handle('journal:new', (event) => {
     assertSender(event, journal);
     if (state.busy) throw new Error('Wait for the current operation to finish');
-    state = { ...state, sources: [], screenshots: [], savedPath: null, requiresTimeframeCopy: false, error: null };
+    state = {
+      ...state,
+      sources: [],
+      screenshots: [],
+      savedPath: null,
+      requiresTimeframeCopy: false,
+      error: null,
+    };
     savedFingerprint = '';
     publish();
   });
-  ipcMain.handle('onenote:state', (event) => { assertSender(event, journal); return oneNoteClient().getState(); });
-  for (const operation of ['configure', 'connect', 'poll', 'disconnect', 'notebooks', 'notebook', 'setups', 'open', 'send'] as const) {
+  ipcMain.handle('onenote:state', (event) => {
+    assertSender(event, journal);
+    return oneNoteClient().getState();
+  });
+  for (const operation of [
+    'configure',
+    'connect',
+    'poll',
+    'disconnect',
+    'notebooks',
+    'notebook',
+    'setups',
+    'open',
+    'send',
+  ] as const) {
     ipcMain.handle(`onenote:${operation}`, async (event, input: unknown) => {
       assertSender(event, journal);
       if (state.busy) {
         if (operation === 'poll') return oneNoteClient().getState();
         throw new Error('Wait for the current operation to finish');
       }
-      state.busy = true; publish();
+      state.busy = true;
+      publish();
       try {
         if (operation === 'setups') return await oneNoteClient().listSetups();
         if (operation === 'open') {
           const owner = journal;
           const loaded = await oneNoteClient().openSetup(input);
-          if (journal !== owner) throw new OneNoteError('OneNote import was canceled because the journal window closed.');
+          if (journal !== owner)
+            throw new OneNoteError(
+              'OneNote import was canceled because the journal window closed.',
+            );
           const setup = validateSetup({ schema: loaded.schema, values: loaded.values });
-          const screenshots = loaded.screenshots.map((shot) => ({ ...shot, image: cacheImage(shot.image) }));
+          const screenshots = loaded.screenshots.map((shot) => ({
+            ...shot,
+            image: cacheImage(shot.image),
+          }));
           schemaStore().remember(setup.schema);
-          state = { ...state, sources: [], screenshots, savedPath: null, requiresTimeframeCopy: screenshots.some((shot) => !shot.timeframe), error: null };
+          state = {
+            ...state,
+            sources: [],
+            screenshots,
+            savedPath: null,
+            requiresTimeframeCopy: screenshots.some((shot) => !shot.timeframe),
+            error: null,
+          };
           savedFingerprint = '';
           return { ...setup, legacy: loaded.legacy, capture: { ...state, busy: false } };
         }
         if (operation === 'send') {
-          if (!state.savedPath || (await readSetup(state.savedPath)).fingerprint !== savedFingerprint) throw new OneNoteError('OneNote needs an unchanged saved setup. Open or save it first.');
+          if (
+            !state.savedPath ||
+            (await readSetup(state.savedPath)).fingerprint !== savedFingerprint
+          )
+            throw new OneNoteError(
+              'OneNote needs an unchanged saved setup. Open or save it first.',
+            );
           const target = await oneNoteClient().getState();
-          if (!target.connected || !target.notebook) throw new OneNoteError('OneNote needs a connection and a selected notebook first.');
+          if (!target.connected || !target.notebook)
+            throw new OneNoteError('OneNote needs a connection and a selected notebook first.');
           const store = connectionStore();
           const jobs = store.enqueue(state.savedPath, target.section, target.notebook.id, false);
-          const sync = await store.retry(jobs.map((job) => job.id), deliverOneNote);
+          const sync = await store.retry(
+            jobs.map((job) => job.id),
+            deliverOneNote,
+          );
           return { status: 'saved', path: state.savedPath, sync } satisfies SaveResult;
         }
         if (operation === 'configure') {
@@ -230,7 +327,8 @@ function registerCapture() {
         if (operation === 'notebooks') return await oneNoteClient().refreshNotebooks();
         if (operation === 'notebook') {
           const current = await oneNoteClient().getState();
-          if (!current.connected || !current.notebooks.some((item) => item.id === input)) throw new Error('Choose an available notebook after signing in');
+          if (!current.connected || !current.notebooks.some((item) => item.id === input))
+            throw new Error('Choose an available notebook after signing in');
           connectionStore().cancelOneNote();
           return await oneNoteClient().selectNotebook(input);
         }
@@ -244,9 +342,14 @@ function registerCapture() {
         return result;
       } catch (error) {
         if (['open', 'setups', 'send'].includes(operation) && !(error instanceof OneNoteError))
-          throw new Error('OneNote could not finish. Check Connections and retry; your current draft is unchanged.');
+          throw new Error(
+            'OneNote could not finish. Check Connections and retry; your current draft is unchanged.',
+          );
         throw error;
-      } finally { state.busy = false; publish(); }
+      } finally {
+        state.busy = false;
+        publish();
+      }
     });
   }
   ipcMain.handle('onenote:browser', async (event) => {
@@ -254,21 +357,34 @@ function registerCapture() {
     if (!(await oneNoteClient().getState()).login) throw new Error('Start OneNote sign-in first');
     await shell.openExternal('https://microsoft.com/devicelogin');
   });
-  ipcMain.handle('connections:get', (event) => { assertSender(event, journal); return connectionStore().get(); });
+  ipcMain.handle('connections:get', (event) => {
+    assertSender(event, journal);
+    return connectionStore().get();
+  });
   ipcMain.handle('connections:folder', async (event, kind: unknown) => {
     assertSender(event, journal);
     folderKind(kind);
     const owner = journal;
     if (!owner || state.busy) throw new Error('Wait for the current operation to finish');
-    state.busy = true; publish();
+    state.busy = true;
+    publish();
     try {
       const selection = await dialog.showOpenDialog(owner, {
-        title: kind === 'journal' ? 'Choose local journal folder' : `Choose ${kind === 'obsidian' ? 'Obsidian vault' : 'Dropbox folder'}`,
+        title:
+          kind === 'journal'
+            ? 'Choose local journal folder'
+            : `Choose ${kind === 'obsidian' ? 'Obsidian vault' : 'Dropbox folder'}`,
         properties: ['openDirectory', 'createDirectory'],
       });
-      if (selection.canceled || !selection.filePaths.length || journal !== owner) return connectionStore().get();
+      if (selection.canceled || !selection.filePaths.length || journal !== owner)
+        return connectionStore().get();
       return connectionStore().setFolder(kind, await realpath(selection.filePaths[0]));
-    } finally { if (journal === owner) { state.busy = false; publish(); } }
+    } finally {
+      if (journal === owner) {
+        state.busy = false;
+        publish();
+      }
+    }
   });
   ipcMain.handle('connections:disconnect', (event, kind: unknown) => {
     assertSender(event, journal);
@@ -279,11 +395,20 @@ function registerCapture() {
   ipcMain.handle('connections:retry', async (event) => {
     assertSender(event, journal);
     if (state.busy) throw new Error('Wait for the current operation to finish');
-    state.busy = true; publish();
-    try { await connectionStore().retry(undefined, deliverOneNote); return connectionStore().get(); }
-    finally { state.busy = false; publish(); }
+    state.busy = true;
+    publish();
+    try {
+      await connectionStore().retry(undefined, deliverOneNote);
+      return connectionStore().get();
+    } finally {
+      state.busy = false;
+      publish();
+    }
   });
-  ipcMain.handle('forms:list', (event) => { assertSender(event, journal); return schemaStore().list(); });
+  ipcMain.handle('forms:list', (event) => {
+    assertSender(event, journal);
+    return schemaStore().list();
+  });
   ipcMain.handle('forms:save', (event, input: unknown) => {
     assertSender(event, journal);
     if (state.busy) throw new Error('Wait for the current operation to finish');
@@ -297,66 +422,28 @@ function registerCapture() {
     publish();
     try {
       const selection = await dialog.showOpenDialog(owner, {
-        title: 'Open TradeFrame setup', properties: ['openFile'], filters: [{ name: 'Markdown setup', extensions: ['md'] }],
+        title: 'Open TradeFrame setup',
+        properties: ['openFile'],
+        filters: [{ name: 'Markdown setup', extensions: ['md'] }],
       });
       if (selection.canceled || !selection.filePaths.length || journal !== owner) return null;
       const loaded = await readSetup(selection.filePaths[0]);
       if (journal !== owner) return null;
       schemaStore().remember(loaded.schema);
-      const screenshots = loaded.screenshots.map((shot) => ({ ...shot, image: cacheImage(shot.image) }));
-      state = { ...state, sources: [], screenshots, savedPath: selection.filePaths[0], requiresTimeframeCopy: loaded.screenshots.some((shot) => !shot.timeframe), error: null };
+      const screenshots = loaded.screenshots.map((shot) => ({
+        ...shot,
+        image: cacheImage(shot.image),
+      }));
+      state = {
+        ...state,
+        sources: [],
+        screenshots,
+        savedPath: selection.filePaths[0],
+        requiresTimeframeCopy: loaded.screenshots.some((shot) => !shot.timeframe),
+        error: null,
+      };
       savedFingerprint = loaded.fingerprint;
       return { schema: loaded.schema, values: loaded.values, capture: { ...state, busy: false } };
-    } finally {
-      if (journal === owner) { state.busy = false; publish(); }
-    }
-  });
-  for (const operation of ['save', 'append'] as const) ipcMain.handle(`journal:${operation}`, async (event, input: unknown): Promise<SaveResult> => {
-    assertSender(event, journal);
-    const owner = journal;
-    if (!owner || state.busy || !state.screenshots.length || state.sources.length) {
-      throw new Error('Choose a screenshot before saving');
-    }
-    if (!state.screenshots.every((shot) => validTimeframe(shot.timeframe))) throw new Error('Choose a timeframe for every screenshot before saving');
-    const setup = validateSetup(input);
-    schemaStore().remember(setup.schema);
-    const screenshots = state.screenshots.map((shot) => ({ ...shot, image: `data:image/png;base64,${images.get(shot.image)!.toString('base64')}` }));
-    state.busy = true;
-    publish();
-    try {
-      const store = connectionStore();
-      let folder = store.get().folders.journal;
-      if (operation === 'save' && !folder) {
-        const selection = await dialog.showOpenDialog(owner, {
-          title: 'Choose journal folder', buttonLabel: 'Save setup here',
-          properties: ['openDirectory', 'createDirectory'],
-        });
-        if (selection.canceled || !selection.filePaths.length || journal !== owner) return { status: 'cancelled' };
-        folder = await realpath(selection.filePaths[0]);
-        store.setFolder('journal', folder);
-      }
-      let savedPath: string;
-      if (operation === 'append') {
-        if (!state.savedPath) throw new Error('Open or save a setup before adding screenshots');
-        await appendScreenshots(state.savedPath, savedFingerprint, setup, screenshots);
-        savedPath = state.savedPath;
-      } else savedPath = await writeSetup(folder!, setup, screenshots);
-      state.savedPath = savedPath;
-      state.requiresTimeframeCopy = false;
-      savedFingerprint = (await readSetup(savedPath)).fingerprint;
-      try {
-        const oneNoteState = await oneNoteClient().getState();
-        const jobs = store.enqueue(savedPath, oneNoteState.connected && oneNoteState.notebook ? oneNoteState.section : undefined, oneNoteState.connected ? oneNoteState.notebook?.id : undefined);
-        const sync = await store.retry(jobs.map((job) => job.id), deliverOneNote);
-        return { status: 'saved', path: savedPath, sync, ...(oneNoteState.connected && !oneNoteState.notebook
-          ? { warning: 'Local save succeeded. Choose a OneNote notebook in Connections, then use Send saved setup to OneNote.' }
-          : !oneNoteState.connected && oneNoteState.notebook ? { warning: 'Local save succeeded. OneNote was not sent: reconnect in Connections, then send the saved setup.' } : {}) };
-      } catch {
-        return { status: 'saved', path: savedPath, sync: [], warning: 'Local save succeeded, but sync could not finish. Check Connections before retrying.' };
-      }
-    } catch (error) {
-      if (operation === 'append') throw new Error('Could not append. Keep existing fields and screenshots unchanged, or reopen a file changed elsewhere. The original content and any backup remain in its folder.');
-      throw new Error('Could not save the setup. Check folder access and free space, then retry.');
     } finally {
       if (journal === owner) {
         state.busy = false;
@@ -364,8 +451,105 @@ function registerCapture() {
       }
     }
   });
-  ipcMain.handle('capture:state', (event) => { assertSender(event); return state; });
-  ipcMain.handle('capture:open-bar', (event) => { assertSender(event, journal); return openBar(); });
+  for (const operation of ['save', 'append'] as const)
+    ipcMain.handle(`journal:${operation}`, async (event, input: unknown): Promise<SaveResult> => {
+      assertSender(event, journal);
+      const owner = journal;
+      if (!owner || state.busy || !state.screenshots.length || state.sources.length) {
+        throw new Error('Choose a screenshot before saving');
+      }
+      if (!state.screenshots.every((shot) => validTimeframe(shot.timeframe)))
+        throw new Error('Choose a timeframe for every screenshot before saving');
+      const setup = validateSetup(input);
+      schemaStore().remember(setup.schema);
+      const screenshots = state.screenshots.map((shot) => ({
+        ...shot,
+        image: `data:image/png;base64,${images.get(shot.image)!.toString('base64')}`,
+      }));
+      state.busy = true;
+      publish();
+      try {
+        const store = connectionStore();
+        let folder = store.get().folders.journal;
+        if (operation === 'save' && !folder) {
+          const selection = await dialog.showOpenDialog(owner, {
+            title: 'Choose journal folder',
+            buttonLabel: 'Save setup here',
+            properties: ['openDirectory', 'createDirectory'],
+          });
+          if (selection.canceled || !selection.filePaths.length || journal !== owner)
+            return { status: 'cancelled' };
+          folder = await realpath(selection.filePaths[0]);
+          store.setFolder('journal', folder);
+        }
+        let savedPath: string;
+        if (operation === 'append') {
+          if (!state.savedPath) throw new Error('Open or save a setup before adding screenshots');
+          await appendScreenshots(state.savedPath, savedFingerprint, setup, screenshots);
+          savedPath = state.savedPath;
+        } else savedPath = await writeSetup(folder!, setup, screenshots);
+        state.savedPath = savedPath;
+        state.requiresTimeframeCopy = false;
+        savedFingerprint = (await readSetup(savedPath)).fingerprint;
+        try {
+          const oneNoteState = await oneNoteClient().getState();
+          const jobs = store.enqueue(
+            savedPath,
+            oneNoteState.connected && oneNoteState.notebook ? oneNoteState.section : undefined,
+            oneNoteState.connected ? oneNoteState.notebook?.id : undefined,
+          );
+          const sync = await store.retry(
+            jobs.map((job) => job.id),
+            deliverOneNote,
+          );
+          return {
+            status: 'saved',
+            path: savedPath,
+            sync,
+            ...(oneNoteState.connected && !oneNoteState.notebook
+              ? {
+                  warning:
+                    'Local save succeeded. Choose a OneNote notebook in Connections, then use Send saved setup to OneNote.',
+                }
+              : !oneNoteState.connected && oneNoteState.notebook
+                ? {
+                    warning:
+                      'Local save succeeded. OneNote was not sent: reconnect in Connections, then send the saved setup.',
+                  }
+                : {}),
+          };
+        } catch {
+          return {
+            status: 'saved',
+            path: savedPath,
+            sync: [],
+            warning:
+              'Local save succeeded, but sync could not finish. Check Connections before retrying.',
+          };
+        }
+      } catch (error) {
+        if (operation === 'append')
+          throw new Error(
+            'Could not append. Keep existing fields and screenshots unchanged, or reopen a file changed elsewhere. The original content and any backup remain in its folder.',
+          );
+        throw new Error(
+          'Could not save the setup. Check folder access and free space, then retry.',
+        );
+      } finally {
+        if (journal === owner) {
+          state.busy = false;
+          publish();
+        }
+      }
+    });
+  ipcMain.handle('capture:state', (event) => {
+    assertSender(event);
+    return state;
+  });
+  ipcMain.handle('capture:open-bar', (event) => {
+    assertSender(event, journal);
+    return openBar();
+  });
   ipcMain.handle('capture:screenshot', (event) => {
     assertSender(event, bar);
     if (event.sender !== bar?.webContents) throw new Error('Open the capture bar first');
@@ -389,7 +573,8 @@ function registerCapture() {
   });
   ipcMain.handle('capture:remove', (event, id: unknown) => {
     assertSender(event, journal);
-    if (state.busy || typeof id !== 'string' || !state.screenshots.some((shot) => shot.id === id)) throw new Error('Invalid screenshot');
+    if (state.busy || typeof id !== 'string' || !state.screenshots.some((shot) => shot.id === id))
+      throw new Error('Invalid screenshot');
     state.screenshots = state.screenshots.filter((shot) => shot.id !== id);
     state.error = null;
     publish();
@@ -397,14 +582,28 @@ function registerCapture() {
   ipcMain.handle('capture:caption', (event, id: unknown, caption: unknown) => {
     assertSender(event, journal);
     const shot = state.screenshots.find((shot) => shot.id === id);
-    if (state.busy || !shot || typeof caption !== 'string' || caption.length > 20000 || /\0/.test(caption)) throw new Error('Invalid screenshot caption');
+    if (
+      state.busy ||
+      !shot ||
+      typeof caption !== 'string' ||
+      caption.length > 20000 ||
+      /\0/.test(caption)
+    )
+      throw new Error('Invalid screenshot caption');
     shot.caption = caption;
     publish();
   });
   ipcMain.handle('capture:timeframe', (event, id: unknown, timeframe: unknown) => {
     assertSender(event, journal);
     const shot = state.screenshots.find((shot) => shot.id === id);
-    if (state.busy || !shot || typeof timeframe !== 'string' || timeframe.length > 5 || /[\r\n\0]/.test(timeframe)) throw new Error('Invalid screenshot timeframe');
+    if (
+      state.busy ||
+      !shot ||
+      typeof timeframe !== 'string' ||
+      timeframe.length > 5 ||
+      /[\r\n\0]/.test(timeframe)
+    )
+      throw new Error('Invalid screenshot timeframe');
     shot.timeframe = timeframe;
     publish();
   });
@@ -416,17 +615,26 @@ function registerCapture() {
 
 function createWindow() {
   const window = new BrowserWindow({
-    title: 'TradeFrame', width: 1120, height: 760, minWidth: 640, minHeight: 480,
+    title: 'TradeFrame',
+    width: 1120,
+    height: 760,
+    minWidth: 640,
+    minHeight: 480,
     icon,
-    show: false, backgroundColor: '#000000',
+    show: false,
+    backgroundColor: '#000000',
     webPreferences: { preload, nodeIntegration: false, contextIsolation: true, sandbox: true },
   });
   journal = window;
   protectWindow(window);
   window.webContents.on('will-prevent-unload', (event) => {
     const choice = dialog.showMessageBoxSync(window, {
-      type: 'question', buttons: ['Discard draft', 'Keep editing'], defaultId: 1, cancelId: 1,
-      title: 'Keep your setup?', message: 'Your current fields and screenshots will be closed.',
+      type: 'question',
+      buttons: ['Discard draft', 'Keep editing'],
+      defaultId: 1,
+      cancelId: 1,
+      title: 'Keep your setup?',
+      message: 'Your current fields and screenshots will be closed.',
       detail: 'Save a copy before closing if you need to keep them. Saved files are unchanged.',
     });
     if (choice === 0) event.preventDefault();
@@ -435,7 +643,15 @@ function createWindow() {
   window.on('closed', () => {
     journal = null;
     bar?.close();
-    state = { barOpen: false, busy: false, sources: [], screenshots: [], savedPath: null, requiresTimeframeCopy: false, error: null };
+    state = {
+      barOpen: false,
+      busy: false,
+      sources: [],
+      screenshots: [],
+      savedPath: null,
+      requiresTimeframeCopy: false,
+      error: null,
+    };
     savedFingerprint = '';
     images.clear();
   });
@@ -445,33 +661,51 @@ function createWindow() {
   });
 }
 
-if (primaryInstance) app.whenReady().then(() => {
-  protocol.handle('tradeframe-image', (request) => {
-    const bytes = request.method === 'GET' ? images.get(request.url) : undefined;
-    return bytes ? new Response(new Uint8Array(bytes), { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' } })
-      : new Response(null, { status: 404 });
-  });
-  app.dock?.setIcon(icon);
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    ...(process.platform === 'darwin' ? [{ role: 'appMenu' as const }] : []),
-    { role: 'fileMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' },
-  ]));
-  registerCapture();
-  createWindow();
-  app.on('second-instance', () => {
-    if (!journal) createWindow();
-    else { journal.show(); journal.focus(); }
-  });
-  app.on('activate', () => {
-    if (!journal) createWindow();
-    else if (!state.busy) journal.show();
-  });
-}).catch((error: Error) => {
-  dialog.showErrorBox('TradeFrame could not start', error.message);
-  app.quit();
-});
+if (primaryInstance)
+  app
+    .whenReady()
+    .then(() => {
+      protocol.handle('tradeframe-image', (request) => {
+        const bytes = request.method === 'GET' ? images.get(request.url) : undefined;
+        return bytes
+          ? new Response(new Uint8Array(bytes), {
+              headers: { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' },
+            })
+          : new Response(null, { status: 404 });
+      });
+      app.dock?.setIcon(icon);
+      Menu.setApplicationMenu(
+        Menu.buildFromTemplate([
+          ...(process.platform === 'darwin' ? [{ role: 'appMenu' as const }] : []),
+          { role: 'fileMenu' },
+          { role: 'editMenu' },
+          { role: 'viewMenu' },
+          { role: 'windowMenu' },
+        ]),
+      );
+      registerCapture();
+      createWindow();
+      app.on('second-instance', () => {
+        if (!journal) createWindow();
+        else {
+          journal.show();
+          journal.focus();
+        }
+      });
+      app.on('activate', () => {
+        if (!journal) createWindow();
+        else if (!state.busy) journal.show();
+      });
+    })
+    .catch((error: Error) => {
+      dialog.showErrorBox('TradeFrame could not start', error.message);
+      app.quit();
+    });
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
-app.on('will-quit', () => { schemas?.close(); schemas = null; });
+app.on('will-quit', () => {
+  schemas?.close();
+  schemas = null;
+});

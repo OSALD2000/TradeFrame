@@ -1,22 +1,54 @@
 import type { FormSchema, FormValues } from './form-schema';
 export type FolderKind = 'journal' | 'obsidian' | 'dropbox';
-export type SyncJob = { id: string; source: string; status: 'pending' | 'synced' | 'failed'; error: string | null }
-  & ({ kind: 'obsidian' | 'dropbox'; folder: string } | { kind: 'onenote'; section: string; notebookId?: string });
-export type Connections = { version: 1 | 2; folders: Record<FolderKind, string | null>; jobs: SyncJob[] };
+export type SyncJob = {
+  id: string;
+  source: string;
+  status: 'pending' | 'synced' | 'failed';
+  error: string | null;
+} & (
+  | { kind: 'obsidian' | 'dropbox'; folder: string }
+  | { kind: 'onenote'; section: string; notebookId?: string }
+);
+export type Connections = {
+  version: 1 | 2;
+  folders: Record<FolderKind, string | null>;
+  jobs: SyncJob[];
+};
 export type OneNoteNotebook = { id: string; displayName: string; isDefault: boolean };
 export type OneNotePage = { id: string; title: string; modifiedAt: string };
-export const validOneNoteId = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 2048
-  && value !== '.' && value !== '..' && !/[\x00-\x20\x7f]/.test(value);
-export type OneNoteState = { configured: boolean; applicationId: string; customApplicationId: boolean; connected: boolean; durable: boolean; section: string; error: string | null;
-  notebook: OneNoteNotebook | null; notebooks: OneNoteNotebook[];
-  login: { userCode: string; expiresAt: number } | null };
+export const validOneNoteId = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  value.length > 0 &&
+  value.length <= 2048 &&
+  value !== '.' &&
+  value !== '..' &&
+  !/[\x00-\x20\x7f]/.test(value);
+export type OneNoteState = {
+  configured: boolean;
+  applicationId: string;
+  customApplicationId: boolean;
+  connected: boolean;
+  durable: boolean;
+  section: string;
+  error: string | null;
+  notebook: OneNoteNotebook | null;
+  notebooks: OneNoteNotebook[];
+  login: { userCode: string; expiresAt: number } | null;
+};
 export type SetupInput = { schema: FormSchema; values: FormValues };
 export type OpenedSetup = SetupInput & { capture: CaptureState };
 
-export type SaveResult = { status: 'cancelled' } | { status: 'saved'; path: string; sync: SyncJob[]; warning?: string };
+export type SaveResult =
+  { status: 'cancelled' } | { status: 'saved'; path: string; sync: SyncJob[]; warning?: string };
 
 export type CaptureSource = { id: string; name: string; image: string };
-export type Screenshot = { id: string; image: string; caption: string; capturedAt: string; timeframe: string };
+export type Screenshot = {
+  id: string;
+  image: string;
+  caption: string;
+  capturedAt: string;
+  timeframe: string;
+};
 
 export type CaptureState = {
   barOpen: boolean;

@@ -15,15 +15,21 @@ test('the new journal template is added without changing saved default revisions
   store.save({ ...DEFAULT_SCHEMA, name: 'Custom existing form' });
   store.close();
   const db = new DatabaseSync(file);
-  db.prepare('DELETE FROM schema_revisions WHERE id = ?').run('journal'); db.close();
+  db.prepare('DELETE FROM schema_revisions WHERE id = ?').run('journal');
+  db.close();
   const reopened = new SchemaStore(file);
   try {
-    assert.equal(reopened.list().find((form) => form.id === 'default').name, 'Custom existing form');
+    assert.equal(
+      reopened.list().find((form) => form.id === 'default').name,
+      'Custom existing form',
+    );
     const journal = reopened.list().find((form) => form.id === 'journal');
     assert.ok(journal.fields.some((field) => field.id === 'date' && field.required));
     assert.ok(journal.fields.some((field) => field.id === 'r' && field.type === 'number'));
     assert.ok(journal.fields.some((field) => field.id === 'result'));
-  } finally { reopened.close(); }
+  } finally {
+    reopened.close();
+  }
 });
 
 test('SQLite persists only immutable form revisions across reopen and detects stale edits', async (t) => {
@@ -33,7 +39,13 @@ test('SQLite persists only immutable form revisions across reopen and detects st
   const first = new SchemaStore(file);
   const original = first.list()[0];
   assert.deepEqual(original, validateSchema(DEFAULT_SCHEMA));
-  const edited = first.save({ ...original, name: 'Review 🕯', fields: original.fields.map((field) => field.id === 'symbol' ? { ...field, label: 'Instrument', key: 'instrument' } : field) });
+  const edited = first.save({
+    ...original,
+    name: 'Review 🕯',
+    fields: original.fields.map((field) =>
+      field.id === 'symbol' ? { ...field, label: 'Instrument', key: 'instrument' } : field,
+    ),
+  });
   assert.equal(edited.revision, 2);
   first.close();
   const reopened = new SchemaStore(file);
@@ -43,18 +55,29 @@ test('SQLite persists only immutable form revisions across reopen and detects st
     assert.throws(() => reopened.save(original), /changed/);
     assert.equal(reopened.save(edited).revision, 3);
     assert.throws(() => other.save(edited), /changed/);
-    assert.throws(() => reopened.remember({ ...original, name: 'Conflicting history' }), /different/);
+    assert.throws(
+      () => reopened.remember({ ...original, name: 'Conflicting history' }),
+      /different/,
+    );
     assert.equal(reopened.list()[0].revision, 3);
     const db = new DatabaseSync(file);
     try {
-      const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((row) => row.name);
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type = 'table'")
+        .all()
+        .map((row) => row.name);
       assert.deepEqual(tables, ['schema_revisions']);
       assert.equal(db.prepare('SELECT COUNT(*) AS count FROM schema_revisions').get().count, 4);
       const row = db.prepare('SELECT schema_json FROM schema_revisions WHERE revision = 1').get();
       assert.deepEqual(validateSchema(JSON.parse(row.schema_json)), original);
       assert.equal(Object.hasOwn(JSON.parse(row.schema_json), 'values'), false);
-    } finally { db.close(); }
-  } finally { reopened.close(); other.close(); }
+    } finally {
+      db.close();
+    }
+  } finally {
+    reopened.close();
+    other.close();
+  }
 });
 
 test('invalid schemas cannot change existing revisions', () => {
@@ -64,7 +87,9 @@ test('invalid schemas cannot change existing revisions', () => {
     assert.throws(() => store.save({ ...original[0], fields: [] }));
     assert.throws(() => store.save({ ...original[0], id: 'new_form', revision: 9 }));
     assert.deepEqual(store.list(), original);
-  } finally { store.close(); }
+  } finally {
+    store.close();
+  }
 });
 
 test('moving legacy form definitions imports every revision and preserves the source', async (t) => {
@@ -81,9 +106,14 @@ test('moving legacy form definitions imports every revision and preserves the so
     migrated.importFrom(file);
     assert.equal(migrated.list()[0].revision, 2);
     assert.equal(migrated.list()[0].name, 'Legacy form');
-    assert.throws(() => migrated.remember({ ...DEFAULT_SCHEMA, name: 'Different history' }), /different/);
+    assert.throws(
+      () => migrated.remember({ ...DEFAULT_SCHEMA, name: 'Different history' }),
+      /different/,
+    );
     assert.deepEqual(await fs.readFile(file), original);
-  } finally { migrated.close(); }
+  } finally {
+    migrated.close();
+  }
 });
 
 test('future or unrelated databases are rejected without rewriting their contents', async (t) => {
@@ -92,13 +122,17 @@ test('future or unrelated databases are rejected without rewriting their content
   for (const version of [0, 99]) {
     const file = path.join(root, `${version}.sqlite`);
     const db = new DatabaseSync(file);
-    db.exec(`CREATE TABLE existing(value TEXT); INSERT INTO existing VALUES ('keep'); PRAGMA user_version = ${version}`);
+    db.exec(
+      `CREATE TABLE existing(value TEXT); INSERT INTO existing VALUES ('keep'); PRAGMA user_version = ${version}`,
+    );
     db.close();
     assert.throws(() => new SchemaStore(file));
     const check = new DatabaseSync(file);
     try {
       assert.equal(check.prepare('PRAGMA user_version').get().user_version, version);
       assert.equal(check.prepare('SELECT value FROM existing').get().value, 'keep');
-    } finally { check.close(); }
+    } finally {
+      check.close();
+    }
   }
 });

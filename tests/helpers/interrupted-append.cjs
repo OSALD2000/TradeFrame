@@ -11,7 +11,8 @@ injected.filename = filename;
 injected.paths = module.paths;
 injected.require = function (name) {
   if (name !== 'node:fs/promises') return Module.prototype.require.call(this, name);
-  return { ...fs,
+  return {
+    ...fs,
     link: async (source, target) => {
       await fs.link(source, target);
       if (!target.endsWith('.tradeframe-write.lock')) return;
@@ -24,7 +25,11 @@ injected.require = function (name) {
     },
     appendFile: async (file, addition, options) => {
       if (scenario === 'partial') {
-        await fs.appendFile(file, addition.subarray(0, Math.max(1, Math.floor(addition.length / 2))), options);
+        await fs.appendFile(
+          file,
+          addition.subarray(0, Math.max(1, Math.floor(addition.length / 2))),
+          options,
+        );
         process.exit(71);
       }
       await fs.appendFile(file, addition, options);
@@ -37,10 +42,20 @@ injected.loaded = true;
 require.cache[filename] = injected;
 
 (async () => {
-  if (action === 'copy') await require('../../dist-electron/connections.js').copySnapshot(fixture.source, fixture.target);
+  if (action === 'copy')
+    await require('../../dist-electron/connections.js').copySnapshot(
+      fixture.source,
+      fixture.target,
+    );
   else {
     const { readSetup, appendScreenshots } = require('../../dist-electron/journal.js');
     const loaded = await readSetup(fixture.file);
-    await appendScreenshots(fixture.file, loaded.fingerprint, fixture.input, [...loaded.screenshots, fixture.screenshot]);
+    await appendScreenshots(fixture.file, loaded.fingerprint, fixture.input, [
+      ...loaded.screenshots,
+      fixture.screenshot,
+    ]);
   }
-})().catch((error) => { process.stderr.write(error.stack + '\n'); process.exitCode = 1; });
+})().catch((error) => {
+  process.stderr.write(error.stack + '\n');
+  process.exitCode = 1;
+});

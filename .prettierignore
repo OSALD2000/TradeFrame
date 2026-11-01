@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+release/
+data/
+.todo/
+package-lock.json
+AGENTS.md
+CLAUDE.md
+*.log
+.env*

@@ -1,31 +1,105 @@
-export const FIELD_TYPES = ['text', 'textarea', 'number', 'checkbox', 'select', 'multiselect', 'date', 'datetime'] as const;
-export type FieldType = typeof FIELD_TYPES[number];
+export const FIELD_TYPES = [
+  'text',
+  'textarea',
+  'number',
+  'checkbox',
+  'select',
+  'multiselect',
+  'date',
+  'datetime',
+] as const;
+export type FieldType = (typeof FIELD_TYPES)[number];
 export type FieldValue = string | number | boolean | string[] | null;
 export type FormValues = Record<string, FieldValue>;
 export type FieldOption = { value: string; label: string; tags: string[] };
 export type FieldDefinition = {
-  id: string; label: string; key: string; type: FieldType; required: boolean;
-  tags: string[]; options?: FieldOption[]; when?: { fieldId: string; equals: FieldValue };
+  id: string;
+  label: string;
+  key: string;
+  type: FieldType;
+  required: boolean;
+  tags: string[];
+  options?: FieldOption[];
+  when?: { fieldId: string; equals: FieldValue };
 };
-export type FormSchema = { formatVersion: 1; id: string; revision: number; name: string; fields: FieldDefinition[] };
-export type ScreenshotReference = { file: string; caption: string; capturedAt: string; timeframe?: string };
-export type SetupDocument = { schema: FormSchema; values: FormValues; createdAt: string; screenshots?: ScreenshotReference[]; schemaVersion?: 2 | 3 | 4 | 5; journalId?: string };
+export type FormSchema = {
+  formatVersion: 1;
+  id: string;
+  revision: number;
+  name: string;
+  fields: FieldDefinition[];
+};
+export type ScreenshotReference = {
+  file: string;
+  caption: string;
+  capturedAt: string;
+  timeframe?: string;
+};
+export type SetupDocument = {
+  schema: FormSchema;
+  values: FormValues;
+  createdAt: string;
+  screenshots?: ScreenshotReference[];
+  schemaVersion?: 2 | 3 | 4 | 5;
+  journalId?: string;
+};
 export const MAX_SCREENSHOTS = 20;
 export const TIMEFRAME_PATTERN = '[1-9][0-9]{0,3}[smhDWM]';
-export const TIMEFRAMES = ['1m', '2m', '3m', '5m', '10m', '15m', '30m', '45m', '1h', '2h', '4h', '1D', '1W', '1M'];
-export const validTimeframe = (value: unknown): value is string => typeof value === 'string' && new RegExp(`^${TIMEFRAME_PATTERN}$`).test(value);
+export const TIMEFRAMES = [
+  '1m',
+  '2m',
+  '3m',
+  '5m',
+  '10m',
+  '15m',
+  '30m',
+  '45m',
+  '1h',
+  '2h',
+  '4h',
+  '1D',
+  '1W',
+  '1M',
+];
+export const validTimeframe = (value: unknown): value is string =>
+  typeof value === 'string' && new RegExp(`^${TIMEFRAME_PATTERN}$`).test(value);
 
-export function validateScreenshots(input: unknown, requireTimeframe = false, version = 4, journalId?: string): ScreenshotReference[] {
-  check(Array.isArray(input) && input.length > 0 && input.length <= MAX_SCREENSHOTS, 'A setup needs 1–20 screenshots');
+export function validateScreenshots(
+  input: unknown,
+  requireTimeframe = false,
+  version = 4,
+  journalId?: string,
+): ScreenshotReference[] {
+  check(
+    Array.isArray(input) && input.length > 0 && input.length <= MAX_SCREENSHOTS,
+    'A setup needs 1–20 screenshots',
+  );
   return input.map((item, index) => {
     check(record(item), 'Invalid screenshot metadata');
     keys(item, ['file', 'caption', 'capturedAt', 'timeframe']);
     check(item.file === screenshotFile(index, journalId), 'Invalid screenshot filename or order');
-    check(typeof item.caption === 'string' && item.caption.length <= (version >= 5 ? 20000 : 200) && !(version >= 5 ? /\0/ : /[\r\n\0]/).test(item.caption), 'Invalid screenshot caption');
-    check(typeof item.capturedAt === 'string' && Number.isFinite(Date.parse(item.capturedAt))
-      && new Date(item.capturedAt).toISOString() === item.capturedAt, 'Invalid screenshot timestamp');
-    check((!requireTimeframe && item.timeframe === undefined) || validTimeframe(item.timeframe), 'Every screenshot needs a timeframe such as 1m, 2m or 1h');
-    return { file: item.file, caption: item.caption, capturedAt: item.capturedAt, ...(item.timeframe === undefined ? {} : { timeframe: item.timeframe as string }) };
+    check(
+      typeof item.caption === 'string' &&
+        item.caption.length <= (version >= 5 ? 20000 : 200) &&
+        !(version >= 5 ? /\0/ : /[\r\n\0]/).test(item.caption),
+      'Invalid screenshot caption',
+    );
+    check(
+      typeof item.capturedAt === 'string' &&
+        Number.isFinite(Date.parse(item.capturedAt)) &&
+        new Date(item.capturedAt).toISOString() === item.capturedAt,
+      'Invalid screenshot timestamp',
+    );
+    check(
+      (!requireTimeframe && item.timeframe === undefined) || validTimeframe(item.timeframe),
+      'Every screenshot needs a timeframe such as 1m, 2m or 1h',
+    );
+    return {
+      file: item.file,
+      caption: item.caption,
+      capturedAt: item.capturedAt,
+      ...(item.timeframe === undefined ? {} : { timeframe: item.timeframe as string }),
+    };
   });
 }
 
@@ -35,7 +109,8 @@ export function screenshotFile(index: number, journalId?: string): string {
 }
 
 function renderScreenshot(shot: ScreenshotReference, index: number, version = 4): string {
-  if (version >= 5) return `## ${shot.timeframe} · captured ${shot.capturedAt}\n\n${shot.caption ? `${shot.caption}\n\n` : ''}![Chart ${index + 1}](${shot.file})\n\n`;
+  if (version >= 5)
+    return `## ${shot.timeframe} · captured ${shot.capturedAt}\n\n${shot.caption ? `${shot.caption}\n\n` : ''}![Chart ${index + 1}](${shot.file})\n\n`;
   return `## Screenshot ${index + 1}${shot.timeframe ? ` · ${shot.timeframe}` : ''}\n\n![Chart ${index + 1}](${shot.file})\n\n${shot.caption ? `${shot.caption}\n\n` : ''}Captured: ${shot.capturedAt}\n\n`;
 }
 
@@ -43,31 +118,70 @@ export function screenshotAddition(shot: ScreenshotReference, index: number, ver
   return `\n<!-- tradeframe-screenshot: ${JSON.stringify(shot)} -->\n\n${renderScreenshot(shot, index, version)}`;
 }
 
-const RESERVED_KEYS = new Set(['schemaVersion', 'createdAt', 'tradeframe', 'tags', 'image', '__proto__', 'constructor', 'prototype']);
-const validId = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(value) && !Object.hasOwn(Object.prototype, value);
-const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
+const RESERVED_KEYS = new Set([
+  'schemaVersion',
+  'createdAt',
+  'tradeframe',
+  'tags',
+  'image',
+  '__proto__',
+  'constructor',
+  'prototype',
+]);
+const validId = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  /^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(value) &&
+  !Object.hasOwn(Object.prototype, value);
+const record = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === 'object' && !Array.isArray(value);
 function check(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 function text(value: unknown, max: number, name: string): asserts value is string {
-  check(typeof value === 'string' && value.trim().length > 0 && value.length <= max && !/[\r\n\0]/.test(value), `Invalid ${name}`);
+  check(
+    typeof value === 'string' &&
+      value.trim().length > 0 &&
+      value.length <= max &&
+      !/[\r\n\0]/.test(value),
+    `Invalid ${name}`,
+  );
 }
 function keys(value: Record<string, unknown>, allowed: string[]) {
-  check(Object.keys(value).every((key) => allowed.includes(key)), 'Unknown schema property');
+  check(
+    Object.keys(value).every((key) => allowed.includes(key)),
+    'Unknown schema property',
+  );
 }
 function tags(value: unknown): asserts value is string[] {
-  check(Array.isArray(value) && value.length <= 30 && value.every((tag) => typeof tag === 'string'
-    && tag.length <= 100 && /^[\p{L}\p{N}_][\p{L}\p{N}_/-]*$/u.test(tag))
-    && new Set(value).size === value.length, 'Invalid or duplicate tags');
+  check(
+    Array.isArray(value) &&
+      value.length <= 30 &&
+      value.every(
+        (tag) =>
+          typeof tag === 'string' &&
+          tag.length <= 100 &&
+          /^[\p{L}\p{N}_][\p{L}\p{N}_/-]*$/u.test(tag),
+      ) &&
+      new Set(value).size === value.length,
+    'Invalid or duplicate tags',
+  );
 }
 
 export function validateSchema(input: unknown): FormSchema {
   check(record(input), 'Invalid form schema');
   keys(input, ['formatVersion', 'id', 'revision', 'name', 'fields']);
-  check(input.formatVersion === 1 && validId(input.id) && Number.isSafeInteger(input.revision)
-    && (input.revision as number) > 0, 'Unsupported schema format or revision');
+  check(
+    input.formatVersion === 1 &&
+      validId(input.id) &&
+      Number.isSafeInteger(input.revision) &&
+      (input.revision as number) > 0,
+    'Unsupported schema format or revision',
+  );
   text(input.name, 120, 'form name');
-  check(Array.isArray(input.fields) && input.fields.length > 0 && input.fields.length <= 100, 'A form needs 1–100 fields');
+  check(
+    Array.isArray(input.fields) && input.fields.length > 0 && input.fields.length <= 100,
+    'A form needs 1–100 fields',
+  );
   const ids = new Set<string>();
   const markdownKeys = new Set<string>();
   for (const field of input.fields) {
@@ -76,13 +190,24 @@ export function validateSchema(input: unknown): FormSchema {
     check(validId(field.id) && !ids.has(field.id), 'Invalid or duplicate field ID');
     ids.add(field.id);
     text(field.label, 120, 'field label');
-    check(typeof field.key === 'string' && /^[A-Za-z][A-Za-z0-9_]{0,79}$/.test(field.key)
-      && !RESERVED_KEYS.has(field.key) && !markdownKeys.has(field.key), 'Invalid, reserved or duplicate Markdown key');
+    check(
+      typeof field.key === 'string' &&
+        /^[A-Za-z][A-Za-z0-9_]{0,79}$/.test(field.key) &&
+        !RESERVED_KEYS.has(field.key) &&
+        !markdownKeys.has(field.key),
+      'Invalid, reserved or duplicate Markdown key',
+    );
     markdownKeys.add(field.key);
-    check(FIELD_TYPES.includes(field.type as FieldType) && typeof field.required === 'boolean', 'Invalid field type or required flag');
+    check(
+      FIELD_TYPES.includes(field.type as FieldType) && typeof field.required === 'boolean',
+      'Invalid field type or required flag',
+    );
     tags(field.tags);
     if (field.type === 'select' || field.type === 'multiselect') {
-      check(Array.isArray(field.options) && field.options.length > 0 && field.options.length <= 100, 'Selection fields need 1–100 options');
+      check(
+        Array.isArray(field.options) && field.options.length > 0 && field.options.length <= 100,
+        'Selection fields need 1–100 options',
+      );
       const optionValues = new Set<string>();
       for (const option of field.options) {
         check(record(option), 'Invalid option');
@@ -109,7 +234,10 @@ export function validateSchema(input: unknown): FormSchema {
     visiting.add(field.id);
     if (field.when) {
       const parent = schema.fields.find((candidate) => candidate.id === field.when!.fieldId);
-      check(parent && parent.type !== 'multiselect', 'Dependency must reference an existing scalar field');
+      check(
+        parent && parent.type !== 'multiselect',
+        'Dependency must reference an existing scalar field',
+      );
       validateValue(parent, field.when.equals, false);
       visit(parent);
     }
@@ -117,57 +245,133 @@ export function validateSchema(input: unknown): FormSchema {
     visited.add(field.id);
   }
   schema.fields.forEach(visit);
-  const canonical: FormSchema = { formatVersion: 1, id: schema.id, revision: schema.revision, name: schema.name,
-    fields: schema.fields.map((field) => ({ id: field.id, label: field.label, key: field.key,
-      type: field.type, required: field.required, tags: [...field.tags],
-      ...(field.options ? { options: field.options.map((option) => ({ value: option.value, label: option.label, tags: [...option.tags] })) } : {}),
+  const canonical: FormSchema = {
+    formatVersion: 1,
+    id: schema.id,
+    revision: schema.revision,
+    name: schema.name,
+    fields: schema.fields.map((field) => ({
+      id: field.id,
+      label: field.label,
+      key: field.key,
+      type: field.type,
+      required: field.required,
+      tags: [...field.tags],
+      ...(field.options
+        ? {
+            options: field.options.map((option) => ({
+              value: option.value,
+              label: option.label,
+              tags: [...option.tags],
+            })),
+          }
+        : {}),
       ...(field.when ? { when: { fieldId: field.when.fieldId, equals: field.when.equals } } : {}),
-    })) };
-  check(new TextEncoder().encode(JSON.stringify(canonical)).byteLength <= 1_000_000, 'Form schema is too large');
+    })),
+  };
+  check(
+    new TextEncoder().encode(JSON.stringify(canonical)).byteLength <= 1_000_000,
+    'Form schema is too large',
+  );
   return canonical;
 }
 
-function validateValue(field: FieldDefinition, value: unknown, required = field.required): asserts value is FieldValue {
+function validateValue(
+  field: FieldDefinition,
+  value: unknown,
+  required = field.required,
+): asserts value is FieldValue {
   if (value === null) {
     check(!required && field.type === 'number', `${field.label}: a value is required`);
     return;
   }
   if (field.type === 'checkbox') {
-    check(typeof value === 'boolean' && (!required || value), `${field.label}: invalid checkbox value`);
+    check(
+      typeof value === 'boolean' && (!required || value),
+      `${field.label}: invalid checkbox value`,
+    );
   } else if (field.type === 'number') {
-    check(typeof value === 'number' && Number.isFinite(value) && !Object.is(value, -0)
-      && (!Number.isInteger(value) || Number.isSafeInteger(value)), `${field.label}: invalid number`);
+    check(
+      typeof value === 'number' &&
+        Number.isFinite(value) &&
+        !Object.is(value, -0) &&
+        (!Number.isInteger(value) || Number.isSafeInteger(value)),
+      `${field.label}: invalid number`,
+    );
   } else if (field.type === 'multiselect') {
-    check(Array.isArray(value) && value.every((item) => typeof item === 'string' && field.options!.some((option) => option.value === item))
-      && new Set(value).size === value.length && (!required || value.length > 0), `${field.label}: invalid selection`);
+    check(
+      Array.isArray(value) &&
+        value.every(
+          (item) =>
+            typeof item === 'string' && field.options!.some((option) => option.value === item),
+        ) &&
+        new Set(value).size === value.length &&
+        (!required || value.length > 0),
+      `${field.label}: invalid selection`,
+    );
   } else {
-    check(typeof value === 'string' && value.length <= 20000 && !value.includes('\0')
-      && (!required || value.trim().length > 0), `${field.label}: invalid text`);
+    check(
+      typeof value === 'string' &&
+        value.length <= 20000 &&
+        !value.includes('\0') &&
+        (!required || value.trim().length > 0),
+      `${field.label}: invalid text`,
+    );
     if (!value && !required) return;
-    if (field.type === 'select') check(field.options!.some((option) => option.value === value), `${field.label}: unknown option`);
+    if (field.type === 'select')
+      check(
+        field.options!.some((option) => option.value === value),
+        `${field.label}: unknown option`,
+      );
     if (field.type === 'date' || field.type === 'datetime') {
       const isDate = field.type === 'date';
       const pattern = isDate ? /^\d{4}-\d{2}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
       const date = new Date(isDate ? `${value}T00:00:00Z` : `${value}:00Z`);
-      check(pattern.test(value) && Number.isFinite(date.getTime()) && date.toISOString().slice(0, isDate ? 10 : 16) === value, `${field.label}: invalid date`);
+      check(
+        pattern.test(value) &&
+          Number.isFinite(date.getTime()) &&
+          date.toISOString().slice(0, isDate ? 10 : 16) === value,
+        `${field.label}: invalid date`,
+      );
     }
   }
 }
 
-export function fieldVisible(field: FieldDefinition, schema: FormSchema, values: FormValues): boolean {
+export function fieldVisible(
+  field: FieldDefinition,
+  schema: FormSchema,
+  values: FormValues,
+): boolean {
   if (!field.when) return true;
   const parent = schema.fields.find((item) => item.id === field.when!.fieldId)!;
-  return fieldVisible(parent, schema, values) && Object.hasOwn(values, parent.id) && values[parent.id] === field.when.equals;
+  return (
+    fieldVisible(parent, schema, values) &&
+    Object.hasOwn(values, parent.id) &&
+    values[parent.id] === field.when.equals
+  );
 }
 
 export function emptyValues(schema: FormSchema): FormValues {
-  return Object.fromEntries(schema.fields.map((field) => [field.id,
-    field.type === 'checkbox' ? false : field.type === 'number' ? null : field.type === 'multiselect' ? [] : '']));
+  return Object.fromEntries(
+    schema.fields.map((field) => [
+      field.id,
+      field.type === 'checkbox'
+        ? false
+        : field.type === 'number'
+          ? null
+          : field.type === 'multiselect'
+            ? []
+            : '',
+    ]),
+  );
 }
 
 export function validateValues(schema: FormSchema, input: unknown): FormValues {
   check(record(input), 'Invalid setup values');
-  check(Object.keys(input).every((id) => schema.fields.some((field) => field.id === id)), 'Unknown setup field');
+  check(
+    Object.keys(input).every((id) => schema.fields.some((field) => field.id === id)),
+    'Unknown setup field',
+  );
   const result: FormValues = {};
   for (const field of schema.fields) {
     if (!fieldVisible(field, schema, input as FormValues)) continue;
@@ -187,87 +391,213 @@ export function valueTags(schema: FormSchema, values: FormValues): string[] {
   for (const field of schema.fields) {
     if (!Object.hasOwn(values, field.id)) continue;
     const value = values[field.id];
-    if (value === undefined || value === null || value === '' || (Array.isArray(value) && !value.length)) continue;
+    if (
+      value === undefined ||
+      value === null ||
+      value === '' ||
+      (Array.isArray(value) && !value.length)
+    )
+      continue;
     field.tags.forEach((tag) => result.add(tag));
-    field.options?.filter((option) => Array.isArray(value) ? value.includes(option.value) : value === option.value)
+    field.options
+      ?.filter((option) =>
+        Array.isArray(value) ? value.includes(option.value) : value === option.value,
+      )
       .forEach((option) => option.tags.forEach((tag) => result.add(tag)));
   }
   return [...result];
 }
 
 const option = (value: string, label: string): FieldOption => ({ value, label, tags: [] });
-const field = (id: string, label: string, type: FieldType, required = false): FieldDefinition => ({ id, key: id, label, type, required, tags: [] });
+const field = (id: string, label: string, type: FieldType, required = false): FieldDefinition => ({
+  id,
+  key: id,
+  label,
+  type,
+  required,
+  tags: [],
+});
 export const DEFAULT_SCHEMA: FormSchema = {
-  formatVersion: 1, id: 'default', revision: 1, name: 'Trading setup', fields: [
-    { ...field('mode', 'Mode', 'select', true), options: [option('live', 'Live'), option('backtest', 'Backtest')] },
+  formatVersion: 1,
+  id: 'default',
+  revision: 1,
+  name: 'Trading setup',
+  fields: [
+    {
+      ...field('mode', 'Mode', 'select', true),
+      options: [option('live', 'Live'), option('backtest', 'Backtest')],
+    },
     field('symbol', 'Symbol', 'text', true),
-    { ...field('direction', 'Direction', 'select', true), options: [option('long', 'Long'), option('short', 'Short')] },
-    field('model', 'Model', 'text', true), field('timeframe', 'Timeframe', 'text', true),
-    field('entryTimeNewYork', 'Entry time · New York', 'datetime'), field('note', 'Note', 'textarea'),
+    {
+      ...field('direction', 'Direction', 'select', true),
+      options: [option('long', 'Long'), option('short', 'Short')],
+    },
+    field('model', 'Model', 'text', true),
+    field('timeframe', 'Timeframe', 'text', true),
+    field('entryTimeNewYork', 'Entry time · New York', 'datetime'),
+    field('note', 'Note', 'textarea'),
   ],
 };
 
 export const JOURNAL_SCHEMA: FormSchema = {
-  formatVersion: 1, id: 'journal', revision: 1, name: 'Trading journal', fields: [
-    { ...field('mode', 'Mode', 'select', true), key: 'type', options: [option('live', 'Live'), option('backtest', 'Backtest')] },
-    field('date', 'Market date', 'date', true), field('time_ny', 'Time · New York (HH:mm)', 'text'),
-    field('session', 'Session', 'text'), { ...field('symbol', 'Instrument', 'text', true), key: 'instrument' },
-    { ...field('direction', 'Direction', 'select', true), options: [option('long', 'Long'), option('short', 'Short'), option('notrade', 'No Trade')] },
-    field('model', 'Model', 'text', true), field('d_bias', 'Daily bias', 'text'),
-    { ...field('result', 'Result', 'select', true), options: [option('pending', 'Pending'), option('win', 'Win'), option('loss', 'Loss'), option('breakeven', 'Break-even'), option('notrade', 'No Trade')] },
-    field('r', 'Result · R', 'number'), field('note', 'Notes', 'textarea'),
+  formatVersion: 1,
+  id: 'journal',
+  revision: 1,
+  name: 'Trading journal',
+  fields: [
+    {
+      ...field('mode', 'Mode', 'select', true),
+      key: 'type',
+      options: [option('live', 'Live'), option('backtest', 'Backtest')],
+    },
+    field('date', 'Market date', 'date', true),
+    field('time_ny', 'Time · New York (HH:mm)', 'text'),
+    field('session', 'Session', 'text'),
+    { ...field('symbol', 'Instrument', 'text', true), key: 'instrument' },
+    {
+      ...field('direction', 'Direction', 'select', true),
+      options: [option('long', 'Long'), option('short', 'Short'), option('notrade', 'No Trade')],
+    },
+    field('model', 'Model', 'text', true),
+    field('d_bias', 'Daily bias', 'text'),
+    {
+      ...field('result', 'Result', 'select', true),
+      options: [
+        option('pending', 'Pending'),
+        option('win', 'Win'),
+        option('loss', 'Loss'),
+        option('breakeven', 'Break-even'),
+        option('notrade', 'No Trade'),
+      ],
+    },
+    field('r', 'Result · R', 'number'),
+    field('note', 'Notes', 'textarea'),
   ],
 };
 
 export function journalValues(schema: FormSchema, values: FormValues) {
   if (schema.id !== JOURNAL_SCHEMA.id) return null;
-  check(schema.fields.every((item) => !['captured', 'cssclasses'].includes(item.key)), 'Reserved journal presentation key');
+  check(
+    schema.fields.every((item) => !['captured', 'cssclasses'].includes(item.key)),
+    'Reserved journal presentation key',
+  );
   for (const item of JOURNAL_SCHEMA.fields) {
     if (item.required || Object.hasOwn(values, item.id)) validateValue(item, values[item.id]);
   }
-  for (const id of ['symbol', 'model', 'session', 'd_bias']) if (values[id]) text(values[id], 200, id);
-  check(!values.time_ny || (typeof values.time_ny === 'string' && /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(values.time_ny)), 'New York time must use HH:mm');
-  check(values.direction !== 'notrade' || values.result === 'notrade', 'No Trade direction needs a No Trade result');
-  check(values.result !== 'notrade' || values.r === null || values.r === undefined, 'No Trade has no R result');
-  return { mode: values.mode as string, date: values.date as string, time: (values.time_ny || '') as string,
-    instrument: values.symbol as string, direction: values.direction as string, model: values.model as string,
-    session: (values.session || '') as string, result: values.result as string };
+  for (const id of ['symbol', 'model', 'session', 'd_bias'])
+    if (values[id]) text(values[id], 200, id);
+  check(
+    !values.time_ny ||
+      (typeof values.time_ny === 'string' &&
+        /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/.test(values.time_ny)),
+    'New York time must use HH:mm',
+  );
+  check(
+    values.direction !== 'notrade' || values.result === 'notrade',
+    'No Trade direction needs a No Trade result',
+  );
+  check(
+    values.result !== 'notrade' || values.r === null || values.r === undefined,
+    'No Trade has no R result',
+  );
+  return {
+    mode: values.mode as string,
+    date: values.date as string,
+    time: (values.time_ny || '') as string,
+    instrument: values.symbol as string,
+    direction: values.direction as string,
+    model: values.model as string,
+    session: (values.session || '') as string,
+    result: values.result as string,
+  };
 }
 
-export const directionLabel = (value: string) => value === 'notrade' ? 'No Trade' : value === 'long' ? 'Long' : 'Short';
-const tagPart = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}_/-]+/gu, '-').replace(/^-+|-+$/g, '').slice(0, 70);
+export const directionLabel = (value: string) =>
+  value === 'notrade' ? 'No Trade' : value === 'long' ? 'Long' : 'Short';
+const tagPart = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}_/-]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 70);
 export function journalTags(schema: FormSchema, values: FormValues): string[] {
   const info = journalValues(schema, values);
   if (!info) return valueTags(schema, values);
-  return [...new Set(['trading', 'journal', `journal/${info.mode}`, `direction/${info.direction}`, `result/${info.result}`,
-    ...[['session', info.session], ['instrument', info.instrument], ['model', info.model]].flatMap(([key, value]) => tagPart(value) ? [`${key}/${tagPart(value)}`] : []),
-    ...valueTags(schema, values)])];
+  return [
+    ...new Set([
+      'trading',
+      'journal',
+      `journal/${info.mode}`,
+      `direction/${info.direction}`,
+      `result/${info.result}`,
+      ...[
+        ['session', info.session],
+        ['instrument', info.instrument],
+        ['model', info.model],
+      ].flatMap(([key, value]) => (tagPart(value) ? [`${key}/${tagPart(value)}`] : [])),
+      ...valueTags(schema, values),
+    ]),
+  ];
 }
 
 export function serializeSetup(document: SetupDocument): string {
   const schema = validateSchema(document.schema);
   const values = validateValues(schema, document.values);
-  check(typeof document.createdAt === 'string' && Number.isFinite(Date.parse(document.createdAt))
-    && new Date(document.createdAt).toISOString() === document.createdAt, 'Invalid creation timestamp');
+  check(
+    typeof document.createdAt === 'string' &&
+      Number.isFinite(Date.parse(document.createdAt)) &&
+      new Date(document.createdAt).toISOString() === document.createdAt,
+    'Invalid creation timestamp',
+  );
   const info = journalValues(schema, values);
   const version = document.schemaVersion ?? (document.screenshots ? 5 : 2);
   const exportedTags = version === 5 ? journalTags(schema, values) : valueTags(schema, values);
   check([2, 3, 4, 5].includes(version), 'Unsupported setup version');
-  const screenshots = document.screenshots === undefined ? undefined : validateScreenshots(document.screenshots, version >= 4, version, document.journalId);
-  check(document.journalId === undefined || (version === 5 && !!info && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(document.journalId)), 'Invalid journal identity');
-  check((version >= 3) === !!screenshots, 'Setup version does not match screenshot metadata');
-  const metadata: Record<string, unknown> = { schemaVersion: version, createdAt: document.createdAt,
-    tradeframe: { formatVersion: 1, schema, ...(screenshots ? { screenshots } : {}), ...(document.journalId ? { journalId: document.journalId } : {}) }, tags: exportedTags };
-  for (const field of schema.fields) if (Object.hasOwn(values, field.id)) metadata[field.key] = values[field.id];
+  const screenshots =
+    document.screenshots === undefined
+      ? undefined
+      : validateScreenshots(document.screenshots, version >= 4, version, document.journalId);
+  check(
+    document.journalId === undefined ||
+      (version === 5 &&
+        !!info &&
+        /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(document.journalId)),
+    'Invalid journal identity',
+  );
+  check(version >= 3 === !!screenshots, 'Setup version does not match screenshot metadata');
+  const metadata: Record<string, unknown> = {
+    schemaVersion: version,
+    createdAt: document.createdAt,
+    tradeframe: {
+      formatVersion: 1,
+      schema,
+      ...(screenshots ? { screenshots } : {}),
+      ...(document.journalId ? { journalId: document.journalId } : {}),
+    },
+    tags: exportedTags,
+  };
+  for (const field of schema.fields)
+    if (Object.hasOwn(values, field.id)) metadata[field.key] = values[field.id];
   if (version === 5 && info) {
     metadata.captured = screenshots![0].capturedAt.slice(0, 10);
     metadata.cssclasses = ['journal', `dir-${info.direction}`, `result-${info.result}`];
   }
-  const notes = schema.fields.filter((field) => field.type === 'textarea' && typeof values[field.id] === 'string')
-    .map((field) => `## ${field.label}\n\n${values[field.id]}\n`).join('\n');
-  const charts = screenshots ? screenshots.map((shot, index) => renderScreenshot(shot, index, version)).join('') : '![Chart](chart.png)\n\n';
-  const title = version === 5 && info ? `${info.date}${info.time ? ` ${info.time} NY` : ''} – ${info.instrument} ${directionLabel(info.direction)} ${info.model}` : 'Setup';
-  const markdown = `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${JSON.stringify(value)}`).join('\n')}\n---\n\n# ${title}\n\n${charts}${exportedTags.length ? `${exportedTags.map((tag) => `#${tag}`).join(' ')}\n\n` : ''}${notes}`;
+  const notes = schema.fields
+    .filter((field) => field.type === 'textarea' && typeof values[field.id] === 'string')
+    .map((field) => `## ${field.label}\n\n${values[field.id]}\n`)
+    .join('\n');
+  const charts = screenshots
+    ? screenshots.map((shot, index) => renderScreenshot(shot, index, version)).join('')
+    : '![Chart](chart.png)\n\n';
+  const title =
+    version === 5 && info
+      ? `${info.date}${info.time ? ` ${info.time} NY` : ''} – ${info.instrument} ${directionLabel(info.direction)} ${info.model}`
+      : 'Setup';
+  const markdown = `---\n${Object.entries(metadata)
+    .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+    .join(
+      '\n',
+    )}\n---\n\n# ${title}\n\n${charts}${exportedTags.length ? `${exportedTags.map((tag) => `#${tag}`).join(' ')}\n\n` : ''}${notes}`;
   check(new TextEncoder().encode(markdown).byteLength <= 5_000_000, 'Setup export is too large');
   return markdown;
 }
@@ -282,44 +612,138 @@ function deserializeBase(markdown: string): SetupDocument {
     check(item && !Object.hasOwn(metadata, item[1]), 'Invalid or duplicate Markdown metadata');
     metadata[item[1]] = JSON.parse(item[2]);
   }
-  check(typeof metadata.createdAt === 'string' && Number.isFinite(Date.parse(metadata.createdAt))
-    && new Date(metadata.createdAt).toISOString() === metadata.createdAt, 'Invalid creation timestamp');
+  check(
+    typeof metadata.createdAt === 'string' &&
+      Number.isFinite(Date.parse(metadata.createdAt)) &&
+      new Date(metadata.createdAt).toISOString() === metadata.createdAt,
+    'Invalid creation timestamp',
+  );
   if (metadata.schemaVersion === 1) {
     check(metadata.entryTimeZone === 'America/New_York', 'Unsupported legacy entry time zone');
-    check(Object.keys(metadata).every((key) => ['schemaVersion', 'createdAt', 'entryTimeZone', ...DEFAULT_SCHEMA.fields.filter((field) => field.id !== 'note').map((field) => field.key)].includes(key)), 'Unknown legacy field');
-    const values: FormValues = Object.fromEntries(DEFAULT_SCHEMA.fields.filter((field) => field.id !== 'note')
-      .map((field) => [field.id, metadata[field.key] === null ? '' : metadata[field.key]])) as FormValues;
-    const notes = /^\r?\n# Setup\r?\n\r?\n!\[Chart\]\(chart\.png\)\r?\n\r?\n## Notes\r?\n\r?\n([\s\S]*)$/.exec(match[2]);
+    check(
+      Object.keys(metadata).every((key) =>
+        [
+          'schemaVersion',
+          'createdAt',
+          'entryTimeZone',
+          ...DEFAULT_SCHEMA.fields.filter((field) => field.id !== 'note').map((field) => field.key),
+        ].includes(key),
+      ),
+      'Unknown legacy field',
+    );
+    const values: FormValues = Object.fromEntries(
+      DEFAULT_SCHEMA.fields
+        .filter((field) => field.id !== 'note')
+        .map((field) => [field.id, metadata[field.key] === null ? '' : metadata[field.key]]),
+    ) as FormValues;
+    const notes =
+      /^\r?\n# Setup\r?\n\r?\n!\[Chart\]\(chart\.png\)\r?\n\r?\n## Notes\r?\n\r?\n([\s\S]*)$/.exec(
+        match[2],
+      );
     check(notes, 'Unsupported legacy notes layout');
     values.note = notes[1].replace(/\r?\n$/, '');
-    return { schema: validateSchema(DEFAULT_SCHEMA), values: validateValues(DEFAULT_SCHEMA, values), createdAt: metadata.createdAt };
+    return {
+      schema: validateSchema(DEFAULT_SCHEMA),
+      values: validateValues(DEFAULT_SCHEMA, values),
+      createdAt: metadata.createdAt,
+    };
   }
-  check((metadata.schemaVersion === 2 || metadata.schemaVersion === 3 || metadata.schemaVersion === 4 || metadata.schemaVersion === 5) && record(metadata.tradeframe) && metadata.tradeframe.formatVersion === 1, 'Unsupported setup format');
-  keys(metadata.tradeframe, metadata.schemaVersion >= 3 ? ['formatVersion', 'schema', 'screenshots', ...(metadata.schemaVersion === 5 ? ['journalId'] : [])] : ['formatVersion', 'schema']);
-  const screenshots = metadata.schemaVersion >= 3 ? validateScreenshots(metadata.tradeframe.screenshots, metadata.schemaVersion >= 4, metadata.schemaVersion, metadata.tradeframe.journalId as string | undefined) : undefined;
+  check(
+    (metadata.schemaVersion === 2 ||
+      metadata.schemaVersion === 3 ||
+      metadata.schemaVersion === 4 ||
+      metadata.schemaVersion === 5) &&
+      record(metadata.tradeframe) &&
+      metadata.tradeframe.formatVersion === 1,
+    'Unsupported setup format',
+  );
+  keys(
+    metadata.tradeframe,
+    metadata.schemaVersion >= 3
+      ? [
+          'formatVersion',
+          'schema',
+          'screenshots',
+          ...(metadata.schemaVersion === 5 ? ['journalId'] : []),
+        ]
+      : ['formatVersion', 'schema'],
+  );
+  const screenshots =
+    metadata.schemaVersion >= 3
+      ? validateScreenshots(
+          metadata.tradeframe.screenshots,
+          metadata.schemaVersion >= 4,
+          metadata.schemaVersion,
+          metadata.tradeframe.journalId as string | undefined,
+        )
+      : undefined;
   const schema = validateSchema(metadata.tradeframe.schema);
-  check(Object.keys(metadata).every((key) => ['schemaVersion', 'createdAt', 'tradeframe', 'tags', ...(metadata.schemaVersion === 5 && schema.id === JOURNAL_SCHEMA.id ? ['captured', 'cssclasses'] : []), ...schema.fields.map((field) => field.key)].includes(key)), 'Unknown Markdown field');
-  const values: FormValues = Object.fromEntries(schema.fields.filter((field) => Object.hasOwn(metadata, field.key))
-    .map((field) => [field.id, metadata[field.key]])) as FormValues;
+  check(
+    Object.keys(metadata).every((key) =>
+      [
+        'schemaVersion',
+        'createdAt',
+        'tradeframe',
+        'tags',
+        ...(metadata.schemaVersion === 5 && schema.id === JOURNAL_SCHEMA.id
+          ? ['captured', 'cssclasses']
+          : []),
+        ...schema.fields.map((field) => field.key),
+      ].includes(key),
+    ),
+    'Unknown Markdown field',
+  );
+  const values: FormValues = Object.fromEntries(
+    schema.fields
+      .filter((field) => Object.hasOwn(metadata, field.key))
+      .map((field) => [field.id, metadata[field.key]]),
+  ) as FormValues;
   const validated = validateValues(schema, values);
-  check(Object.keys(validated).length === Object.keys(values).length, 'Hidden field values must not be saved');
-  check(JSON.stringify(metadata.tags) === JSON.stringify(metadata.schemaVersion === 5 ? journalTags(schema, validated) : valueTags(schema, validated)), 'Markdown tags do not match the schema values');
-  const document: SetupDocument = { schema, values: validated, createdAt: metadata.createdAt,
-    ...(metadata.schemaVersion >= 3 ? { schemaVersion: metadata.schemaVersion } : {}), ...(screenshots ? { screenshots } : {}), ...(metadata.tradeframe.journalId === undefined ? {} : { journalId: metadata.tradeframe.journalId as string }) };
+  check(
+    Object.keys(validated).length === Object.keys(values).length,
+    'Hidden field values must not be saved',
+  );
+  check(
+    JSON.stringify(metadata.tags) ===
+      JSON.stringify(
+        metadata.schemaVersion === 5
+          ? journalTags(schema, validated)
+          : valueTags(schema, validated),
+      ),
+    'Markdown tags do not match the schema values',
+  );
+  const document: SetupDocument = {
+    schema,
+    values: validated,
+    createdAt: metadata.createdAt,
+    ...(metadata.schemaVersion >= 3 ? { schemaVersion: metadata.schemaVersion } : {}),
+    ...(screenshots ? { screenshots } : {}),
+    ...(metadata.tradeframe.journalId === undefined
+      ? {}
+      : { journalId: metadata.tradeframe.journalId as string }),
+  };
   const canonical = serializeSetup(document);
   if (metadata.schemaVersion === 5 && schema.id === JOURNAL_SCHEMA.id) {
     const info = journalValues(schema, validated)!;
     const expected = ['journal', `dir-${info.direction}`, `result-${info.result}`];
-    check(metadata.captured === screenshots![0].capturedAt.slice(0, 10) && JSON.stringify(metadata.cssclasses) === JSON.stringify(expected), 'Journal presentation metadata does not match');
+    check(
+      metadata.captured === screenshots![0].capturedAt.slice(0, 10) &&
+        JSON.stringify(metadata.cssclasses) === JSON.stringify(expected),
+      'Journal presentation metadata does not match',
+    );
   }
   const body = canonical.slice(canonical.indexOf('\n---\n') + '\n---\n'.length);
-  check(body.replace(/\r\n/g, '\n') === match[2].replace(/\r\n/g, '\n'), 'Markdown body does not match its field values');
+  check(
+    body.replace(/\r\n/g, '\n') === match[2].replace(/\r\n/g, '\n'),
+    'Markdown body does not match its field values',
+  );
   return document;
 }
 
 function readWithAdditions(markdown: string, depth: number): SetupDocument {
-  try { return deserializeBase(markdown); }
-  catch (error) {
+  try {
+    return deserializeBase(markdown);
+  } catch (error) {
     if (depth >= MAX_SCREENSHOTS) throw error;
     const marker = markdown.lastIndexOf('\n<!-- tradeframe-screenshot: ');
     if (marker < 0) throw error;
@@ -327,9 +751,22 @@ function readWithAdditions(markdown: string, depth: number): SetupDocument {
     const header = /^\n<!-- tradeframe-screenshot: (.+) -->\n/.exec(addition);
     if (!header) throw error;
     const document = readWithAdditions(markdown.slice(0, marker), depth + 1);
-    const previous = document.screenshots ?? [{ file: 'chart.png', caption: '', capturedAt: document.createdAt }];
-    const screenshots = validateScreenshots([...previous, JSON.parse(header[1])], (document.schemaVersion ?? 2) >= 4, document.schemaVersion, document.journalId);
-    if (screenshotAddition(screenshots.at(-1)!, previous.length, document.schemaVersion).replace(/\r\n/g, '\n') !== addition.replace(/\r\n/g, '\n')) throw new Error('Invalid appended screenshot');
+    const previous = document.screenshots ?? [
+      { file: 'chart.png', caption: '', capturedAt: document.createdAt },
+    ];
+    const screenshots = validateScreenshots(
+      [...previous, JSON.parse(header[1])],
+      (document.schemaVersion ?? 2) >= 4,
+      document.schemaVersion,
+      document.journalId,
+    );
+    if (
+      screenshotAddition(screenshots.at(-1)!, previous.length, document.schemaVersion).replace(
+        /\r\n/g,
+        '\n',
+      ) !== addition.replace(/\r\n/g, '\n')
+    )
+      throw new Error('Invalid appended screenshot');
     return { ...document, screenshots };
   }
 }

@@ -6,33 +6,71 @@ const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const vm = require('node:vm');
 const dataRoots = [];
-process.once('exit', () => { for (const root of dataRoots) require('node:fs').rmSync(root, { recursive: true, force: true }); });
+process.once('exit', () => {
+  for (const root of dataRoots) require('node:fs').rmSync(root, { recursive: true, force: true });
+});
 const { DEFAULT_SCHEMA } = require('../dist-electron/form-schema.js');
-const setupInput = (values = {}) => ({ schema: DEFAULT_SCHEMA, values: {
-  mode: 'live', direction: 'long', symbol: 'TEST', model: 'Test', timeframe: '5m', entryTimeNewYork: '', note: '', ...values,
-} });
-
-const source = (id, name = 'Synthetic chart') => ({ id, name,
-  thumbnail: { isEmpty: () => false, toDataURL: () => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=' },
+const setupInput = (values = {}) => ({
+  schema: DEFAULT_SCHEMA,
+  values: {
+    mode: 'live',
+    direction: 'long',
+    symbol: 'TEST',
+    model: 'Test',
+    timeframe: '5m',
+    entryTimeNewYork: '',
+    note: '',
+    ...values,
+  },
 });
 
-async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] }), primaryInstance = true, oneNoteOptions, runtime = {}) {
+const source = (id, name = 'Synthetic chart') => ({
+  id,
+  name,
+  thumbnail: {
+    isEmpty: () => false,
+    toDataURL: () =>
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
+  },
+});
+
+async function boot(
+  capture = async () => [source('screen:0:0')],
+  selectFolder = async () => ({ canceled: true, filePaths: [] }),
+  primaryInstance = true,
+  oneNoteOptions,
+  runtime = {},
+) {
   const fsSync = require('node:fs');
-  const dataRoot = fsSync.mkdtempSync(path.join(require('node:os').tmpdir(), 'tradeframe-main-test-'));
+  const dataRoot = fsSync.mkdtempSync(
+    path.join(require('node:os').tmpdir(), 'tradeframe-main-test-'),
+  );
   dataRoots.push(dataRoot);
   const app = new EventEmitter();
   app.getPath = () => dataRoot;
   app.isPackaged = true;
   app.setName = () => {};
   app.requestSingleInstanceLock = () => primaryInstance;
-  const switches = new Map(runtime.passwordStore === undefined ? [] : [['password-store', runtime.passwordStore]]);
-  app.commandLine = { hasSwitch: (name) => switches.has(name), appendSwitch: (name, value) => switches.set(name, value) };
-  app.whenReady = () => { app.readySwitches = new Map(switches); return Promise.resolve(); };
-  app.quit = () => { app.quitCalled = true; };
+  const switches = new Map(
+    runtime.passwordStore === undefined ? [] : [['password-store', runtime.passwordStore]],
+  );
+  app.commandLine = {
+    hasSwitch: (name) => switches.has(name),
+    appendSwitch: (name, value) => switches.set(name, value),
+  };
+  app.whenReady = () => {
+    app.readySwitches = new Map(switches);
+    return Promise.resolve();
+  };
+  app.quit = () => {
+    app.quitCalled = true;
+  };
   const windows = [];
   const handlers = new Map();
   class BrowserWindow extends EventEmitter {
-    static getAllWindows() { return windows.filter((w) => !w.destroyed); }
+    static getAllWindows() {
+      return windows.filter((w) => !w.destroyed);
+    }
     constructor(options) {
       super();
       this.options = options;
@@ -42,7 +80,9 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
       this.position = [0, 0];
       this.webContents = new EventEmitter();
       this.webContents.mainFrame = { url: '' };
-      this.webContents.setWindowOpenHandler = (handler) => { this.open = handler; };
+      this.webContents.setWindowOpenHandler = (handler) => {
+        this.open = handler;
+      };
       this.webContents.send = () => {};
       windows.push(this);
     }
@@ -55,36 +95,88 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
       if (!this.visible) this.position = [0, 0];
       this.visible = true;
     }
-    hide() { this.visible = false; }
-    focus() { this.focused = true; }
-    setOpacity(value) { this.opacity = value; }
-    setIgnoreMouseEvents(value) { this.ignoreMouseEvents = value; }
-    isDestroyed() { return !!this.destroyed; }
-    close() { this.destroyed = true; this.emit('closed'); }
+    hide() {
+      this.visible = false;
+    }
+    focus() {
+      this.focused = true;
+    }
+    setOpacity(value) {
+      this.opacity = value;
+    }
+    setIgnoreMouseEvents(value) {
+      this.ignoreMouseEvents = value;
+    }
+    isDestroyed() {
+      return !!this.destroyed;
+    }
+    close() {
+      this.destroyed = true;
+      this.emit('closed');
+    }
   }
-  const electron = { app, BrowserWindow,
-    protocol: { registerSchemesAsPrivileged: () => {}, handle: (scheme, handler) => handlers.set(`protocol:${scheme}`, handler) },
+  const electron = {
+    app,
+    BrowserWindow,
+    protocol: {
+      registerSchemesAsPrivileged: () => {},
+      handle: (scheme, handler) => handlers.set(`protocol:${scheme}`, handler),
+    },
     desktopCapturer: { getSources: () => capture(windows) },
     ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
-    dialog: { showErrorBox: () => assert.fail('Unexpected startup error'), showOpenDialog: selectFolder, showMessageBoxSync: () => 1 },
+    dialog: {
+      showErrorBox: () => assert.fail('Unexpected startup error'),
+      showOpenDialog: selectFolder,
+      showMessageBoxSync: () => 1,
+    },
     Menu: { buildFromTemplate: (template) => template, setApplicationMenu: () => {} },
   };
   const dirname = path.resolve(__dirname, '../dist-electron');
   vm.runInNewContext(readFileSync(path.join(dirname, 'main.js'), 'utf8'), {
-    exports: {}, __dirname: dirname, process: { platform: runtime.platform ?? 'linux', env: runtime.env ?? {} },
-    Buffer, Response, Uint8Array,
+    exports: {},
+    __dirname: dirname,
+    process: { platform: runtime.platform ?? 'linux', env: runtime.env ?? {} },
+    Buffer,
+    Response,
+    Uint8Array,
     setTimeout: (callback) => queueMicrotask(callback),
-    require: (name) => name === 'electron' ? electron : name === './schema-store'
-      ? { SchemaStore: class extends require('../dist-electron/schema-store.js').SchemaStore { constructor() { super(':memory:'); } } }
-      : name === './onenote' && oneNoteOptions ? { ...require('../dist-electron/onenote.js'), OneNoteClient: class extends require('../dist-electron/onenote.js').OneNoteClient {
-        constructor(directory, encryption, clientId) { super(directory, encryption, clientId, oneNoteOptions.request, oneNoteOptions.now); }
-      } }
-      : require(name.startsWith('./') ? path.join(dirname, name) : name),
+    require: (name) =>
+      name === 'electron'
+        ? electron
+        : name === './schema-store'
+          ? {
+              SchemaStore: class extends require('../dist-electron/schema-store.js').SchemaStore {
+                constructor() {
+                  super(':memory:');
+                }
+              },
+            }
+          : name === './onenote' && oneNoteOptions
+            ? {
+                ...require('../dist-electron/onenote.js'),
+                OneNoteClient: class extends require('../dist-electron/onenote.js').OneNoteClient {
+                  constructor(directory, encryption, clientId) {
+                    super(
+                      directory,
+                      encryption,
+                      clientId,
+                      oneNoteOptions.request,
+                      oneNoteOptions.now,
+                    );
+                  }
+                },
+              }
+            : require(name.startsWith('./') ? path.join(dirname, name) : name),
   });
   await new Promise(setImmediate);
-  const invoke = async (name, window = windows[0], ...args) => handlers.get(name)({
-    sender: window.webContents, senderFrame: window.webContents.mainFrame,
-  }, ...args);
+  const invoke = async (name, window = windows[0], ...args) =>
+    handlers.get(name)(
+      {
+        sender: window.webContents,
+        senderFrame: window.webContents.mainFrame,
+      },
+      ...args,
+    );
   return { app, windows, handlers, invoke };
 }
 
@@ -96,7 +188,10 @@ async function captureReady(invoke, windows) {
 }
 
 test('startup loads only local UI with isolation and blocks navigation/new windows', async () => {
-  const { app, windows: [window] } = await boot();
+  const {
+    app,
+    windows: [window],
+  } = await boot();
   assert.equal(window.file, path.resolve(__dirname, '../dist/index.html'));
   assert.equal(window.options.icon, path.resolve(__dirname, '../dist/tradeframe-icon.png'));
   assert.equal(window.visible, false);
@@ -104,14 +199,25 @@ test('startup loads only local UI with isolation and blocks navigation/new windo
   assert.equal(window.visible, true);
   assert.equal(window.open({ url: 'https://example.com' }).action, 'deny');
   let prevented = false;
-  window.webContents.emit('will-navigate', { preventDefault: () => { prevented = true; } });
+  window.webContents.emit('will-navigate', {
+    preventDefault: () => {
+      prevented = true;
+    },
+  });
   assert.equal(prevented, true);
   assert.equal(window.options.webPreferences.nodeIntegration, false);
   assert.equal(window.options.webPreferences.contextIsolation, true);
   assert.equal(window.options.webPreferences.sandbox, true);
-  assert.equal(window.options.webPreferences.preload, path.resolve(__dirname, '../dist-electron/preload.js'));
+  assert.equal(
+    window.options.webPreferences.preload,
+    path.resolve(__dirname, '../dist-electron/preload.js'),
+  );
   let discarded = false;
-  window.webContents.emit('will-prevent-unload', { preventDefault: () => { discarded = true; } });
+  window.webContents.emit('will-prevent-unload', {
+    preventDefault: () => {
+      discarded = true;
+    },
+  });
   assert.equal(discarded, false, 'The draft-close dialog keeps editing by default');
   app.emit('window-all-closed');
   assert.equal(app.quitCalled, true);
@@ -157,7 +263,11 @@ test('capture keeps the journal visible and preserves the mapped bar position ac
   assert.equal(bar.options.title, 'TradeFrame Capture');
   assert.equal(bar.options.frame, false);
   let titlePreserved = false;
-  bar.emit('page-title-updated', { preventDefault: () => { titlePreserved = true; } });
+  bar.emit('page-title-updated', {
+    preventDefault: () => {
+      titlePreserved = true;
+    },
+  });
   assert.equal(titlePreserved, true);
   assert.equal(bar.options.webPreferences.sandbox, true);
   assert.equal(bar.visible, true);
@@ -223,8 +333,15 @@ test('image URLs serve only current in-memory PNGs and state updates do not tran
   const response = serve({ method: 'GET', url });
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('Content-Type'), 'image/png');
-  assert.deepEqual(Buffer.from(await response.arrayBuffer()).subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-  for (const request of [{ method: 'POST', url }, { method: 'GET', url: 'tradeframe-image://capture/../../secrets' }, { method: 'GET', url: `${url}?extra` }]) {
+  assert.deepEqual(
+    Buffer.from(await response.arrayBuffer()).subarray(0, 8),
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+  );
+  for (const request of [
+    { method: 'POST', url },
+    { method: 'GET', url: 'tradeframe-image://capture/../../secrets' },
+    { method: 'GET', url: `${url}?extra` },
+  ]) {
     assert.equal(serve(request).status, 404);
   }
   await invoke('capture:remove', windows[0], state.screenshots[0].id);
@@ -245,7 +362,19 @@ test('workspace hash navigation keeps native journal requests trusted without ch
 test('OneNote operations and login browser are unavailable to the capture bar', async () => {
   const { windows, invoke } = await boot();
   await invoke('capture:open-bar');
-  for (const operation of ['state', 'connect', 'configure', 'poll', 'disconnect', 'browser', 'notebooks', 'notebook', 'setups', 'open', 'send']) {
+  for (const operation of [
+    'state',
+    'connect',
+    'configure',
+    'poll',
+    'disconnect',
+    'browser',
+    'notebooks',
+    'notebook',
+    'setups',
+    'open',
+    'send',
+  ]) {
     await assert.rejects(invoke(`onenote:${operation}`, windows[1]), /Untrusted/);
   }
   await assert.rejects(invoke('onenote:browser'), /Start OneNote sign-in/);
@@ -257,9 +386,16 @@ test('OneNote application ID reset uses trusted IPC and cancels only pending One
   const store = new ConnectionStore(path.join(app.getPath(), 'connections.json'));
   store.setFolder('obsidian', app.getPath());
   store.enqueue(path.join(app.getPath(), 'synthetic.md'), 'TradeFrame');
-  const configured = await invoke('onenote:configure', windows[0], '11111111-2222-3333-4444-555555555555');
+  const configured = await invoke(
+    'onenote:configure',
+    windows[0],
+    '11111111-2222-3333-4444-555555555555',
+  );
   assert.equal(configured.customApplicationId, true);
-  assert.deepEqual(Array.from((await invoke('connections:get')).jobs, (job) => job.kind), ['obsidian']);
+  assert.deepEqual(
+    Array.from((await invoke('connections:get')).jobs, (job) => job.kind),
+    ['obsidian'],
+  );
   const cleared = await invoke('onenote:configure', windows[0], '');
   assert.equal(cleared.applicationId, '');
   assert.equal(cleared.configured, false);
@@ -268,49 +404,89 @@ test('OneNote application ID reset uses trusted IPC and cancels only pending One
 
 test('native saves require a chosen notebook and switching it cancels failed jobs instead of redirecting them', async (t) => {
   const fs = require('node:fs/promises');
-  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-notebook-ipc-')));
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-notebook-ipc-')),
+  );
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  let now = 0; let fail = true; const destinations = [];
-  const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+  let now = 0;
+  let fail = true;
+  const destinations = [];
+  const reply = (data, status = 200) =>
+    new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
   const request = async (url, options) => {
-    if (url.endsWith('devicecode')) return reply({ device_code: 'private-code', user_code: 'TEST', expires_in: 60, interval: 1 });
+    if (url.endsWith('devicecode'))
+      return reply({ device_code: 'private-code', user_code: 'TEST', expires_in: 60, interval: 1 });
     if (url.endsWith('token')) return reply({ access_token: 'private-access', expires_in: 3600 });
     const pathname = new URL(url).pathname;
-    if (pathname.endsWith('/notebooks')) return reply({ value: ['book-a', 'book-b'].map((id) => ({ id, displayName: id, isDefault: id === 'book-a' })) });
-    if (pathname.endsWith('/sections')) return reply({ value: [{ id: `sec-${pathname.split('/').at(-2)}`, displayName: 'TradeFrame' }] });
+    if (pathname.endsWith('/notebooks'))
+      return reply({
+        value: ['book-a', 'book-b'].map((id) => ({
+          id,
+          displayName: id,
+          isDefault: id === 'book-a',
+        })),
+      });
+    if (pathname.endsWith('/sections'))
+      return reply({
+        value: [{ id: `sec-${pathname.split('/').at(-2)}`, displayName: 'TradeFrame' }],
+      });
     assert.ok(pathname.includes('/sections/sec-book-'));
     if (options.method !== 'POST') return reply({ value: [] });
-    destinations.push(pathname); return reply({}, fail ? 503 : 201);
+    destinations.push(pathname);
+    return reply({}, fail ? 503 : 201);
   };
-  const { windows, invoke } = await boot(undefined, async () => ({ canceled: false, filePaths: [root] }), true, { request, now: () => now });
+  const { windows, invoke } = await boot(
+    undefined,
+    async () => ({ canceled: false, filePaths: [root] }),
+    true,
+    { request, now: () => now },
+  );
   await invoke('onenote:configure', windows[0], '11111111-2222-3333-4444-555555555555');
-  await invoke('onenote:connect'); now = 1000; await invoke('onenote:poll');
-  await invoke('capture:open-bar'); await captureReady(invoke, windows);
-  assert.match((await invoke('journal:save', windows[0], setupInput())).warning, /Choose a OneNote notebook/);
+  await invoke('onenote:connect');
+  now = 1000;
+  await invoke('onenote:poll');
+  await invoke('capture:open-bar');
+  await captureReady(invoke, windows);
+  assert.match(
+    (await invoke('journal:save', windows[0], setupInput())).warning,
+    /Choose a OneNote notebook/,
+  );
   assert.equal((await invoke('connections:get')).jobs.length, 0);
   await invoke('onenote:notebooks');
   await assert.rejects(invoke('onenote:notebook', windows[0], 'unknown'), /available notebook/);
   await invoke('onenote:notebook', windows[0], 'book-b');
   const failed = await invoke('journal:save', windows[0], setupInput());
-  assert.equal(failed.sync[0].status, 'failed'); assert.equal(failed.sync[0].notebookId, 'book-b');
+  assert.equal(failed.sync[0].status, 'failed');
+  assert.equal(failed.sync[0].notebookId, 'book-b');
   await invoke('onenote:notebook', windows[0], 'book-a');
   assert.equal((await invoke('connections:get')).jobs.length, 0);
   fail = false;
   const sent = await invoke('journal:save', windows[0], setupInput());
-  assert.equal(sent.sync[0].status, 'synced'); assert.equal(sent.sync[0].notebookId, 'book-a');
-  assert.deepEqual(destinations, ['/v1.0/me/onenote/sections/sec-book-b/pages', '/v1.0/me/onenote/sections/sec-book-a/pages']);
+  assert.equal(sent.sync[0].status, 'synced');
+  assert.equal(sent.sync[0].notebookId, 'book-a');
+  assert.deepEqual(destinations, [
+    '/v1.0/me/onenote/sections/sec-book-b/pages',
+    '/v1.0/me/onenote/sections/sec-book-a/pages',
+  ]);
 });
 
 test('native save requires an explicitly chosen timeframe for every screenshot', async () => {
   let dialogs = 0;
-  const { windows, invoke } = await boot(undefined, async () => { dialogs++; return { canceled: true, filePaths: [] }; });
+  const { windows, invoke } = await boot(undefined, async () => {
+    dialogs++;
+    return { canceled: true, filePaths: [] };
+  });
   await invoke('capture:open-bar');
   await invoke('capture:screenshot', windows[1]);
   await invoke('capture:screenshot', windows[1]);
   const shots = (await invoke('capture:state')).screenshots;
-  assert.deepEqual(Array.from(shots, (shot) => shot.timeframe), ['', '']);
+  assert.deepEqual(
+    Array.from(shots, (shot) => shot.timeframe),
+    ['', ''],
+  );
   await assert.rejects(invoke('capture:timeframe', windows[1], shots[0].id, '1m'), /Untrusted/);
-  for (const value of [null, '100000m', '1m\n']) await assert.rejects(invoke('capture:timeframe', windows[0], shots[0].id, value), /Invalid/);
+  for (const value of [null, '100000m', '1m\n'])
+    await assert.rejects(invoke('capture:timeframe', windows[0], shots[0].id, value), /Invalid/);
   await assert.rejects(invoke('capture:timeframe', windows[0], 'unknown', '1m'), /Invalid/);
   await invoke('capture:timeframe', windows[0], shots[0].id, '1');
   await assert.rejects(invoke('journal:save', windows[0], setupInput()), /timeframe/);
@@ -318,7 +494,10 @@ test('native save requires an explicitly chosen timeframe for every screenshot',
   await assert.rejects(invoke('journal:save', windows[0], setupInput()), /timeframe/);
   assert.equal(dialogs, 0, 'Validation precedes the folder picker');
   await invoke('capture:timeframe', windows[0], shots[1].id, '2m');
-  assert.deepEqual(Array.from((await invoke('capture:state')).screenshots, (shot) => shot.timeframe), ['1m', '2m']);
+  assert.deepEqual(
+    Array.from((await invoke('capture:state')).screenshots, (shot) => shot.timeframe),
+    ['1m', '2m'],
+  );
   assert.equal((await invoke('journal:save', windows[0], setupInput())).status, 'cancelled');
   assert.equal(dialogs, 1);
 });
@@ -333,8 +512,14 @@ test('repeated captures append distinct screenshots and validate caption/removal
   await captureReady(invoke, windows);
   assert.equal((await invoke('capture:state')).screenshots.length, 20);
   assert.match((await invoke('capture:state')).error, /20 screenshots/);
-  await assert.rejects(invoke('capture:caption', windows[1], shots[0].id, 'Wrong window'), /Untrusted/);
-  await assert.rejects(invoke('capture:caption', windows[0], shots[0].id, 'x'.repeat(20001)), /Invalid/);
+  await assert.rejects(
+    invoke('capture:caption', windows[1], shots[0].id, 'Wrong window'),
+    /Untrusted/,
+  );
+  await assert.rejects(
+    invoke('capture:caption', windows[0], shots[0].id, 'x'.repeat(20001)),
+    /Invalid/,
+  );
   await assert.rejects(invoke('capture:remove', windows[0], 'missing'), /Invalid/);
   await invoke('capture:caption', windows[0], shots[0].id, '5m entry');
   assert.equal((await invoke('capture:state')).screenshots[0].caption, '5m entry');
@@ -349,15 +534,18 @@ test('repeated captures append distinct screenshots and validate caption/removal
 
 test('source selection rejects stale ids and cancellation keeps the previous preview', async () => {
   let count = 0;
-  const { windows, invoke } = await boot(async () => ++count === 1
-    ? [source('screen:0:0')]
-    : [source('screen:0:0'), source('window:42:0')]);
+  const { windows, invoke } = await boot(async () =>
+    ++count === 1 ? [source('screen:0:0')] : [source('screen:0:0'), source('window:42:0')],
+  );
   await invoke('capture:open-bar');
   await captureReady(invoke, windows);
   await invoke('capture:open-bar');
   await captureReady(invoke, windows);
   assert.equal((await invoke('capture:state')).sources.length, 2);
-  await assert.rejects(invoke('capture:choose', windows[0], 'window:unknown:0'), /no longer available/);
+  await assert.rejects(
+    invoke('capture:choose', windows[0], 'window:unknown:0'),
+    /no longer available/,
+  );
   await assert.rejects(invoke('capture:choose', windows[0], { id: 'screen:0:0' }), /Invalid/);
   await invoke('capture:discard');
   assert.equal((await invoke('capture:state')).screenshots.length, 1);
@@ -396,7 +584,10 @@ test('IPC rejects unknown windows, subframes and remote pages', async () => {
   assert.throws(() => state({ sender: journal.webContents, senderFrame: {} }), /Untrusted/);
   const url = journal.webContents.mainFrame.url;
   journal.webContents.mainFrame.url = 'https://example.com';
-  assert.throws(() => state({ sender: journal.webContents, senderFrame: journal.webContents.mainFrame }), /Untrusted/);
+  assert.throws(
+    () => state({ sender: journal.webContents, senderFrame: journal.webContents.mainFrame }),
+    /Untrusted/,
+  );
   journal.webContents.mainFrame.url = url;
   await assert.rejects(invoke('capture:screenshot'), /Untrusted/);
   await invoke('capture:open-bar');
@@ -408,7 +599,9 @@ test('duplicate capture requests do not start parallel captures', async () => {
   let calls = 0;
   const { windows, invoke } = await boot(() => {
     calls++;
-    return new Promise((done) => { resolve = done; });
+    return new Promise((done) => {
+      resolve = done;
+    });
   });
   await invoke('capture:open-bar');
   const first = invoke('capture:screenshot', windows[1]);
@@ -421,7 +614,12 @@ test('duplicate capture requests do not start parallel captures', async () => {
 
 test('closing the journal during capture drops the pending image', async () => {
   let resolve;
-  const { windows, invoke, app } = await boot(() => new Promise((done) => { resolve = done; }));
+  const { windows, invoke, app } = await boot(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
   await invoke('capture:open-bar');
   const pending = invoke('capture:screenshot', windows[1]);
   await new Promise(setImmediate);
@@ -435,10 +633,21 @@ test('closing the journal during capture drops the pending image', async () => {
 test('preload exposes named commands and strips event objects from subscriptions', () => {
   const ipcRenderer = new EventEmitter();
   const calls = [];
-  ipcRenderer.invoke = (...args) => { calls.push(args); return Promise.resolve(); };
+  ipcRenderer.invoke = (...args) => {
+    calls.push(args);
+    return Promise.resolve();
+  };
   let api;
   vm.runInNewContext(readFileSync(path.resolve(__dirname, '../dist-electron/preload.js'), 'utf8'), {
-    exports: {}, require: () => ({ ipcRenderer, contextBridge: { exposeInMainWorld: (_name, value) => { api = value; } } }),
+    exports: {},
+    require: () => ({
+      ipcRenderer,
+      contextBridge: {
+        exposeInMainWorld: (_name, value) => {
+          api = value;
+        },
+      },
+    }),
   });
   api.chooseSource('screen:0:0');
   assert.deepEqual(calls[0], ['capture:choose', 'screen:0:0']);
@@ -448,7 +657,11 @@ test('preload exposes named commands and strips event objects from subscriptions
   api.getSchemas();
   api.saveSchema(DEFAULT_SCHEMA);
   api.openSetup();
-  assert.deepEqual(calls.slice(2), [['forms:list'], ['forms:save', DEFAULT_SCHEMA], ['journal:open']]);
+  assert.deepEqual(calls.slice(2), [
+    ['forms:list'],
+    ['forms:save', DEFAULT_SCHEMA],
+    ['journal:open'],
+  ]);
   const received = [];
   const unsubscribe = api.onStateChange((...args) => received.push(args));
   const state = { preview: null };
@@ -460,7 +673,13 @@ test('preload exposes named commands and strips event objects from subscriptions
 
 test('saving requires a journal screenshot and cancellation preserves it while blocking parallel capture', async () => {
   let resolve;
-  const { windows, invoke } = await boot(undefined, () => new Promise((done) => { resolve = done; }));
+  const { windows, invoke } = await boot(
+    undefined,
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
   const input = setupInput();
   await assert.rejects(invoke('journal:save', windows[0], input), /Choose a screenshot/);
   await invoke('capture:open-bar');
@@ -478,30 +697,41 @@ test('saving requires a journal screenshot and cancellation preserves it while b
 });
 
 test('save failures preserve the preview and unlock the controls for retry', async () => {
-  const { windows, invoke } = await boot(undefined, async () => { throw new Error('Synthetic folder failure'); });
+  const { windows, invoke } = await boot(undefined, async () => {
+    throw new Error('Synthetic folder failure');
+  });
   await invoke('capture:open-bar');
   await captureReady(invoke, windows);
-  await assert.rejects(invoke('journal:save', windows[0], setupInput({ mode: 'backtest', direction: 'short' })), /Could not save/);
+  await assert.rejects(
+    invoke('journal:save', windows[0], setupInput({ mode: 'backtest', direction: 'short' })),
+    /Could not save/,
+  );
   assert.equal((await invoke('capture:state')).screenshots.length, 1);
   assert.equal((await invoke('capture:state')).busy, false);
 });
 
 test('journal save resolves a selected folder alias and writes the native snapshot', async (t) => {
   const fs = require('node:fs/promises');
-  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-ipc-')));
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-ipc-')),
+  );
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const folder = path.join(root, 'journal');
   const alias = path.join(root, 'journal-alias');
   await fs.mkdir(folder);
   await fs.symlink(folder, alias, process.platform === 'win32' ? 'junction' : 'dir');
-  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  const image =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
   const snapshot = source('screen:0:0');
   snapshot.thumbnail.toDataURL = () => image;
-  const { windows, invoke } = await boot(async () => [snapshot], async (owner, options) => {
-    assert.equal(owner, windows[0]);
-    assert.ok(options.properties.includes('openDirectory'));
-    return { canceled: false, filePaths: [alias] };
-  });
+  const { windows, invoke } = await boot(
+    async () => [snapshot],
+    async (owner, options) => {
+      assert.equal(owner, windows[0]);
+      assert.ok(options.properties.includes('openDirectory'));
+      return { canceled: false, filePaths: [alias] };
+    },
+  );
   await invoke('capture:open-bar');
   await captureReady(invoke, windows);
   const saved = await invoke('journal:save', windows[0], setupInput({ note: 'Synthetic' }));
@@ -509,7 +739,10 @@ test('journal save resolves a selected folder alias and writes the native snapsh
   assert.equal(path.dirname(path.dirname(saved.path)), folder);
   assert.equal((await invoke('connections:get')).folders.journal, folder);
   assert.match(await fs.readFile(saved.path, 'utf8'), /Synthetic/);
-  assert.equal((await fs.readFile(path.join(path.dirname(saved.path), 'chart.png'))).toString('base64'), image.split(',')[1]);
+  assert.equal(
+    (await fs.readFile(path.join(path.dirname(saved.path), 'chart.png'))).toString('base64'),
+    image.split(',')[1],
+  );
   assert.equal((await invoke('capture:state')).busy, false);
 });
 
@@ -529,27 +762,64 @@ test('schema commands validate the journal sender and preserve previous revision
 
 test('native journal save uses the historical day and preserves multiline screenshot notes', async (t) => {
   const fs = require('node:fs/promises');
-  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-calendar-ipc-')));
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-calendar-ipc-')),
+  );
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const { windows, invoke } = await boot(undefined, async () => ({ canceled: false, filePaths: [root] }));
+  const { windows, invoke } = await boot(undefined, async () => ({
+    canceled: false,
+    filePaths: [root],
+  }));
   const schema = (await invoke('forms:list')).find((item) => item.id === 'journal');
   assert.ok(schema, 'New template is available alongside the original');
-  await invoke('capture:open-bar'); await captureReady(invoke, windows);
+  await invoke('capture:open-bar');
+  await captureReady(invoke, windows);
   const shot = (await invoke('capture:state')).screenshots[0];
   const caption = 'First paragraph\n\n' + 'A'.repeat(400);
   await invoke('capture:caption', windows[0], shot.id, caption);
-  const saved = await invoke('journal:save', windows[0], { schema, values: { mode: 'backtest', date: '2025-01-07',
-    time_ny: '09:30', session: 'NY AM', symbol: 'TEST', direction: 'notrade', model: 'Example', result: 'notrade', r: null } });
-  assert.equal(path.relative(root, saved.path).split(path.sep).join('/'), 'backtesting/2025/01/07/2025-01-07 0930 TEST No Trade Example.md');
-  assert.equal((await require('../dist-electron/journal.js').readSetup(saved.path)).screenshots[0].caption, caption);
+  const saved = await invoke('journal:save', windows[0], {
+    schema,
+    values: {
+      mode: 'backtest',
+      date: '2025-01-07',
+      time_ny: '09:30',
+      session: 'NY AM',
+      symbol: 'TEST',
+      direction: 'notrade',
+      model: 'Example',
+      result: 'notrade',
+      r: null,
+    },
+  });
+  assert.equal(
+    path.relative(root, saved.path).split(path.sep).join('/'),
+    'backtesting/2025/01/07/2025-01-07 0930 TEST No Trade Example.md',
+  );
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(saved.path)).screenshots[0].caption,
+    caption,
+  );
 });
 
 test('opening a setup restores its schema values and image without modifying the source', async (t) => {
   const fs = require('node:fs/promises');
   const root = await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-open-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
-  const file = await require('../dist-electron/journal.js').writeSetup(root, setupInput({ note: 'Restore 🕯' }), [{ id: 'test', image, caption: 'Entry', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' }]);
+  const image =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  const file = await require('../dist-electron/journal.js').writeSetup(
+    root,
+    setupInput({ note: 'Restore 🕯' }),
+    [
+      {
+        id: 'test',
+        image,
+        caption: 'Entry',
+        capturedAt: '2026-10-30T12:00:00.000Z',
+        timeframe: '1m',
+      },
+    ],
+  );
   const original = await fs.readFile(file, 'utf8');
   const { windows, invoke, app } = await boot(undefined, async (_, options) => {
     assert.ok(options.properties.includes('openFile'));
@@ -560,7 +830,10 @@ test('opening a setup restores its schema values and image without modifying the
   assert.equal(opened.schema.revision, 1);
   assert.deepEqual(opened.capture, await invoke('capture:state'));
   assert.equal(opened.capture.screenshots.length, 1);
-  assert.match((await invoke('capture:state')).screenshots[0].image, /^tradeframe-image:\/\/capture\//);
+  assert.match(
+    (await invoke('capture:state')).screenshots[0].image,
+    /^tradeframe-image:\/\/capture\//,
+  );
   assert.equal((await invoke('capture:state')).busy, false);
   assert.equal(await fs.readFile(file, 'utf8'), original);
   assert.equal((await invoke('forms:list')).length, 2);
@@ -574,12 +847,21 @@ test('legacy opening requires a separate timeframe copy and enables appending on
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = path.join(root, 'old.md');
   const input = setupInput();
-  const original = serializeSetup({ ...input, schemaVersion: 3, createdAt: '2026-10-30T12:00:00.000Z',
-    screenshots: [{ file: 'chart.png', caption: 'Legacy', capturedAt: '2026-10-30T12:00:00.000Z' }] });
+  const original = serializeSetup({
+    ...input,
+    schemaVersion: 3,
+    createdAt: '2026-10-30T12:00:00.000Z',
+    screenshots: [{ file: 'chart.png', caption: 'Legacy', capturedAt: '2026-10-30T12:00:00.000Z' }],
+  });
   await fs.writeFile(file, original);
-  await fs.writeFile(path.join(root, 'chart.png'), Buffer.from(source('synthetic').thumbnail.toDataURL().split(',')[1], 'base64'));
-  const { windows, invoke } = await boot(undefined, async (_, options) => ({ canceled: false,
-    filePaths: [options.properties.includes('openFile') ? file : root] }));
+  await fs.writeFile(
+    path.join(root, 'chart.png'),
+    Buffer.from(source('synthetic').thumbnail.toDataURL().split(',')[1], 'base64'),
+  );
+  const { windows, invoke } = await boot(undefined, async (_, options) => ({
+    canceled: false,
+    filePaths: [options.properties.includes('openFile') ? file : root],
+  }));
   await invoke('journal:open');
   let state = await invoke('capture:state');
   assert.equal(state.requiresTimeframeCopy, true);
@@ -599,14 +881,20 @@ test('legacy opening requires a separate timeframe copy and enables appending on
 
 test('folder connections are journal-only and save sends all screenshots to both targets', async (t) => {
   const fs = require('node:fs/promises');
-  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-destinations-')));
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-destinations-')),
+  );
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const folders = ['obsidian', 'dropbox', 'journal'].map((name) => path.join(root, name));
   for (const folder of folders) await fs.mkdir(folder);
   let selections = 0;
   const snapshot = source('screen:0:0');
-  snapshot.thumbnail.toDataURL = () => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
-  const { windows, invoke } = await boot(async () => [snapshot], async () => ({ canceled: false, filePaths: [folders[selections++]] }));
+  snapshot.thumbnail.toDataURL = () =>
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  const { windows, invoke } = await boot(
+    async () => [snapshot],
+    async () => ({ canceled: false, filePaths: [folders[selections++]] }),
+  );
   await invoke('capture:open-bar');
   await assert.rejects(invoke('connections:folder', windows[1], 'dropbox'), /Untrusted/);
   await assert.rejects(invoke('connections:folder', windows[0], 'arbitrary'), /Invalid/);
@@ -620,45 +908,77 @@ test('folder connections are journal-only and save sends all screenshots to both
   await captureReady(invoke, windows);
   const appended = await invoke('journal:append', windows[0], setupInput());
   assert.equal(appended.path, saved.path);
-  assert.equal((await require('../dist-electron/journal.js').readSetup(saved.path)).screenshots.length, 3);
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(saved.path)).screenshots.length,
+    3,
+  );
   assert.ok(appended.sync.every((job) => job.status === 'synced'));
   await invoke('journal:save', windows[0], setupInput());
   assert.equal(selections, 3, 'Saving again uses the remembered journal folder');
-  for (const folder of folders.slice(0, 2)) assert.equal((await fs.readdir(path.join(folder, 'TradeFrame'))).length, 2);
+  for (const folder of folders.slice(0, 2))
+    assert.equal((await fs.readdir(path.join(folder, 'TradeFrame'))).length, 2);
 });
 
 test('saved setups can be sent after connecting and cloud opens restore a separate draft without touching files', async (t) => {
   const fs = require('node:fs/promises');
-  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-cloud-ipc-')));
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-cloud-ipc-')),
+  );
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  let now = 0; let title; let html; let snapshot; let png; let corrupt = false;
+  let now = 0;
+  let title;
+  let html;
+  let snapshot;
+  let png;
+  let corrupt = false;
   const reply = (data, status = 200) => new Response(JSON.stringify(data), { status });
   const graph = 'https://graph.microsoft.com/v1.0/me/onenote/';
   const request = async (url, options) => {
-    if (url.endsWith('devicecode')) return reply({ device_code: 'private', user_code: 'TEST', expires_in: 60, interval: 1 });
+    if (url.endsWith('devicecode'))
+      return reply({ device_code: 'private', user_code: 'TEST', expires_in: 60, interval: 1 });
     if (url.endsWith('token')) return reply({ access_token: 'private-access', expires_in: 3600 });
     const resource = new URL(url).pathname;
-    if (resource.endsWith('/notebooks')) return reply({ value: [{ id: 'book', displayName: 'Synthetic book', isDefault: false }] });
-    if (resource.endsWith('/sections')) return reply({ value: [{ id: 'section', displayName: 'TradeFrame' }] });
+    if (resource.endsWith('/notebooks'))
+      return reply({ value: [{ id: 'book', displayName: 'Synthetic book', isDefault: false }] });
+    if (resource.endsWith('/sections'))
+      return reply({ value: [{ id: 'section', displayName: 'TradeFrame' }] });
     if (resource.endsWith('/resources/setup/content')) return new Response(snapshot);
-    if (resource.endsWith('/resources/chart0/content')) return new Response(corrupt ? Buffer.from('invalid PNG') : png);
+    if (resource.endsWith('/resources/chart0/content'))
+      return new Response(corrupt ? Buffer.from('invalid PNG') : png);
     if (resource.endsWith('/content')) return new Response(html);
     if (options.method !== 'POST') return reply({ value: title ? [{ id: 'page', title }] : [] });
-    html = await options.body.get('Presentation').text(); title = /<title>(.*?)<\/title>/.exec(html)[1];
-    snapshot = await options.body.get('setup').text(); png = Buffer.from(await options.body.get('chart0').arrayBuffer());
-    html = html.replace('data="name:setup"', `data="${graph}resources/setup/$value"`).replace('src="name:chart0"', `data-fullres-src="${graph}resources/chart0/$value"`);
+    html = await options.body.get('Presentation').text();
+    title = /<title>(.*?)<\/title>/.exec(html)[1];
+    snapshot = await options.body.get('setup').text();
+    png = Buffer.from(await options.body.get('chart0').arrayBuffer());
+    html = html
+      .replace('data="name:setup"', `data="${graph}resources/setup/$value"`)
+      .replace('src="name:chart0"', `data-fullres-src="${graph}resources/chart0/$value"`);
     return reply({ id: 'page' }, 201);
   };
-  const { windows, invoke } = await boot(undefined, async () => ({ canceled: false, filePaths: [root] }), true, { request, now: () => now });
+  const { windows, invoke } = await boot(
+    undefined,
+    async () => ({ canceled: false, filePaths: [root] }),
+    true,
+    { request, now: () => now },
+  );
   await invoke('connections:folder', windows[0], 'obsidian');
-  await invoke('capture:open-bar'); await captureReady(invoke, windows);
-  const saved = await invoke('journal:save', windows[0], setupInput()); const original = await fs.readFile(saved.path);
-  assert.equal(saved.sync.length, 1); assert.equal(saved.sync[0].kind, 'obsidian');
+  await invoke('capture:open-bar');
+  await captureReady(invoke, windows);
+  const saved = await invoke('journal:save', windows[0], setupInput());
+  const original = await fs.readFile(saved.path);
+  assert.equal(saved.sync.length, 1);
+  assert.equal(saved.sync[0].kind, 'obsidian');
   await invoke('onenote:configure', windows[0], '11111111-2222-3333-4444-555555555555');
-  await invoke('onenote:connect'); now = 1000; await invoke('onenote:poll');
-  await invoke('onenote:notebooks'); await invoke('onenote:notebook', windows[0], 'book');
+  await invoke('onenote:connect');
+  now = 1000;
+  await invoke('onenote:poll');
+  await invoke('onenote:notebooks');
+  await invoke('onenote:notebook', windows[0], 'book');
   const sent = await invoke('onenote:send');
-  assert.equal(sent.sync.length, 1); assert.equal(sent.sync[0].kind, 'onenote'); assert.equal(sent.sync[0].status, 'synced');
+  assert.equal(sent.sync.length, 1);
+  assert.equal(sent.sync[0].kind, 'onenote');
+  assert.equal(sent.sync[0].status, 'synced');
   assert.equal((await invoke('connections:get')).jobs.length, 2);
   await invoke('onenote:setups');
   const before = await invoke('capture:state');
@@ -669,8 +989,11 @@ test('saved setups can be sent after connecting and cloud opens restore a separa
   assert.deepEqual(await invoke('capture:state'), before);
   corrupt = false;
   const loaded = await invoke('onenote:open', windows[0], 'page');
-  assert.deepEqual(loaded.values, setupInput().values); assert.equal(loaded.legacy, false);
-  const state = await invoke('capture:state'); assert.equal(state.savedPath, null); assert.equal(state.screenshots.length, 1);
+  assert.deepEqual(loaded.values, setupInput().values);
+  assert.equal(loaded.legacy, false);
+  const state = await invoke('capture:state');
+  assert.equal(state.savedPath, null);
+  assert.equal(state.screenshots.length, 1);
   assert.deepEqual(loaded.capture, state);
   assert.equal(loaded.capture.busy, false);
   assert.ok(state.screenshots[0].image.startsWith('tradeframe-image:'));

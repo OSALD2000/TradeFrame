@@ -12,6 +12,7 @@ upload, account registration, real-journal access or signing identity is implied
 On 1 November the owner reported missing OneNote delivery, requested opening
 setups from OneNote, and asked for online design research and a more approachable
 interface. Preserve all three requirements until actual acceptance.
+
 ## Implemented; acceptance still open
 
 1. Multi-image capture with a required timeframe and multiline notes per image,

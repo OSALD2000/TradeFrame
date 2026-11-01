@@ -6,11 +6,7 @@
     "strict": true,
     "outDir": "dist-electron",
     "skipLibCheck": true,
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
-  "include": [
-    "electron"
-  ]
+  "include": ["electron"]
 }

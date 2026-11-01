@@ -5,14 +5,29 @@ const { readFileSync } = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
-const { validateSetup, writeSetup, readSetup, appendScreenshots } = require('../dist-electron/journal.js');
+const {
+  validateSetup,
+  writeSetup,
+  readSetup,
+  appendScreenshots,
+} = require('../dist-electron/journal.js');
 const { DEFAULT_SCHEMA, deserializeSetup } = require('../dist-electron/form-schema.js');
 
-const values = { mode: 'live', symbol: 'EURUSD', direction: 'long', model: 'Test model',
-  timeframe: '5m', entryTimeNewYork: '2026-10-27T09:30', note: 'Synthetic note\nSecond line' };
+const values = {
+  mode: 'live',
+  symbol: 'EURUSD',
+  direction: 'long',
+  model: 'Test model',
+  timeframe: '5m',
+  entryTimeNewYork: '2026-10-27T09:30',
+  note: 'Synthetic note\nSecond line',
+};
 const input = { schema: DEFAULT_SCHEMA, values };
-const image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
-const screenshots = [{ id: 'test', image, caption: '', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' }];
+const image =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+const screenshots = [
+  { id: 'test', image, caption: '', capturedAt: '2026-10-30T12:00:00.000Z', timeframe: '1m' },
+];
 
 test('follow-up screenshots append to the same file, preserve its original bytes and keep a backup', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-append-'));
@@ -20,7 +35,10 @@ test('follow-up screenshots append to the same file, preserve its original bytes
   const file = await writeSetup(root, input, screenshots);
   const original = await fs.readFile(file, 'utf8');
   const loaded = await readSetup(file);
-  const more = [...loaded.screenshots, { ...screenshots[0], id: 'second', timeframe: '2m', caption: 'Follow-up' }];
+  const more = [
+    ...loaded.screenshots,
+    { ...screenshots[0], id: 'second', timeframe: '2m', caption: 'Follow-up' },
+  ];
   const backup = await appendScreenshots(file, loaded.fingerprint, input, more);
   assert.equal(await fs.readFile(backup, 'utf8'), original);
   assert.ok((await fs.readFile(file, 'utf8')).startsWith(original));
@@ -28,45 +46,90 @@ test('follow-up screenshots append to the same file, preserve its original bytes
   assert.equal(reopened.screenshots.length, 2);
   assert.deepEqual(reopened.values, values);
   assert.equal(reopened.screenshots[1].caption, 'Follow-up');
-  assert.deepEqual(reopened.screenshots.map((shot) => shot.timeframe), ['1m', '2m']);
-  await assert.rejects(appendScreenshots(file, reopened.fingerprint, input, [{ ...more[0], timeframe: '5m' }, more[1]]), /Save copy/);
+  assert.deepEqual(
+    reopened.screenshots.map((shot) => shot.timeframe),
+    ['1m', '2m'],
+  );
+  await assert.rejects(
+    appendScreenshots(file, reopened.fingerprint, input, [
+      { ...more[0], timeframe: '5m' },
+      more[1],
+    ]),
+    /Save copy/,
+  );
   await assert.rejects(appendScreenshots(file, loaded.fingerprint, input, more), /changed/);
-  await assert.rejects(appendScreenshots(file, reopened.fingerprint, { ...input, values: { ...values, note: 'Changed' } }, [...more, more[1]]), /Save copy/);
-  await appendScreenshots(file, reopened.fingerprint, input, [...reopened.screenshots, { ...more[1], id: 'third', caption: 'Exit' }]);
+  await assert.rejects(
+    appendScreenshots(
+      file,
+      reopened.fingerprint,
+      { ...input, values: { ...values, note: 'Changed' } },
+      [...more, more[1]],
+    ),
+    /Save copy/,
+  );
+  await appendScreenshots(file, reopened.fingerprint, input, [
+    ...reopened.screenshots,
+    { ...more[1], id: 'third', caption: 'Exit' },
+  ]);
   reopened = await readSetup(file);
   assert.equal(reopened.screenshots.length, 3);
   const complete = await fs.readFile(file, 'utf8');
   assert.equal(deserializeSetup(complete.replace(/(?<!\r)\n/g, '\r\n')).screenshots.length, 3);
   await fs.appendFile(file, '\nExternal Obsidian note\n');
-  await assert.rejects(appendScreenshots(file, reopened.fingerprint, input, [...reopened.screenshots, more[1]]));
+  await assert.rejects(
+    appendScreenshots(file, reopened.fingerprint, input, [...reopened.screenshots, more[1]]),
+  );
   assert.ok((await fs.readFile(file, 'utf8')).endsWith('External Obsidian note\n'));
-  assert.equal((await fs.readFile(path.join(path.dirname(file), 'chart.png'))).toString('base64'), image.split(',')[1]);
+  assert.equal(
+    (await fs.readFile(path.join(path.dirname(file), 'chart.png'))).toString('base64'),
+    image.split(',')[1],
+  );
 });
 
 test('each screenshot needs a valid timeframe before new files are created', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-timeframe-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const { validTimeframe } = require('../dist-electron/form-schema.js');
-  for (const value of ['1m', '2m', '30s', '4h', '1D', '1W', '1M', '9999m']) assert.equal(validTimeframe(value), true);
+  for (const value of ['1m', '2m', '30s', '4h', '1D', '1W', '1M', '9999m'])
+    assert.equal(validTimeframe(value), true);
   for (const value of [undefined, '', '0m', '01m', '1', '1mm', '10000m', '1m\n', 1]) {
     assert.equal(validTimeframe(value), false);
-    await assert.rejects(writeSetup(root, input, [{ ...screenshots[0], timeframe: value }]), /timeframe/);
+    await assert.rejects(
+      writeSetup(root, input, [{ ...screenshots[0], timeframe: value }]),
+      /timeframe/,
+    );
   }
   assert.deepEqual(await fs.readdir(root), []);
-  const file = await writeSetup(root, input, [screenshots[0], { ...screenshots[0], id: 'second', timeframe: '2m' }]);
+  const file = await writeSetup(root, input, [
+    screenshots[0],
+    { ...screenshots[0], id: 'second', timeframe: '2m' },
+  ]);
   const markdown = await fs.readFile(file, 'utf8');
   assert.match(markdown, /## 1m · captured/);
   assert.match(markdown, /## 2m · captured/);
-  assert.throws(() => deserializeSetup(markdown.replace('"timeframe":"2m"', '"timeframe":""')), /timeframe/);
+  assert.throws(
+    () => deserializeSetup(markdown.replace('"timeframe":"2m"', '"timeframe":""')),
+    /timeframe/,
+  );
 });
 
 test('version 3 screenshots keep unknown timeframes until an explicit version 5 copy', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-legacy-timeframe-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const { serializeSetup, screenshotAddition } = require('../dist-electron/form-schema.js');
-  const markdown = serializeSetup({ ...input, schemaVersion: 3, createdAt: screenshots[0].capturedAt,
-    screenshots: [{ file: 'chart.png', caption: 'Legacy', capturedAt: screenshots[0].capturedAt }] })
-    + screenshotAddition({ file: 'chart-002.png', caption: 'Old follow-up', capturedAt: screenshots[0].capturedAt }, 1);
+  const markdown =
+    serializeSetup({
+      ...input,
+      schemaVersion: 3,
+      createdAt: screenshots[0].capturedAt,
+      screenshots: [
+        { file: 'chart.png', caption: 'Legacy', capturedAt: screenshots[0].capturedAt },
+      ],
+    }) +
+    screenshotAddition(
+      { file: 'chart-002.png', caption: 'Old follow-up', capturedAt: screenshots[0].capturedAt },
+      1,
+    );
   const file = path.join(root, 'old.md');
   await fs.writeFile(file, markdown);
   await fs.writeFile(path.join(root, 'chart.png'), Buffer.from(image.split(',')[1], 'base64'));
@@ -90,13 +153,23 @@ test('multiple screenshots round trip in one Markdown file and follow-up saves p
   const first = await writeSetup(root, input, shots);
   const original = await fs.readFile(first, 'utf8');
   const loaded = await readSetup(first);
-  assert.deepEqual(loaded.screenshots.map(({ id, ...shot }) => shot), shots.map(({ id, ...shot }) => shot));
+  assert.deepEqual(
+    loaded.screenshots.map(({ id, ...shot }) => shot),
+    shots.map(({ id, ...shot }) => shot),
+  );
   assert.match(original, /!\[Chart 2\]\(chart-002.png\)/);
   assert.match(original, /1h follow-up 🕯/);
-  const second = await writeSetup(root, input, [...loaded.screenshots, { ...shots[1], id: 'third', caption: 'Exit' }]);
+  const second = await writeSetup(root, input, [
+    ...loaded.screenshots,
+    { ...shots[1], id: 'third', caption: 'Exit' },
+  ]);
   assert.equal((await readSetup(second)).screenshots.length, 3);
   assert.equal(await fs.readFile(first, 'utf8'), original);
-  assert.deepEqual(await fs.readdir(path.dirname(first)), ['chart-002.png', 'chart.png', 'setup.md']);
+  assert.deepEqual(await fs.readdir(path.dirname(first)), [
+    'chart-002.png',
+    'chart.png',
+    'setup.md',
+  ]);
   await assert.rejects(writeSetup(root, input, []), /1–20/);
   await assert.rejects(writeSetup(root, input, Array(21).fill(shots[0])), /1–20/);
   for (const file of ['../outside.png', '/tmp/chart.png', 'chart-003.png']) {
@@ -108,7 +181,10 @@ test('multiple screenshots round trip in one Markdown file and follow-up saves p
 test('version 2 single-image files remain readable without rewriting them', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-legacy-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
-  const markdown = require('../dist-electron/form-schema.js').serializeSetup({ ...input, createdAt: screenshots[0].capturedAt });
+  const markdown = require('../dist-electron/form-schema.js').serializeSetup({
+    ...input,
+    createdAt: screenshots[0].capturedAt,
+  });
   const file = path.join(root, 'old.md');
   await fs.writeFile(file, markdown);
   await fs.writeFile(path.join(root, 'chart.png'), Buffer.from(image.split(',')[1], 'base64'));
@@ -120,20 +196,37 @@ test('version 2 single-image files remain readable without rewriting them', asyn
 
 test('setup validation rejects invalid fields and impossible dates', () => {
   assert.deepEqual(validateSetup(input).values, values);
-  for (const invalid of [null, {}, ...[{ mode: 'paper' }, { direction: 'buy' },
-    { symbol: ' ' }, { model: 'x'.repeat(20001) }, { timeframe: 5 },
-    { note: '\0' }, { entryTimeNewYork: '2026-02-30T09:30' },
-    { entryTimeNewYork: '2026-10-27T25:00' }].map((patch) => ({ schema: DEFAULT_SCHEMA, values: { ...values, ...patch } }))]) {
+  for (const invalid of [
+    null,
+    {},
+    ...[
+      { mode: 'paper' },
+      { direction: 'buy' },
+      { symbol: ' ' },
+      { model: 'x'.repeat(20001) },
+      { timeframe: 5 },
+      { note: '\0' },
+      { entryTimeNewYork: '2026-02-30T09:30' },
+      { entryTimeNewYork: '2026-10-27T25:00' },
+    ].map((patch) => ({ schema: DEFAULT_SCHEMA, values: { ...values, ...patch } })),
+  ]) {
     assert.throws(() => validateSetup(invalid));
   }
-  assert.equal(validateSetup({ schema: DEFAULT_SCHEMA, values: { ...values, entryTimeNewYork: '', note: '' } }).values.entryTimeNewYork, '');
+  assert.equal(
+    validateSetup({ schema: DEFAULT_SCHEMA, values: { ...values, entryTimeNewYork: '', note: '' } })
+      .values.entryTimeNewYork,
+    '',
+  );
 });
 
 test('each save creates its own Markdown and PNG without changing existing files', async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-save-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   await fs.writeFile(path.join(root, 'setup.md'), 'Existing journal');
-  const setup = validateSetup({ schema: DEFAULT_SCHEMA, values: { ...values, symbol: '../name:\nquoted "symbol"' } });
+  const setup = validateSetup({
+    schema: DEFAULT_SCHEMA,
+    values: { ...values, symbol: '../name:\nquoted "symbol"' },
+  });
   const first = await writeSetup(root, setup, screenshots);
   const second = await writeSetup(root, setup, screenshots);
   assert.notEqual(first, second);
@@ -145,8 +238,14 @@ test('each save creates its own Markdown and PNG without changing existing files
   assert.deepEqual(deserializeSetup(markdown).values, setup.values);
   assert.ok(markdown.endsWith(`${values.note}\n`));
   assert.ok(markdown.includes('![Chart 1](chart.png)'));
-  assert.deepEqual(await fs.readFile(path.join(path.dirname(first), 'chart.png')), Buffer.from(image.split(',')[1], 'base64'));
-  await assert.rejects(writeSetup(root, setup, [{ ...screenshots[0], image: 'data:image/png;base64,invalid' }]), /Invalid screenshot/);
+  assert.deepEqual(
+    await fs.readFile(path.join(path.dirname(first), 'chart.png')),
+    Buffer.from(image.split(',')[1], 'base64'),
+  );
+  await assert.rejects(
+    writeSetup(root, setup, [{ ...screenshots[0], image: 'data:image/png;base64,invalid' }]),
+    /Invalid screenshot/,
+  );
   assert.equal((await fs.readdir(root)).length, 3);
   const loaded = await readSetup(first);
   assert.deepEqual(loaded.values, setup.values);
@@ -154,7 +253,10 @@ test('each save creates its own Markdown and PNG without changing existing files
 });
 
 test('opening rejects symbolic-link images and missing or invalid setup files', async (t) => {
-  if (process.platform === 'win32') { t.skip('Creating symbolic links requires additional Windows privileges'); return; }
+  if (process.platform === 'win32') {
+    t.skip('Creating symbolic links requires additional Windows privileges');
+    return;
+  }
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-read-boundary-'));
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   const file = await writeSetup(root, input, screenshots);
@@ -173,13 +275,23 @@ test('failed Markdown writes clean up the new image without touching prior journ
   await fs.writeFile(path.join(root, 'keep.md'), 'Preserve me');
   const module = { exports: {} };
   vm.runInNewContext(readFileSync(path.resolve(__dirname, '../dist-electron/journal.js'), 'utf8'), {
-    exports: module.exports, Buffer,
-    require: (name) => name === './append-store' ? { ...require('../dist-electron/append-store.js'), createFile: async (file, ...args) => {
-      if (file.endsWith('setup.md')) throw new Error('Synthetic disk failure');
-      return require('../dist-electron/append-store.js').createFile(file, ...args);
-    } } : require(name.startsWith('./') ? path.resolve(__dirname, '../dist-electron', name) : name),
+    exports: module.exports,
+    Buffer,
+    require: (name) =>
+      name === './append-store'
+        ? {
+            ...require('../dist-electron/append-store.js'),
+            createFile: async (file, ...args) => {
+              if (file.endsWith('setup.md')) throw new Error('Synthetic disk failure');
+              return require('../dist-electron/append-store.js').createFile(file, ...args);
+            },
+          }
+        : require(name.startsWith('./') ? path.resolve(__dirname, '../dist-electron', name) : name),
   });
-  await assert.rejects(module.exports.writeSetup(root, input, screenshots), /Synthetic disk failure/);
+  await assert.rejects(
+    module.exports.writeSetup(root, input, screenshots),
+    /Synthetic disk failure/,
+  );
   assert.deepEqual(await fs.readdir(root), ['keep.md']);
   assert.equal(await fs.readFile(path.join(root, 'keep.md'), 'utf8'), 'Preserve me');
 });

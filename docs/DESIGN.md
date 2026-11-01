@@ -30,6 +30,7 @@ sans-serif typography, 6px controls, and one accent reserved for the primary act
 Avoid decorative gradients, large marketing headings, and unrelated colored cards.
 
 Secondary research:
+
 - [Fey](https://styles.refero.design/style/a0630421-7b66-48b4-aa14-6194a3b2c2b9):
   chart-first financial context. Borrow only the priority given to chart content;
   do not import its rounded pills, shadows, or extra accents.
@@ -39,22 +40,22 @@ Secondary research:
 
 ## Decision ledger
 
-| Decision | Source | Role preserved | Reason |
-| --- | --- | --- | --- |
-| Canvas #000000, surfaces #060606 / #101010 | Owner's darker revision of the Linear reference | Background / nested surfaces | Blacker canvas with restrained separation and readable text |
-| Borders #202020 | Owner's darker revision | Structural edges | Separate navigation, preview, fields, and controls |
-| Accent #e4f222 | Linear | Single primary action only | Capture before a preview; Save setup with a preview; disabled actions stay neutral |
-| Sans-serif UI, medium weights | Linear | Interface typography | Compact scan-friendly labels; system fallback until a font is bundled |
-| Brighter secondary text #a0a5ae | Accessibility adaptation | Readable supporting copy | Improve small-text contrast on the dark canvas |
-| Navigation / full-width journal / details below image | Owner's layout revision | Desktop workflow | More room for the chart and setup fields |
-| Empty state, no synthetic trade records | Current product scope | Honest state | A transient capture is not a saved setup |
-| Compact draggable capture bar | Owner's recorder-tool request | Mouse-operated capture controls | Capture without shortcuts; journal stays visible as requested on 27 October 2026 |
-| Capture action switches to Close capture bar while open | Owner's explicit-close request, 27 October 2026 | Existing journal action | Keep controls available across screenshots and allow closing from either window |
-| App icon: two candles inside capture corners on a dark tile | Owner's icon request; existing TradeFrame frame/candle motif | App identity, separate from action-color roles | Recognizable mark at small desktop sizes; one acid accent candle |
-| Setup form below the preview with adaptive field columns | Owner's request for more input space | Setup details following the image | Fields share available width; notes span the row; narrow windows stack fields |
-| Save setup becomes the primary action with a preview | Existing single-primary-action rule | Accent reserved for the next action | Retake and capture controls become neutral while setup details are available |
-| Inline form selector and explicit editor below the screenshot | Owner's configurable-input request and existing full-width form | Local setup customization | Edit fields, keys, tags, choices and dependencies without a narrow panel or new navigation |
-| Native typed inputs and one primary Save form revision action | Existing compact controls and accent discipline | Form definition editing | Keep labels, ordering and rules visible; validation errors stay beside the editor |
+| Decision                                                      | Source                                                          | Role preserved                                 | Reason                                                                                     |
+| ------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Canvas #000000, surfaces #060606 / #101010                    | Owner's darker revision of the Linear reference                 | Background / nested surfaces                   | Blacker canvas with restrained separation and readable text                                |
+| Borders #202020                                               | Owner's darker revision                                         | Structural edges                               | Separate navigation, preview, fields, and controls                                         |
+| Accent #e4f222                                                | Linear                                                          | Single primary action only                     | Capture before a preview; Save setup with a preview; disabled actions stay neutral         |
+| Sans-serif UI, medium weights                                 | Linear                                                          | Interface typography                           | Compact scan-friendly labels; system fallback until a font is bundled                      |
+| Brighter secondary text #a0a5ae                               | Accessibility adaptation                                        | Readable supporting copy                       | Improve small-text contrast on the dark canvas                                             |
+| Navigation / full-width journal / details below image         | Owner's layout revision                                         | Desktop workflow                               | More room for the chart and setup fields                                                   |
+| Empty state, no synthetic trade records                       | Current product scope                                           | Honest state                                   | A transient capture is not a saved setup                                                   |
+| Compact draggable capture bar                                 | Owner's recorder-tool request                                   | Mouse-operated capture controls                | Capture without shortcuts; journal stays visible as requested on 27 October 2026           |
+| Capture action switches to Close capture bar while open       | Owner's explicit-close request, 27 October 2026                 | Existing journal action                        | Keep controls available across screenshots and allow closing from either window            |
+| App icon: two candles inside capture corners on a dark tile   | Owner's icon request; existing TradeFrame frame/candle motif    | App identity, separate from action-color roles | Recognizable mark at small desktop sizes; one acid accent candle                           |
+| Setup form below the preview with adaptive field columns      | Owner's request for more input space                            | Setup details following the image              | Fields share available width; notes span the row; narrow windows stack fields              |
+| Save setup becomes the primary action with a preview          | Existing single-primary-action rule                             | Accent reserved for the next action            | Retake and capture controls become neutral while setup details are available               |
+| Inline form selector and explicit editor below the screenshot | Owner's configurable-input request and existing full-width form | Local setup customization                      | Edit fields, keys, tags, choices and dependencies without a narrow panel or new navigation |
+| Native typed inputs and one primary Save form revision action | Existing compact controls and accent discipline                 | Form definition editing                        | Keep labels, ordering and rules visible; validation errors stay beside the editor          |
 
 ## App icon
 
