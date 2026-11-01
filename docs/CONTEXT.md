@@ -95,6 +95,17 @@ redacted failures, Linux provider initialization/restart and picker prerequisite
 
 ## Code ownership
 
+The latest owner-requested UI polish retains the chosen dark workspace and adds
+consistent navigation/source icons, clearer input surfaces, bounded screenshot
+previews, destination marks and functional micro-interactions across existing
+screens. Motion uses CSS tokens, immediate actions and a reduced-motion override;
+only loading loops. The supplied owner screenshots are private before-state
+references, not bundled assets. Build/typecheck/format and all 144 tests pass;
+view event/control bindings and compiled native code are unchanged. Local
+browser preview is blocked by URL policy and serving restrictions, so rendered
+desktop/narrow acceptance is still open. The installed release is unchanged.
+The target and verification limits are recorded in [DESIGN](DESIGN.md).
+
 The implemented pattern inventory, SOLID review rules and approved responsibility
 extraction are in [ARCHITECTURE](ARCHITECTURE.md). The pinned formatter and shared
 development conventions are in [CODE_STYLE](CODE_STYLE.md). The formatting step

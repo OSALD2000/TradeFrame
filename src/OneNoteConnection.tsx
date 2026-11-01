@@ -62,8 +62,11 @@ export function OneNoteConnection({
   }
   return (
     <div className="onenote-connection">
-      <div className="connection-row">
+      <div className="connection-row" data-connected={!!state?.connected}>
         <div>
+          <span className="connection-mark" aria-hidden="true">
+            N
+          </span>
           <h3>OneNote</h3>
           <p>
             {state?.connected

@@ -1,16 +1,70 @@
 # TradeFrame visual direction
 
+## Current polish target, 1 November 2026
+
+The owner's latest request is a more professional implementation with richer
+micro-interactions throughout. Build directly on the already approved guided-dark
+reference lock below. Preserve the black canvas, lime primary-action role,
+screenshot-first layout, existing routes, draft ownership and native workflows.
+This is a refinement of that chosen direction, not a new visual-language proposal.
+
+Research refreshed against the existing Linear, Fey and Attio Refero style pages,
+Linear's [product screens](https://linear.app/features), the bundled Refero motion,
+typography and form craft guides, and the official
+[animation performance guide](https://motion.dev/docs/performance) and
+[Chrome motion guidance](https://developer.chrome.com/docs/modern-web-guidance/guides/ui-behaviors/motion).
+The current Fey homepage redirects to an acquisition notice, so the historical
+Refero reference supplies only its existing chart-priority role.
+
+| Decision                                                               | Source / role                                 | Implementation target                                                                                 |
+| ---------------------------------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Stepped black surfaces, neutral active navigation, lime primary action | Existing Linear lock and owner choice         | Crisp navigation, clear page hierarchy, quiet structural borders                                      |
+| Consistent icon scale and grouped labels                               | Refero form/typography craft; Attio hierarchy | Three equally legible navigation items, clear source/destination identities                           |
+| Readable input surfaces and aligned secondary actions                  | Existing full-width form lock                 | 44px targets, visible keyboard focus, stable labels and responsive field columns                      |
+| Immediate interactive feedback                                         | Owner's motion request; Refero motion craft   | 120ms hover, focus and press; short card/disclosure/status entrances                                  |
+| Controlled visual hierarchy                                            | Motion performance guidance                   | Animate transforms/opacity for entries, retain immediate actions and draft state                      |
+| Accessible motion                                                      | Refero craft and Chrome guidance              | Reduced-motion disables movement; only genuine loading loops; no animated typing or artificial delays |
+
+Use existing CSS and native controls; add no animation dependency, remote font,
+generated media, fake trading results or additional navigation. Preserve real
+screenshots as the product's media. Actual desktop/narrow rendering and motion
+must be inspected before visual acceptance; automatic checks alone are insufficient.
+
+The owner's supplied desktop screenshots were inspected as the before-state:
+capture preview, open sources, connected destinations, setup fields, native
+replacement confirmation and the schema editor. They inform the bounded content
+width, consistent navigation icons, clearer input surfaces and destination marks.
+These private screenshots are not copied into the repository or distribution.
+Native confirmation dialogs retain their existing behavior and system appearance.
+
+Verification of this polish: `npm run check` passes all 144 tests, including four
+style-policy checks for contrast, reduced motion, loading-only loops and target
+sizes. The five changed view components retain their 11 function prefixes and
+105 event/control bindings. All 20 compiled native modules remain byte-identical
+to the previous build; controllers, persistence, authentication and production
+CSP are unchanged. The generated renderer references and bundled style rules resolve.
+
+Visual acceptance remains **blocked**, not passed. Local serving fails with
+`listen EPERM`, and the browser URL policy rejects local-file previews. No
+alternate browser route or disabled security was used. The supplied screenshots
+are the before-state only. After completely closing the running app, launch
+`npm start` from the project to inspect this source build: desktop/narrow layouts,
+capture and form editing, Connections, OneNote dialog, focus and reduced motion.
+The installed release has not been replaced or rebuilt by this design step.
+
 Current owner choice, 1 November 2026: **guided dark workspace**, approved for
 implementation, with larger text/controls and more subtle micro-interactions.
 This resolves the pending choice recorded below. Preserve the existing black
 canvas, restrained sans-serif, fine stepped surfaces and lime primary action.
 Increase readability and spacing rather than adding decorative dashboards.
 
-Implementation lock: 16px base, 30px screen titles, 14–15px supporting/control
-text, 44px targets, 260px-minimum field columns, wider 232px navigation and
-roomier modal lists. Keep screenshot-first content and full-width details below.
-Use 120ms hover/press feedback, 180ms short state entries and 200ms modal entry;
-4–6px travel, no spring/bounce. Only active loading may loop, with explicit text.
+Implementation lock: 16px base, 32px desktop/28px narrow titles, 14–15px
+supporting/control text, 44px targets, 280px-minimum field columns, 248px desktop
+navigation and a 1440px maximum content width. Keep screenshot-first content and
+full-width details below; previews remain contained with a 55vh/520px height cap.
+Use 120ms hover/press feedback, 200ms state entries and 240ms modal entry;
+short travel, no spring/bounce. The small empty-state illustration enters once
+over 400ms. Only active loading may loop, with explicit text.
 Respect prefers-reduced-motion by disabling animation/transition and smooth
 scroll. Use the bundled Refero motion guide; no animation dependency or imagery.
 Route changes start at the workspace top; typing never replays route animation.
@@ -40,22 +94,22 @@ Secondary research:
 
 ## Decision ledger
 
-| Decision                                                      | Source                                                          | Role preserved                                 | Reason                                                                                     |
-| ------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Canvas #000000, surfaces #060606 / #101010                    | Owner's darker revision of the Linear reference                 | Background / nested surfaces                   | Blacker canvas with restrained separation and readable text                                |
-| Borders #202020                                               | Owner's darker revision                                         | Structural edges                               | Separate navigation, preview, fields, and controls                                         |
-| Accent #e4f222                                                | Linear                                                          | Single primary action only                     | Capture before a preview; Save setup with a preview; disabled actions stay neutral         |
-| Sans-serif UI, medium weights                                 | Linear                                                          | Interface typography                           | Compact scan-friendly labels; system fallback until a font is bundled                      |
-| Brighter secondary text #a0a5ae                               | Accessibility adaptation                                        | Readable supporting copy                       | Improve small-text contrast on the dark canvas                                             |
-| Navigation / full-width journal / details below image         | Owner's layout revision                                         | Desktop workflow                               | More room for the chart and setup fields                                                   |
-| Empty state, no synthetic trade records                       | Current product scope                                           | Honest state                                   | A transient capture is not a saved setup                                                   |
-| Compact draggable capture bar                                 | Owner's recorder-tool request                                   | Mouse-operated capture controls                | Capture without shortcuts; journal stays visible as requested on 27 October 2026           |
-| Capture action switches to Close capture bar while open       | Owner's explicit-close request, 27 October 2026                 | Existing journal action                        | Keep controls available across screenshots and allow closing from either window            |
-| App icon: two candles inside capture corners on a dark tile   | Owner's icon request; existing TradeFrame frame/candle motif    | App identity, separate from action-color roles | Recognizable mark at small desktop sizes; one acid accent candle                           |
-| Setup form below the preview with adaptive field columns      | Owner's request for more input space                            | Setup details following the image              | Fields share available width; notes span the row; narrow windows stack fields              |
-| Save setup becomes the primary action with a preview          | Existing single-primary-action rule                             | Accent reserved for the next action            | Retake and capture controls become neutral while setup details are available               |
-| Inline form selector and explicit editor below the screenshot | Owner's configurable-input request and existing full-width form | Local setup customization                      | Edit fields, keys, tags, choices and dependencies without a narrow panel or new navigation |
-| Native typed inputs and one primary Save form revision action | Existing compact controls and accent discipline                 | Form definition editing                        | Keep labels, ordering and rules visible; validation errors stay beside the editor          |
+| Decision                                                      | Source                                                          | Role preserved                                   | Reason                                                                                     |
+| ------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Canvas #000000, surfaces #08090a / #131517                    | Owner's darker revision of the Linear reference                 | Background / nested surfaces                     | Black canvas with restrained separation and readable text                                  |
+| Structural borders #282c30, input borders #606874             | Dark reference adapted for control contrast                     | Structural edges / identifiable input boundaries | Keep separators quiet while editable controls remain distinct                              |
+| Accent #e4f222                                                | Linear                                                          | Single primary action only                       | Capture before a preview; Save setup with a preview; disabled actions stay neutral         |
+| Sans-serif UI, medium weights                                 | Linear                                                          | Interface typography                             | Compact scan-friendly labels; system fallback until a font is bundled                      |
+| Secondary text #b3bac4, supporting text #969faa               | Accessibility adaptation                                        | Readable supporting copy                         | Declared text contrast is at least 6.83:1 on the standard dark surfaces                    |
+| Navigation / full-width journal / details below image         | Owner's layout revision                                         | Desktop workflow                                 | More room for the chart and setup fields                                                   |
+| Empty state, no synthetic trade records                       | Current product scope                                           | Honest state                                     | A transient capture is not a saved setup                                                   |
+| Compact draggable capture bar                                 | Owner's recorder-tool request                                   | Mouse-operated capture controls                  | Capture without shortcuts; journal stays visible as requested on 27 October 2026           |
+| Capture action switches to Close capture bar while open       | Owner's explicit-close request, 27 October 2026                 | Existing journal action                          | Keep controls available across screenshots and allow closing from either window            |
+| App icon: two candles inside capture corners on a dark tile   | Owner's icon request; existing TradeFrame frame/candle motif    | App identity, separate from action-color roles   | Recognizable mark at small desktop sizes; one acid accent candle                           |
+| Setup form below the preview with adaptive field columns      | Owner's request for more input space                            | Setup details following the image                | Fields share available width; notes span the row; narrow windows stack fields              |
+| Save setup becomes the primary action with a preview          | Existing single-primary-action rule                             | Accent reserved for the next action              | Retake and capture controls become neutral while setup details are available               |
+| Inline form selector and explicit editor below the screenshot | Owner's configurable-input request and existing full-width form | Local setup customization                        | Edit fields, keys, tags, choices and dependencies without a narrow panel or new navigation |
+| Native typed inputs and one primary Save form revision action | Existing compact controls and accent discipline                 | Form definition editing                          | Keep labels, ordering and rules visible; validation errors stay beside the editor          |
 
 ## App icon
 
@@ -70,7 +124,7 @@ and one acid yellow-green; legible at 24px, no text, arrows, glow, or 3D."
 Media: real chart screenshots when capture exists. The current empty-state glyph
 is a simple code-native candlestick/frame symbol, not a chart or performance claim.
 The setup form follows the preview at every window size. Its fields use as
-many 220px-minimum columns as fit, falling to one column on narrow windows.
+many 280px-minimum columns as fit, falling to one column on narrow windows.
 The form stays mounted but hidden during source selection to preserve its draft.
 The capture bar uses the same surfaces, control radii, and primary-action accent.
 Candidate source thumbnails and the preview are real user-triggered snapshots,

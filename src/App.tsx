@@ -59,7 +59,10 @@ export function App() {
       <aside className="sidebar" aria-label="Workspace">
         <div className="brand">
           <img src="./tradeframe-icon.png" alt="" width="32" height="32" />
-          <span>TradeFrame</span>
+          <span>
+            <strong>TradeFrame</strong>
+            <small>Trading journal</small>
+          </span>
         </div>
         <nav aria-label="Main navigation">
           <a
@@ -74,6 +77,9 @@ export function App() {
             Create setup
           </a>
           <a className="nav-item" href="#open" aria-current={view === 'open' ? 'page' : undefined}>
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M3 6V4.5A1.5 1.5 0 0 1 4.5 3H8l2 2h5.5A1.5 1.5 0 0 1 17 6.5V8M3 8h14l-2 8H5z" />
+            </svg>
             Open setup
           </a>
           <a
@@ -81,6 +87,11 @@ export function App() {
             href="#connections"
             aria-current={view === 'connections' ? 'page' : undefined}
           >
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="m8 7 4 6m-4 0 4-6" />
+              <rect x="2.5" y="3" width="5" height="5" rx="1.5" />
+              <rect x="12.5" y="12" width="5" height="5" rx="1.5" />
+            </svg>
             Connections
           </a>
         </nav>
@@ -136,12 +147,12 @@ export function App() {
             )}
             <section id="journal" hidden={view !== 'journal'} aria-label="Create setup">
               <ol className="setup-steps" aria-label="Setup workflow">
-                <li>
+                <li data-state={state.screenshots.length ? 'complete' : 'current'}>
                   <span>1</span>
                   <strong>Capture</strong>
                   <small>Keep the chart</small>
                 </li>
-                <li>
+                <li data-state={state.screenshots.length ? 'current' : 'upcoming'}>
                   <span>2</span>
                   <strong>Describe</strong>
                   <small>Add timeframe and context</small>

@@ -62,6 +62,11 @@ export function SetupForm({
         aria-label="Open setup sources"
       >
         <article>
+          <span className="open-source-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M3 7V5a1 1 0 0 1 1-1h6l2 2h8a1 1 0 0 1 1 1v2M3 9h18l-2 11H5z" />
+            </svg>
+          </span>
           <h2>On this computer</h2>
           <p>
             Choose a saved TradeFrame setup. Keep its Markdown file and screenshots in the same
@@ -72,6 +77,12 @@ export function SetupForm({
           </button>
         </article>
         <article>
+          <span className="open-source-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="3" width="15" height="18" rx="2" />
+              <path d="M8 3v18m4-12v6m0-6 5 6V9M3 7h3m-3 5h3m-3 5h3" />
+            </svg>
+          </span>
           <h2>OneNote</h2>
           <p>Browse setups in the TradeFrame section of your selected notebook.</p>
           <button

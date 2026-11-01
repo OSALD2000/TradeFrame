@@ -4,7 +4,12 @@ export function DeliveryStatus({ result }: { result: SaveResult }) {
   if (result.status !== 'saved') return null;
   const failed = result.sync.some((job) => job.status !== 'synced');
   return (
-    <section className="delivery-status" aria-label="Last save result" role="status">
+    <section
+      className="delivery-status"
+      aria-label="Last save result"
+      role="status"
+      data-attention={failed || !!result.warning}
+    >
       <strong>Saved locally{failed ? ' · delivery needs attention' : ''}</strong>
       <p className="saved-path">{result.path}</p>
       {result.sync.length > 0 && (

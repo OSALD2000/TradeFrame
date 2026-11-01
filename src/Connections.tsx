@@ -62,8 +62,11 @@ export function Connections({ api, busy }: { api: ConnectionsAPI | undefined; bu
         )}
       </div>
       {(['journal', 'obsidian', 'dropbox'] as const).map((kind) => (
-        <div className="connection-row" key={kind}>
+        <div className="connection-row" key={kind} data-connected={!!connections?.folders[kind]}>
           <div>
+            <span className="connection-mark" aria-hidden="true">
+              {labels[kind].charAt(0)}
+            </span>
             <h3>{labels[kind]}</h3>
             <p>
               {connections?.folders[kind] ??
