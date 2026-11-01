@@ -10,20 +10,21 @@ The existing directories and file paths stay in place. An approved extraction
 may add files inside an existing directory; it does not introduce a new folder
 hierarchy. Packaging must include every new native module it needs.
 
-| Location                                                                         | Responsibility                                                                    | Boundary                                                                                                            |
-| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `src/`                                                                           | React screens, form editing, capture subscriptions and user feedback              | Calls the named preload API; no direct filesystem, credentials or Graph access                                      |
-| `electron/preload.ts` and `electron/capture-types.ts`                            | Renderer-facing commands, events and their contracts                              | Expose individual commands rather than arbitrary IPC or native capabilities                                         |
-| `electron/main.ts`                                                               | Electron startup, windows, capture state, trusted IPC and composition             | Verifies senders, owns in-memory image access and coordinates services                                              |
-| `electron/form-definition.ts` and `electron/journal-layout.ts`                   | Form definition/value rules and calendar identity                                 | Pure rules are shared without importing Electron or account services                                                |
-| `electron/setup-document.ts` and the compatible `electron/form-schema.ts` facade | Versioned Markdown and screenshot references, with the established public exports | Document conversion depends on definitions; definitions do not depend on document conversion                        |
-| `electron/journal.ts` and `electron/append-store.ts`                             | Markdown/PNG persistence, append preservation and recovery                        | Filesystem operations validate inputs and preserve conflicting external data                                        |
-| `electron/schema-store.ts`                                                       | Versioned form definitions in SQLite                                              | Setup values and screenshots do not enter this database                                                             |
-| `electron/connections.ts`                                                        | Folder preferences, durable delivery jobs and folder copies                       | Delivery failures do not undo a local save                                                                          |
-| `electron/onenote.ts` and `electron/onenote-content.ts`                          | Microsoft authorization, Graph requests and validated cloud conversion            | Tokens stay native; returned HTML is parsed as data, never rendered                                                 |
-| `electron/onenote-resource.ts` and `electron/onenote-error.ts`                   | Pure resource URL validation and the shared safe error type                       | No HTTP, credentials, settings or account lifecycle; the existing public error export keeps the same class identity |
-| `scripts/`                                                                       | Native distribution, platform branding and runtime verification                   | Uses an explicit public-file allowlist                                                                              |
-| `tests/`                                                                         | Behavioral regressions using synthetic data and temporary folders                 | Does not require real journals, accounts or desktop capture                                                         |
+| Location                                                                                          | Responsibility                                                                    | Boundary                                                                                                            |
+| ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `src/`                                                                                            | React screens, form editing, capture subscriptions and user feedback              | Calls the named preload API; no direct filesystem, credentials or Graph access                                      |
+| `electron/preload.ts` and `electron/capture-types.ts`                                             | Renderer-facing commands, events and their contracts                              | Expose individual commands rather than arbitrary IPC or native capabilities                                         |
+| `electron/main.ts`                                                                                | Electron startup, windows, capture state, trusted IPC and composition             | Verifies senders, owns in-memory image access and coordinates services                                              |
+| `electron/form-definition.ts` and `electron/journal-layout.ts`                                    | Form definition/value rules and calendar identity                                 | Pure rules are shared without importing Electron or account services                                                |
+| `electron/setup-document.ts` and the compatible `electron/form-schema.ts` facade                  | Versioned Markdown and screenshot references, with the established public exports | Document conversion depends on definitions; definitions do not depend on document conversion                        |
+| `electron/journal.ts` and `electron/append-store.ts`                                              | Markdown/PNG persistence, append preservation and recovery                        | Filesystem operations validate inputs and preserve conflicting external data                                        |
+| `electron/schema-store.ts`                                                                        | Versioned form definitions in SQLite                                              | Setup values and screenshots do not enter this database                                                             |
+| `electron/connections.ts`                                                                         | Folder preferences and durable delivery job state                                 | Uses the connector factory; delivery failures do not undo a local save                                              |
+| `electron/connector.ts`, `connector-factory.ts`, `folder-connector.ts` and `onenote-connector.ts` | Delivery contract, provider selection and delivery-specific adapters              | Constructors perform no transfer or sign-in; adapters own delivery and failure messages                             |
+| `electron/onenote.ts` and `electron/onenote-content.ts`                                           | Microsoft authorization, Graph requests and validated cloud conversion            | Tokens stay native; returned HTML is parsed as data, never rendered                                                 |
+| `electron/onenote-resource.ts` and `electron/onenote-error.ts`                                    | Pure resource URL validation and the shared safe error type                       | No HTTP, credentials, settings or account lifecycle; the existing public error export keeps the same class identity |
+| `scripts/`                                                                                        | Native distribution, platform branding and runtime verification                   | Uses an explicit public-file allowlist                                                                              |
+| `tests/`                                                                                          | Behavioral regressions using synthetic data and temporary folders                 | Does not require real journals, accounts or desktop capture                                                         |
 
 The UI and native code share validation rules and type definitions. This is a
 modular Electron application, not a claim that the current code implements a
@@ -86,6 +87,39 @@ states matches the previous component, including cancellation, failure, revision
 migration, cloud images and generated form IDs. Native emitted files are unchanged.
 These checks do not simulate a real browser or replace desktop acceptance.
 
+### Simple Factory and connector adapters
+
+The owner selected a factory function with small connector adapters.
+`createConnector` in `connector-factory.ts` exhaustively selects a `FolderConnector`
+for Obsidian/Dropbox or a `OneNoteConnector` for OneNote. Both implement the narrow
+`SetupConnector` contract in `connector.ts`: deliver a source/job ID and format
+its failure message. `ConnectionStore.retry` no longer dispatches by provider or
+contains provider-specific error rules.
+
+This is a **Simple Factory**, not a GoF Factory Method inheritance hierarchy or
+an Abstract Factory for families of objects. There is no plugin registry or
+service container. New supported destinations require explicit factory wiring
+and a separate decision about their UI and persisted configuration.
+
+The folder adapter owns the unchanged `copySnapshot` implementation; its old
+export from `connections.ts` remains compatible. The OneNote adapter receives
+the existing delivery callback, preserving section, notebook and job identity.
+Creating an adapter does not authenticate, upload or instantiate another
+`OneNoteClient`; its process-owned session is still supplied by native composition.
+
+Delivery returns the underlying operation directly. The common return type is
+`Promise<unknown>` because the queue needs completion rather than a provider's
+result: folder copying still resolves to its path and OneNote resolves normally.
+No wrapper `async`/`then` adds another microtask; missing callbacks and synchronous
+failures keep their timing. All status transitions and persistence stay in the
+queue, including legacy backup, retry filtering and cancellation behavior.
+
+Factory tests cover both folder targets, notebook-aware/legacy OneNote delivery,
+original promise identity, safe errors and unsupported destinations. A direct
+comparison of 14 queue scenarios matches the previous implementation, including
+immediate and awaited states, callback arguments, backups and cancellation.
+All 134 tests pass; the moved folder-copy body is unchanged.
+
 ### Repository-style store: form revisions
 
 `SchemaStore` in `electron/schema-store.ts` encapsulates
@@ -116,8 +150,8 @@ callback, while native composition supplies `deliverOneNote`.
 
 These are explicit dependencies and a function-based delivery strategy, not a
 class hierarchy. Their supplied implementations must retain return, error and
-cancellation contracts. Existing explicit branches for the supported destinations
-are not replaced with a plugin registry merely to add a pattern.
+cancellation contracts. The factory selects the supported destination adapters; an unrequested plugin
+registry is not introduced.
 
 ### Lazy construction at the composition root
 
@@ -179,8 +213,8 @@ These techniques are important, but are not additional GoF class patterns:
 | Principle             | Current evidence and cleanup rule                                                                                                                                                                                                                                              |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Single responsibility | Setup draft state/workflows, view markup and pure resource validation have separate modules. Native orchestration, Microsoft client ownership and form document conversion are reviewed as separate responsibilities; each further extraction is agreed before implementation. |
-| Open/closed           | Existing injected operations provide extension points. Add another abstraction only for a real variation; retain explicit domain cases where they are clearer.                                                                                                                 |
-| Liskov substitution   | There is no service inheritance hierarchy to extend. Substituted callbacks and ports must preserve observable results, failures and cancellation behavior.                                                                                                                     |
+| Open/closed           | The delivery queue uses `SetupConnector`; provider behavior and error policy live in adapters selected by the composition factory. Domain kinds/configuration remain explicit rather than pretending arbitrary plugins are already supported.                                  |
+| Liskov substitution   | Connector adapters preserve the delivery completion/failure contract. Tests exercise both implementations, original promise identity and synchronous failures; callback and facade compatibility remain intact.                                                                |
 | Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.                                                                             |
 | Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                                                                                     |
 

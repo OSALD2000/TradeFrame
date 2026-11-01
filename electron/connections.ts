@@ -1,14 +1,10 @@
+import { createConnector } from './connector-factory';
+import type { OneNoteDelivery } from './connector';
 import { mkdirSync, readFileSync, writeFileSync, renameSync, rmSync } from 'node:fs';
-import { mkdir, lstat, readFile, rm, realpath } from 'node:fs/promises';
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { deserializeSetup } from './form-schema';
-import { readSetup, pngBytes } from './journal';
-import { appendDocument, createFile, recoverAppend } from './append-store';
-import { calendarPath, journalDirectory, safeNoteFilename } from './journal-layout';
 import type { FolderKind, SyncJob, Connections } from './capture-types';
 import { validOneNoteId } from './capture-types';
-import { OneNoteError } from './onenote-error';
 
 export function folderKind(value: unknown): asserts value is FolderKind {
   if (!['journal', 'obsidian', 'dropbox'].includes(String(value)))
@@ -153,35 +149,20 @@ export class ConnectionStore {
     next.jobs = next.jobs.filter((job) => job.kind !== 'onenote' || job.status === 'synced');
     this.commit(next);
   }
-  async retry(
-    ids?: string[],
-    deliverOneNote?: (
-      source: string,
-      section: string,
-      id: string,
-      notebookId?: string,
-    ) => Promise<void>,
-  ): Promise<SyncJob[]> {
+  async retry(ids?: string[], deliverOneNote?: OneNoteDelivery): Promise<SyncJob[]> {
     const jobs = this.data.jobs.filter(
       (job) => job.status !== 'synced' && (!ids || ids.includes(job.id)),
     );
     const results: SyncJob[] = [];
     for (const job of jobs) {
+      const connector = createConnector(job, deliverOneNote);
       let status: SyncJob['status'] = 'synced';
       let error: string | null = null;
       try {
-        if (job.kind === 'onenote') {
-          if (!deliverOneNote) throw new Error('OneNote is not connected');
-          await deliverOneNote(job.source, job.section, job.id, job.notebookId);
-        } else await copySnapshot(job.source, path.join(job.folder, 'TradeFrame'));
+        await connector.deliver(job);
       } catch (cause) {
         status = 'failed';
-        error =
-          job.kind === 'onenote'
-            ? cause instanceof OneNoteError
-              ? cause.message
-              : 'Could not sync OneNote. Check your sign-in, connection and setup size, then retry.'
-            : 'Could not sync. Check folder access, available space, and conflicting files, then retry.';
+        error = connector.failureMessage(cause);
       }
       const next = this.get();
       const updated = { ...job, status, error };
@@ -193,86 +174,4 @@ export class ConnectionStore {
   }
 }
 
-export async function copySnapshot(source: string, targetRoot: string): Promise<string> {
-  const loaded = await readSetup(source);
-  const markdown = loaded.markdown;
-  const document = deserializeSetup(markdown);
-  const parent = path.basename(path.dirname(source));
-  const name = /^setup-[A-Za-z0-9_.-]{1,120}$/.test(parent)
-    ? parent
-    : `setup-import-${createHash('sha256').update(source).digest('hex').slice(0, 20)}`;
-  // Targets must already exist; a removed/unmounted destination must not be recreated elsewhere.
-  const root = await realpath(path.dirname(targetRoot));
-  if (root !== path.dirname(targetRoot)) throw new Error('Connection folder moved');
-  await mkdir(targetRoot, { recursive: true });
-  if (!(await lstat(targetRoot)).isDirectory() || (await lstat(targetRoot)).isSymbolicLink())
-    throw new Error('Invalid sync folder');
-  const calendar = calendarPath(document);
-  const target = calendar
-    ? await journalDirectory(root, [path.basename(targetRoot), ...calendar])
-    : path.join(targetRoot, name);
-  const filename = calendar ? path.basename(source) : 'setup.md';
-  if (!safeNoteFilename(filename)) throw new Error('Invalid sync note filename');
-  const files = loaded.screenshots.map((shot, index) => ({
-    name: document.screenshots?.[index].file ?? 'chart.png',
-    bytes: pngBytes(shot.image),
-  }));
-  files.push({ name: filename, bytes: Buffer.from(markdown) });
-  let created = false;
-  try {
-    try {
-      await mkdir(target);
-      created = !calendar;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    }
-    const info = await lstat(target);
-    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('Invalid sync target');
-    await recoverAppend(path.join(target, filename));
-    const missing = [];
-    let markdownAddition: Buffer | null = null;
-    let previousMarkdown: Buffer | null = null;
-    // Compare the entire snapshot before writing; never replace an externally edited file.
-    for (const file of files) {
-      const destination = path.join(target, file.name);
-      try {
-        const info = await lstat(destination);
-        if (!info.isFile() || info.isSymbolicLink() || info.size > file.bytes.length)
-          throw new Error('Sync conflict');
-        const existing = await readFile(destination);
-        if (existing.equals(file.bytes)) continue;
-        if (file.name !== filename || !file.bytes.subarray(0, existing.length).equals(existing))
-          throw new Error('Sync conflict');
-        const earlier = deserializeSetup(existing.toString('utf8'));
-        const suffix = file.bytes.subarray(existing.length);
-        if (
-          !suffix.toString('utf8').startsWith('\n<!-- tradeframe-screenshot: ') ||
-          (earlier.screenshots?.length ?? 1) >= loaded.screenshots.length
-        )
-          throw new Error('Sync conflict');
-        markdownAddition = suffix;
-        previousMarkdown = existing;
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-        missing.push(file);
-      }
-    }
-    if (markdownAddition) {
-      const oldCount =
-        deserializeSetup(previousMarkdown!.toString('utf8')).screenshots?.length ?? 1;
-      for (const image of files.slice(0, oldCount)) {
-        if (missing.includes(image)) await createFile(path.join(target, image.name), image.bytes);
-      }
-      await appendDocument(
-        path.join(target, filename),
-        previousMarkdown!,
-        markdownAddition,
-        files.slice(0, -1),
-      );
-    } else for (const file of missing) await createFile(path.join(target, file.name), file.bytes);
-    return path.join(target, filename);
-  } catch (error) {
-    if (created) await rm(target, { recursive: true, force: true });
-    throw error;
-  }
-}
+export { copySnapshot } from './folder-connector';

@@ -126,6 +126,14 @@ types. The dependency goes from documents to definitions only. All 42 moved
 declarations retain their syntax and 35 before/after format/error comparisons
 agree, including legacy version 1. No persisted format is migrated.
 
+The owner selected a Simple Factory for deliveries. `createConnector` provides
+folder or OneNote adapters through `SetupConnector`; queue processing no longer
+selects provider behavior or formats provider errors. The folder-copy function
+is unchanged and retains its original export. OneNote uses the existing lazy
+client callback, not a newly created account/session. All 134 tests pass, and
+14 direct queue comparisons preserve immediate/awaited state, errors, callback
+arguments, legacy backup and cancellation. Underlying promises are returned directly.
+
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
 lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,
 new windows and off-app navigation remain blocked. `preload.ts` exposes only
