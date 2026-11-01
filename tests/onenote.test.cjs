@@ -11,10 +11,13 @@ const clientId = '11111111-2222-3333-4444-555555555555';
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 function encryption(available = true) {
   const vault = new Map();
+  const encrypt = (value) => { const id = randomUUID(); vault.set(id, value); return Buffer.from(id); };
   return {
+    isEncryptionAvailable: () => available,
     isAsyncEncryptionAvailable: async () => available,
     getSelectedStorageBackend: () => available ? 'gnome_libsecret' : 'basic_text',
-    encryptStringAsync: async (value) => { const id = randomUUID(); vault.set(id, value); return Buffer.from(id); },
+    encryptString: encrypt,
+    encryptStringAsync: async (value) => encrypt(value),
     decryptStringAsync: async (value) => ({ result: vault.get(value.toString()), shouldReEncrypt: false }),
   };
 }
@@ -49,6 +52,26 @@ test('a rejected application ID can be corrected, removed and stays removed afte
   await assert.rejects(fs.stat(path.join(root, 'onenote.json')), { code: 'ENOENT' });
   client = new OneNoteClient(root, encryption());
   assert.equal((await client.getState()).applicationId, '');
+});
+test('Linux initializes and uses the checked keyring provider before persisting sign-in', { skip: process.platform !== 'linux' }, async (t) => {
+  const root = await fixture(t); const secure = encryption(); let initialized = false; let now = 0;
+  secure.isEncryptionAvailable = () => { initialized = true; return true; };
+  secure.getSelectedStorageBackend = () => initialized ? 'gnome_libsecret' : 'unknown';
+  secure.encryptStringAsync = async () => { throw new Error('The unchecked async fallback must not store credentials'); };
+  const request = async (url) => url.endsWith('devicecode')
+    ? json({ device_code: 'private-code', user_code: 'TEST', expires_in: 60, interval: 1 })
+    : json({ access_token: 'private-access', refresh_token: 'private-refresh', expires_in: 3600 });
+  let client = new OneNoteClient(root, secure, clientId, request, () => now);
+  await client.begin(); now = 1000;
+  assert.equal((await client.poll()).durable, true); assert.equal(initialized, true);
+  client = new OneNoteClient(root, secure, clientId, request, () => now);
+  assert.equal((await client.getState()).connected, true);
+  assert.equal(await client.token(), 'private-access');
+  await client.disconnect();
+  secure.getSelectedStorageBackend = () => 'basic_text';
+  await client.begin(); now += 1000;
+  const session = await client.poll(); assert.equal(session.connected, true); assert.equal(session.durable, false);
+  await assert.rejects(fs.stat(path.join(root, 'onenote-token.bin')), { code: 'ENOENT' });
 });
 
 test('removing a custom ID disconnects persisted credentials and restores the publisher default', async (t) => {

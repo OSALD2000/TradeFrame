@@ -8,7 +8,7 @@ import { readSetup, pngBytes } from './journal';
 import { journalTags } from './form-schema';
 import { assets, restoreOneNote, snapshotName, imageAlt, imageHash } from './onenote-content';
 
-type Encryption = Pick<SafeStorage, 'isAsyncEncryptionAvailable' | 'encryptStringAsync' | 'decryptStringAsync' | 'getSelectedStorageBackend'>;
+type Encryption = Pick<SafeStorage, 'isEncryptionAvailable' | 'encryptString' | 'isAsyncEncryptionAvailable' | 'encryptStringAsync' | 'decryptStringAsync' | 'getSelectedStorageBackend'>;
 const identity = 'https://login.microsoftonline.com/common/oauth2/v2.0/';
 const graph = 'https://graph.microsoft.com/v1.0/me/onenote/';
 const scope = 'https://graph.microsoft.com/Notes.ReadWrite offline_access';
@@ -78,13 +78,16 @@ export class OneNoteClient {
     await this.loaded;
   }
   private async secureStorage() {
-    if (!await this.encryption.isAsyncEncryptionAvailable()) return false;
-    return process.platform !== 'linux' || ['gnome_libsecret', 'kwallet', 'kwallet5', 'kwallet6'].includes(this.encryption.getSelectedStorageBackend());
+    // shortcut: Electron 45 only identifies the sync Linux provider; revisit when async exposes its security level.
+    if (process.platform === 'linux') return this.encryption.isEncryptionAvailable()
+      && ['gnome_libsecret', 'kwallet', 'kwallet5', 'kwallet6'].includes(this.encryption.getSelectedStorageBackend());
+    return this.encryption.isAsyncEncryptionAvailable();
   }
   private async persistToken() {
     this.durable = false;
     if (!this.refreshToken || !await this.secureStorage()) return;
-    const encrypted = await this.encryption.encryptStringAsync(JSON.stringify({ clientId: this.clientId, refreshToken: this.refreshToken }));
+    const value = JSON.stringify({ clientId: this.clientId, refreshToken: this.refreshToken });
+    const encrypted = process.platform === 'linux' ? this.encryption.encryptString(value) : await this.encryption.encryptStringAsync(value);
     await this.atomicWrite(path.join(this.directory, 'onenote-token.bin'), encrypted);
     this.durable = true;
   }
@@ -291,12 +294,29 @@ export class OneNoteClient {
   }
   private async resource(value: string, headers: Record<string, string>, generation: number, limit: number) {
     if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
-    const url = new URL(value);
-    const match = url.pathname.match(/^\/(?:v1\.0\/(?:me\/onenote\/)?|api\/v1\.0\/(?:me\/notes\/)?)resources\/([^/]+)\/(?:content|\$value)$/);
-    if (url.protocol !== 'https:' || !['graph.microsoft.com', 'www.onenote.com'].includes(url.hostname) || url.port || url.username || url.password || !match
-      || !validOneNoteId(decodeURIComponent(match[1]))) throw new OneNoteError('OneNote returned an unsupported resource link.');
+    let url: URL;
+    try {
+      if (typeof value !== 'string' || value.length > 8192) throw new Error();
+      url = new URL(value);
+    } catch { throw new OneNoteError('OneNote returned an unsupported resource link (missing or invalid URL).'); }
+    const unsupported = () => {
+      const host = url.hostname === 'graph.microsoft.com' ? 'Graph' : url.hostname === 'www.onenote.com' ? 'OneNote' : 'other host';
+      const keywords = ['v1.0', 'api', 'me', 'onenote', 'notes', 'users', 'groups', 'sites', 'resources', 'content', '$value'];
+      const shape = url.pathname.split('/').slice(1, 13).map((part) => keywords.includes(part) ? part
+        : /^(users|groups|sites|resources)\(/.test(part) ? `${part.slice(0, part.indexOf('('))}({id})` : '{id}').join('/');
+      return new OneNoteError(`OneNote returned an unsupported resource link (${host}; /${shape}). Your draft is unchanged.`);
+    };
+    if (url.protocol !== 'https:' || !['graph.microsoft.com', 'www.onenote.com'].includes(url.hostname) || url.port || url.username || url.password) throw unsupported();
+    const match = url.pathname.match(url.hostname === 'graph.microsoft.com'
+      ? /^\/v1\.0\/(?:(?<scope>me|(?:users|groups|sites)\/[^/]+)\/onenote\/)?resources\/(?<id>[^/]+)\/(?:content|\$value)$/
+      : /^\/api\/v1\.0\/(?:me\/notes\/)?resources\/(?<id>[^/]+)\/(?:content|\$value)$/);
+    if (!match?.groups) throw unsupported();
+    let id: string; let owner: string[];
+    try { id = decodeURIComponent(match.groups.id); owner = (match.groups.scope ?? 'me').split('/').map(decodeURIComponent); }
+    catch { throw unsupported(); }
+    if (!validOneNoteId(id) || !owner.every(validOneNoteId)) throw unsupported();
     // Rebuild a Graph URL; never forward a token to a URL supplied in page HTML.
-    const response = await this.request(`${graph}resources/${encodeURIComponent(decodeURIComponent(match[1]))}/content`, { headers, redirect: 'error', signal: AbortSignal.timeout(30_000) });
+    const response = await this.request(`https://graph.microsoft.com/v1.0/${owner.map(encodeURIComponent).join('/')}/onenote/resources/${encodeURIComponent(id)}/content`, { headers, redirect: 'error', signal: AbortSignal.timeout(30_000) });
     return this.bytes(response, limit, generation);
   }
   async listSetups(): Promise<OneNotePage[]> {

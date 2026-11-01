@@ -93,12 +93,21 @@ Connecting after saving does not upload automatically. **Send saved setup to
 OneNote** sends only the unchanged, last saved file to the chosen notebook;
 unsaved edits need saving first. It adds no extra Obsidian/Dropbox deliveries.
 
-Refresh tokens are encrypted through Electron 45's asynchronous `safeStorage`
-and written with user-only file permissions. On Linux, persistence requires a
-recognized system secret backend; unavailable/insecure backends keep credentials
-in memory for this session only. Windows/macOS use their OS credential encryption.
+Refresh tokens are encrypted through Electron 45's `safeStorage`
+and written with user-only file permissions. On Linux, the synchronous API
+initializes and uses the checked system keyring. The async encryptor and sync
+backend name describe different providers; they must not be mixed to decide
+whether credentials are protected. This compatibility path must be revisited
+before moving to Electron 46, which removes the sync API. Windows/macOS use
+asynchronous OS credential encryption. Unavailable/insecure backends keep
+credentials in memory for this session only. See [Electron safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage).
 Access tokens remain in memory. Failed decryption asks for reconnection.
 No tokens are stored in the form-definition SQLite database.
+
+Normal package updates retain this profile and its encrypted token file. If
+Connections says **Connected for this session**, closing the app ends sign-in;
+unlock a supported system keyring and reconnect. A new sign-in clears the old
+notebook selection to avoid reusing another account's target; choose it again.
 
 ## Open from OneNote
 
@@ -115,7 +124,11 @@ New pages attach TradeFrame.setup.json with the validated original Markdown and
 PNG hashes. Original image resources are downloaded within bounded limits and
 checked before replacing the draft. Both modern `/content` and older `/$value`
 resource links are accepted and normalized to the authenticated Graph `/content`
-endpoint. Retrieved HTML is never rendered. Resource
+endpoint, preserving documented `me`, `users`, `groups` and `sites` scopes.
+See Microsoft's [resource endpoints](https://learn.microsoft.com/en-us/graph/api/resource-get?view=graph-rest-1.0).
+Unrecognized links report only a redacted path shape, never raw URLs or IDs.
+The picker requires connection and notebook selection before listing.
+Retrieved HTML is never rendered. Resource
 links are validated and rebuilt on Graph; tokens never go to a page-supplied host.
 Old pages without a snapshot recover standard-form values and screenshots,
 keeping the complete original page text in Notes, including manual additions.

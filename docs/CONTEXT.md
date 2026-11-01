@@ -7,6 +7,24 @@ simultaneous destinations and multiple screenshots per setup on 30 October 2026.
 The original Super+Ctrl+j script was inspected as a workflow reference only;
 no private journals or account data were opened.
 
+0.6.1 follow-up: the owner reports imports still fail with an unsupported resource
+link on installed 0.6.0. The live URL shape remains unknown. A focused regression
+reproduces rejection of Microsoft's documented user/group/site resource paths;
+downloads now preserve that scope on Graph. Unsupported links expose only a
+redacted structural diagnostic, with no account/resource IDs, query values or
+credentials. The browser checks connection/notebook prerequisites before listing.
+
+Linux session-only sign-in also has a reproducible provider-initialization bug:
+the async encryptor did not initialize the separate sync backend identification.
+Linux now initializes and encrypts using the same checked sync keyring provider;
+fallback/plaintext storage stays rejected. Windows/macOS keep async encryption,
+and existing ciphertext is still read with the compatible async decryption API.
+Revisit the Linux compatibility path before Electron 46 removes sync safeStorage.
+No credential/settings format migration or cloud page modification is introduced.
+Live import, Linux keyring/restart and native UI acceptance remain unverified.
+Build/typecheck and all 117 tests pass locally, including scope preservation,
+redacted failures, Linux provider initialization/restart and picker prerequisites.
+
 ## Implemented state
 
 - Floating capture bar, native source snapshots, source selection, up to 20

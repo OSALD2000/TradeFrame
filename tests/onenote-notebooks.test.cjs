@@ -18,7 +18,8 @@ async function fixture(t, request) {
   t.after(() => fs.rm(root, { recursive: true, force: true }));
   let now = 0;
   const vault = new Map();
-  const secure = { isAsyncEncryptionAvailable: async () => true, getSelectedStorageBackend: () => 'gnome_libsecret',
+  const secure = { isEncryptionAvailable: () => true, isAsyncEncryptionAvailable: async () => true, getSelectedStorageBackend: () => 'gnome_libsecret',
+    encryptString: (value) => { const id = randomUUID(); vault.set(id, value); return Buffer.from(id); },
     encryptStringAsync: async (value) => { const id = randomUUID(); vault.set(id, value); return Buffer.from(id); },
     decryptStringAsync: async (value) => ({ result: vault.get(value.toString()), shouldReEncrypt: false }) };
   const network = async (url, options) => {

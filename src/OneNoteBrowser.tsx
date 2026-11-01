@@ -20,10 +20,14 @@ export function OneNoteBrowser({ api, onClose, onOpen }: {
   const [error, setError] = useState('');
   useEffect(() => { dialog.current?.showModal(); }, []);
   async function refresh() {
-    setLoading(true); setError('');
+    setLoading(true); setError(''); setPages([]);
     try {
       const state = await api.getOneNote();
       setNotebook(state.notebook?.displayName ?? 'Choose a notebook in Connections');
+      if (!state.connected || !state.notebook) {
+        setError(!state.connected ? 'OneNote is disconnected. Connect in Connections first.' : 'OneNote needs a notebook. Choose one in Connections first.');
+        return;
+      }
       setPages(await api.listOneNoteSetups());
     } catch (error) { setError(oneNoteMessage(error, 'Could not load setups. Connect OneNote and select a notebook in Connections, then retry.')); }
     finally { setLoading(false); }

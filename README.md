@@ -48,7 +48,7 @@ those systems. The archive includes public guides with working relative links.
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.6.0`.
+The top-right toolbar shows the installed app version, for example `v0.6.1`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup
@@ -110,6 +110,8 @@ creating or opening one in OneNote; its name is unrestricted. The selection
 survives restart. Switching notebooks cancels pending OneNote deliveries without
 moving existing pages. New saves require a selection. Refresh tokens use
 system encryption where supported; otherwise sign-in lasts this session only.
+Normal updates keep the profile. If sign-in is session-only, unlock the system
+keyring and reconnect; select the notebook again after a new sign-in.
 A new follow-up delivery creates a new OneNote page; existing pages are preserved.
 Failed deliveries survive restart and appear under **Retry sync**. Disconnecting
 cancels outstanding deliveries without deleting existing notes or pages.

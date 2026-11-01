@@ -1,4 +1,39 @@
-# TradeFrame 0.6.0 preview
+# TradeFrame 0.6.1 preview
+
+OneNote imports now accept the documented Graph user/group/site resource paths,
+retaining their scope and normalizing downloads to `/content`. Unknown links
+report only a redacted path shape: account/resource IDs, credentials and query
+parameters stay out of errors. The picker asks for connection/notebook selection
+before listing, instead of repeatedly invoking an unavailable list operation.
+
+Linux sign-in now initializes and uses the same checked keyring provider for
+credential encryption. Previously the async encryptor was combined with the sync
+provider check, which could leave the provider unidentified and prevent saving.
+Plaintext/fallback storage remains rejected. Normal updates retain the same
+profile; session-only sign-in still ends on app exit. After reconnecting, choose
+the notebook again. Windows/macOS keep the async credential path.
+
+The owner reported that 0.6.0 still rejected a resource link. The exact live link
+shape is not available; documented scope cases and keyring initialization are
+reproduced in regression tests. Live import and keyring persistence after restart
+still require owner verification. Existing notes and cloud pages stay unchanged.
+
+## Deutsch — 0.6.1
+
+Der OneNote-Import akzeptiert auch die dokumentierten Benutzer-, Gruppen- und
+Website-Pfade. Unbekannte Links melden nur ihre Struktur, ohne Konto-/Ressourcen-
+IDs, Zugangsdaten oder Parameter. Die Liste prueft zuerst Verbindung und Notizbuch.
+
+Unter Linux wird derselbe gepruefte Schluesselbund initialisiert und zum
+Verschluesseln verwendet. Ein normales Update behaelt das Profil; eine nur fuer
+die Sitzung gespeicherte Anmeldung endet dagegen beim Schliessen. Nach erneuter
+Anmeldung das Notizbuch wieder auswaehlen. Unsichere Ablage bleibt ausgeschlossen.
+
+Der echte Link aus dem gemeldeten Fehler ist noch unbekannt. Import und
+gespeicherte Anmeldung nach Neustart muessen mit 0.6.1 noch bestaetigt werden.
+Vorhandene Notizen und Cloud-Seiten bleiben erhalten.
+
+## Previous preview — 0.6.0
 
 The owner chose the guided dark workspace with larger controls and subtle motion.
 Text and spacing are larger, screen titles are 30px, buttons/inputs have 44px

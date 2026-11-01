@@ -63,7 +63,7 @@ async function fixture(t, count = 2) {
     if (state.patches === state.losePatch) throw new Error('Synthetic network response lost after accepted patch');
     return new Response(null, { status: 204 });
   };
-  const secure = { isAsyncEncryptionAvailable: async () => false, getSelectedStorageBackend: () => 'basic_text' };
+  const secure = { isEncryptionAvailable: () => false, isAsyncEncryptionAvailable: async () => false, getSelectedStorageBackend: () => 'basic_text' };
   const client = new OneNoteClient(root, secure, '11111111-2222-3333-4444-555555555555', request, () => now);
   await client.begin(); now = 1000; await client.poll(); await client.refreshNotebooks(); await client.selectNotebook('book');
   return { root, file, values, state, client };
@@ -87,6 +87,24 @@ test('legacy OneNote-host resource links use authenticated Graph content downloa
     assert.equal((await f.client.openSetup('page')).screenshots.length, 2);
   }
   assert.ok(f.state.requests.every((url) => url.startsWith(graph)));
+});
+
+test('documented user, group and site resource links retain their Graph scope when restoring a setup', async (t) => {
+  const f = await fixture(t);
+  await f.client.deliver(f.file, 'TradeFrame', randomUUID(), 'book'); await f.client.listSetups();
+  const html = f.state.html;
+  for (const scope of ['users/synthetic%40example.invalid', 'groups/group-id', 'sites/site-id']) {
+    const prefix = `https://graph.microsoft.com/v1.0/${scope}/onenote/`;
+    f.state.html = html.replaceAll(graph, prefix);
+    const before = f.state.requests.length;
+    const loaded = await f.client.openSetup('page');
+    assert.deepEqual(loaded.values, f.values); assert.equal(loaded.screenshots.length, 2);
+    assert.ok(f.state.requests.slice(before + 1).every((url) => url.startsWith(prefix) && url.endsWith('/content')));
+  }
+  f.state.html = html.replaceAll('/$value', '/content?private-query=do-not-forward&amp;other=hidden');
+  const before = f.state.requests.length;
+  assert.deepEqual((await f.client.openSetup('page')).values, f.values);
+  assert.ok(f.state.requests.slice(before + 1).every((url) => !url.includes('?')));
 });
 
 test('20 screenshot setups upload within Graph limits and open losslessly from the chosen notebook', async (t) => {
@@ -126,10 +144,19 @@ test('safe upload diagnostics survive in the queue while raw Microsoft and netwo
 test('cloud resources reject external URLs, foreign paths and changed image bytes before altering a draft', async (t) => {
   const f = await fixture(t); await f.client.deliver(f.file, 'TradeFrame', randomUUID(), 'book'); await f.client.listSetups();
   const html = f.state.html;
-  for (const target of ['https://evil.example/resources/setup/$value', graph+'pages/other/content']) {
+  for (const target of ['https://evil.example/resources/setup/$value', graph+'pages/other/content',
+    graph+'resources/%ZZ/content', graph+'users/%20/onenote/resources/setup/content',
+    'http://graph.microsoft.com/v1.0/me/onenote/resources/setup/content',
+    'https://private-user:private-password@graph.microsoft.com/v1.0/me/onenote/resources/setup/content',
+    'https://graph.microsoft.com:444/v1.0/me/onenote/resources/setup/content',
+    graph+"resources('private-resource')/$value?private-query=do-not-log"]) {
     f.state.html = html.replace(graph+'resources/setup/$value', target);
     const before = f.state.requests.length;
-    await assert.rejects(f.client.openSetup('page'), /unsupported resource/);
+    await assert.rejects(f.client.openSetup('page'), (error) => {
+      assert.ok(error instanceof OneNoteError); assert.match(error.message, /unsupported resource/);
+      assert.doesNotMatch(error.message, /private-|evil|do-not-log|%ZZ/);
+      return true;
+    });
     assert.equal(f.state.requests.length, before + 1);
   }
   f.state.html = html; f.state.resources.set('chart0', Buffer.concat([png, Buffer.from('changed')]));

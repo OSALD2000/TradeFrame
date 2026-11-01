@@ -49,7 +49,7 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.0`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.1`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →
@@ -118,8 +118,11 @@ Die Auswahl bleibt nach Neustart erhalten; ein Wechsel beendet offene OneNote-
 Auftraege und verschiebt keine vorhandenen Seiten. Neue Uebertragungen brauchen
 eine Auswahl. Refresh-Tokens
 werden bei geeigneter Systemverschluesselung geschuetzt gespeichert; sonst gilt
-die Anmeldung nur fuer diese Sitzung. Eine neue Folge-Uebertragung erstellt eine
-neue OneNote-Seite; vorhandene Seiten bleiben erhalten. Fehlgeschlagene Auftraege
+die Anmeldung nur fuer diese Sitzung.
+Normale Updates behalten das Profil. Bei Sitzungs-Anmeldung den System-
+Schluesselbund entsperren und neu verbinden; danach das Notizbuch erneut waehlen.
+Eine neue Folge-Uebertragung erstellt eine neue OneNote-Seite; vorhandene Seiten
+bleiben erhalten. Fehlgeschlagene Auftraege
 ueberleben Neustarts und stehen unter **Retry sync**. Trennen beendet offene
 Uebertragungen, loescht aber keine vorhandenen Notizen oder Seiten.
 Das Speicherergebnis zeigt lokale Speicherung und jedes Ziel getrennt.
