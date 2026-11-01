@@ -41,11 +41,10 @@ including text/image recovery for older pages. Direct send supports setups saved
 before connecting. Per-destination feedback exposes upload failures.
 The owner reports 0.6.0 still rejects an import link. 0.6.1 adds documented
 resource scopes and redacted path diagnostics to identify the missing shape.
-Verify that Linux secure sign-in persistence survives an app restart.
 The 0.6.1 diagnostic now identifies OData `users(…)` owner syntax; 0.6.2 parses
 and normalizes that observed shape. The owner confirms actual import with 0.6.2.
-0.6.3 selects libsecret before startup under Sway; verify a running/unlocked keyring
-keeps the login and notebook after completely closing and restarting the app.
+0.6.3 selects libsecret before startup under Sway; the owner confirms OneNote
+stays connected after closing and reopening the app, without repeating sign-in.
 Architecture and current verification evidence: [CONTEXT](CONTEXT.md).
 File behavior: [JOURNAL](JOURNAL.md). Integration behavior: [SYNC](SYNC.md).
 Build and publisher instructions: [RELEASE](RELEASE.md).
