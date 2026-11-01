@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
-import type { CaptureAPI, OneNoteState } from '../electron/capture-types';
+import type { OneNoteConnectionAPI, OneNoteState } from '../electron/capture-types';
 
-export function OneNoteConnection({ api, busy }: { api: CaptureAPI | undefined; busy: boolean }) {
+export function OneNoteConnection({
+  api,
+  busy,
+}: {
+  api: OneNoteConnectionAPI | undefined;
+  busy: boolean;
+}) {
   const [state, setState] = useState<OneNoteState | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');

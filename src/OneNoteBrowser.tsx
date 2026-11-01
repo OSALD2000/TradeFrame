@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { CaptureAPI, OneNotePage } from '../electron/capture-types';
+import type { OneNoteBrowserAPI, OneNotePage } from '../electron/capture-types';
 
 export function oneNoteMessage(error: unknown, fallback: string) {
   const message =
@@ -22,7 +22,7 @@ export function OneNoteBrowser({
   onClose,
   onOpen,
 }: {
-  api: CaptureAPI;
+  api: OneNoteBrowserAPI;
   onClose(): void;
   onOpen(id: string): Promise<void>;
 }) {

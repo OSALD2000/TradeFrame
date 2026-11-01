@@ -43,6 +43,17 @@ still enforce the boundary. Its method names, arguments and return values are
 compatibility contracts. Electron's `contextBridge` is an API name, not evidence
 that the application implements the GoF Bridge pattern.
 
+Renderer consumers now declare smaller capability contracts in `capture-types.ts`:
+`OneNoteBrowserAPI`, `OneNoteConnectionAPI`, `SaveDestinationsAPI`, `ConnectionsAPI`
+and `SetupFormAPI`. They use `Pick` and intersections of the existing facade;
+parents retain the capabilities needed by their child components. For example,
+OneNote browsing requires only `getOneNote` and `listOneNoteSetups`.
+
+The public `CaptureAPI` and preload object are unchanged. These are compile-time
+contracts, not new runtime security permissions. All 17 emitted files remain
+byte-identical after this interface-only change; negative compile checks confirm
+consumers cannot call unrelated commands through their declared contracts.
+
 ### Adapter: Microsoft and cloud document conversion
 
 `OneNoteClient` in `electron/onenote.ts` adapts Microsoft device
@@ -138,7 +149,7 @@ These techniques are important, but are not additional GoF class patterns:
 | Single responsibility | Pure validation and document conversion already have module boundaries. `main.ts`, `OneNoteClient`, `form-schema.ts` and `SetupForm` still combine concerns; propose each extraction before changing ownership. |
 | Open/closed           | Existing injected operations provide extension points. Add another abstraction only for a real variation; retain explicit domain cases where they are clearer.                                                  |
 | Liskov substitution   | There is no service inheritance hierarchy to extend. Substituted callbacks and ports must preserve observable results, failures and cancellation behavior.                                                      |
-| Interface segregation | `CaptureAPI` is currently a broad facade. A consumer can later receive a smaller capability type after approval; the existing exposed bridge must remain compatible.                                            |
+| Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.              |
 | Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                      |
 
 SOLID is a review discipline, not a requirement to turn every function into a

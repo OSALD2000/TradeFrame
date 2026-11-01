@@ -107,6 +107,12 @@ The existing error export remains compatible; the delivery queue no longer impor
 the Microsoft client for its error type. Authentication and HTTP ownership stay
 unchanged. All 122 tests and 47 before/after resource comparisons pass.
 
+Renderer component contracts now use smaller capabilities derived from the existing
+`CaptureAPI`. The five affected consumers and their parent/child requirements
+compile successfully; unrelated operations are rejected by compile checks. All
+17 emitted files remain byte-identical, and the 122 tests pass. No public bridge,
+persistence, account or UI behavior changes are introduced by this step.
+
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
 lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,
 new windows and off-app navigation remain blocked. `preload.ts` exposes only

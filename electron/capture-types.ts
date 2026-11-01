@@ -93,3 +93,39 @@ export type CaptureAPI = {
   openMicrosoftLogin(): Promise<void>;
   onStateChange(listener: (state: CaptureState) => void): () => void;
 };
+
+export type OneNoteBrowserAPI = Pick<CaptureAPI, 'getOneNote' | 'listOneNoteSetups'>;
+
+export type OneNoteConnectionAPI = Pick<
+  CaptureAPI,
+  | 'getOneNote'
+  | 'configureOneNote'
+  | 'connectOneNote'
+  | 'pollOneNote'
+  | 'disconnectOneNote'
+  | 'refreshOneNoteNotebooks'
+  | 'selectOneNoteNotebook'
+  | 'openMicrosoftLogin'
+>;
+
+export type SaveDestinationsAPI = Pick<CaptureAPI, 'getConnections' | 'getOneNote'>;
+
+export type ConnectionsAPI = Pick<
+  CaptureAPI,
+  'getConnections' | 'connectFolder' | 'disconnectFolder' | 'retrySync'
+> &
+  OneNoteConnectionAPI;
+
+export type SetupFormAPI = Pick<
+  CaptureAPI,
+  | 'newSetup'
+  | 'saveSetup'
+  | 'appendScreenshots'
+  | 'getSchemas'
+  | 'saveSchema'
+  | 'openSetup'
+  | 'openOneNoteSetup'
+  | 'sendToOneNote'
+> &
+  OneNoteBrowserAPI &
+  SaveDestinationsAPI;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type {
-  CaptureAPI,
+  ConnectionsAPI,
   Connections as ConnectionState,
   FolderKind,
 } from '../electron/capture-types';
@@ -12,7 +12,7 @@ const labels: Record<FolderKind | 'onenote', string> = {
   dropbox: 'Dropbox',
   onenote: 'OneNote',
 };
-export function Connections({ api, busy }: { api: CaptureAPI | undefined; busy: boolean }) {
+export function Connections({ api, busy }: { api: ConnectionsAPI | undefined; busy: boolean }) {
   const [connections, setConnections] = useState<ConnectionState | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');

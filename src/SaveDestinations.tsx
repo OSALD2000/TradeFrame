@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { CaptureAPI, Connections, OneNoteState } from '../electron/capture-types';
+import type { SaveDestinationsAPI, Connections, OneNoteState } from '../electron/capture-types';
 
 export function DestinationSummary({
   connections,
@@ -63,7 +63,7 @@ export function SaveDestinations({
   busy,
   visible,
 }: {
-  api: CaptureAPI | undefined;
+  api: SaveDestinationsAPI | undefined;
   busy: boolean;
   visible: boolean;
 }) {

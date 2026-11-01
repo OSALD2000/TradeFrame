@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { CaptureAPI, CaptureState, SetupInput, SaveResult } from '../electron/capture-types';
+import type { SetupFormAPI, CaptureState, SetupInput, SaveResult } from '../electron/capture-types';
 import {
   JOURNAL_SCHEMA,
   emptyValues,
@@ -27,7 +27,7 @@ export function SetupForm({
   view,
   onOpened,
 }: {
-  api: CaptureAPI | undefined;
+  api: SetupFormAPI | undefined;
   busy: boolean;
   choosing: boolean;
   hasPreview: boolean;
