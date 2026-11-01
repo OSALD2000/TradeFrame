@@ -25,6 +25,8 @@ Other formatting decisions use this pinned Prettier version's defaults. JSON and
 JSX retain their normal double-quote syntax. Do not add overlapping manual rules
 for wrapping, commas or braces. `.editorconfig` supplies UTF-8,
 LF, final newlines and two-space indentation for editors that support it.
+`.gitattributes` keeps detected text files on LF during Git checkout, including
+Windows; binary files remain binary through Git's automatic text detection.
 
 ## Commands and CI
 
