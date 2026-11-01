@@ -200,3 +200,37 @@ pagination boundaries, restart, switching/cancellation, section creation, lost
 responses and configuration preservation. The owner reported connection success;
 actual notebook discovery/upload and desktop/narrow visual acceptance remain open.
 See [ADR 0005](adr/0005-pin-onenote-deliveries-to-selected-notebooks.md).
+
+1 November OneNote delivery/opening work (0.5.0): the owner reports notebooks
+visible but no saved page. The installed version is 0.4.0. Scoped read-only
+inspection of connection job statuses showed only synced folder jobs, no OneNote
+job, and no durable token file; no token or real journal content was read. This
+does not establish the exact reported failure. The native app may have session-
+only credentials or the setup may have been saved before choosing its target.
+
+Concrete code defects: OData filters used form-encoded plus signs for spaces,
+and the upload cap used the underlying OneNote 70 MB limit instead of Graph's
+4 MB/six-part limits. Filters now use percent spaces; bounded multipart creation
+and append requests support 20 images, with validated missing-image retry.
+Individual images/details exceeding 3.8 MB fail explicitly without losing the
+local save. Queue errors keep safe stage/status/code diagnostics. A separate
+per-destination save result and Send saved setup to OneNote remove ambiguity
+when connecting after an earlier save.
+
+Open from OneNote lists only TradeFrame pages in the selected notebook and opens
+a separate draft. New snapshot attachments carry original Markdown and image
+hashes, with original resource bytes validated before loading. Older standard
+forms are recovered from labels/values; unknown forms retain full text/images.
+Cloud HTML is never rendered, IDs come from the selected list, and resource URLs
+are rebuilt on Graph. Existing pages/files stay; saving creates a separate copy.
+Snapshot opening does not merge later visible-text/handwriting edits in OneNote.
+See [ADR 0006](adr/0006-reopen-cloud-setups-with-validated-snapshots.md).
+
+Build and 103 automated tests pass, covering 20-image round trips, six-part/size
+bounds, a lost PATCH response, safe diagnostics, rejected foreign resource URLs,
+changed image bytes, disconnect during download, legacy recovery, trusted native
+open/send and preservation of a draft/file after failed import. A real account
+send/open is still needed to establish resolution of the owner's report.
+The requested larger redesign remains pending the owner's reference-direction
+choice. Functional browser/save status reuse the approved lock. Local preview
+serving was rechecked: listen EPERM, so desktop/narrow rendering remains open.

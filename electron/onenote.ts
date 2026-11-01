@@ -3,9 +3,10 @@ import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { SafeStorage } from 'electron';
 import { validOneNoteId } from './capture-types';
-import type { OneNoteNotebook, OneNoteState } from './capture-types';
+import type { OneNoteNotebook, OneNoteState, OneNotePage } from './capture-types';
 import { readSetup, pngBytes } from './journal';
 import { journalTags } from './form-schema';
+import { assets, restoreOneNote, snapshotName, imageAlt, imageHash } from './onenote-content';
 
 type Encryption = Pick<SafeStorage, 'isAsyncEncryptionAvailable' | 'encryptStringAsync' | 'decryptStringAsync' | 'getSelectedStorageBackend'>;
 const identity = 'https://login.microsoftonline.com/common/oauth2/v2.0/';
@@ -13,12 +14,16 @@ const graph = 'https://graph.microsoft.com/v1.0/me/onenote/';
 const scope = 'https://graph.microsoft.com/Notes.ReadWrite offline_access';
 const clientIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const escapeHtml = (text: unknown) => String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+const queryString = (values: Record<string, string>) => new URLSearchParams(values).toString().replace(/\+/g, '%20');
+
+export class OneNoteError extends Error {}
 
 export class OneNoteClient {
   private clientId = '';
   private customApplicationId = false;
   private notebook: OneNoteNotebook | null = null;
   private notebooks: OneNoteNotebook[] = [];
+  private pages: OneNotePage[] = [];
   private refreshToken = '';
   private accessToken = '';
   private expiresAt = 0;
@@ -178,7 +183,20 @@ export class OneNoteClient {
   }
   private async clearNotebook() {
     await rm(path.join(this.directory, 'onenote-notebook.json'), { force: true });
-    this.notebook = null; this.notebooks = [];
+    this.notebook = null; this.notebooks = []; this.pages = [];
+  }
+  private async checkResponse(response: Response, action: string) {
+    if (response.ok) return;
+    if (response.status === 401) this.accessToken = '';
+    let code = '';
+    try {
+      const data = await response.json() as { error?: { code?: unknown } };
+      if (typeof data.error?.code === 'string' && /^[A-Za-z0-9_.-]{1,60}$/.test(data.error.code)) code = `, code ${data.error.code}`;
+    } catch { /* The status remains useful when Microsoft returns no JSON. */ }
+    const help = response.status === 401 ? 'Reconnect OneNote.' : response.status === 403 ? 'Check notebook write access and Microsoft Notes.ReadWrite consent.'
+      : response.status === 413 ? 'This request exceeds Microsoft Graph’s 4 MB limit.' : response.status === 429 ? 'Microsoft is throttling requests. Wait, then retry.'
+      : response.status === 404 ? 'The selected notebook, section or page is unavailable.' : 'Retry in Connections; your local setup is safe.';
+    throw new OneNoteError(`OneNote could not ${action} (HTTP ${response.status}${code}). ${help}`);
   }
   async disconnect() {
     await this.load();
@@ -188,7 +206,7 @@ export class OneNoteClient {
     this.login = null; this.refreshToken = ''; this.accessToken = ''; this.expiresAt = 0; this.durable = false; this.error = null;
     return this.getState();
   }
-  private async collection(endpoint: string, headers: Record<string, string>, generation: number): Promise<Record<string, unknown>[]> {
+  private async collection(endpoint: string, headers: Record<string, string>, generation: number, property = 'displayName'): Promise<Record<string, unknown>[]> {
     const initial = new URL(graph + endpoint);
     let next: string | undefined = initial.href;
     const seen = new Set<string>();
@@ -200,10 +218,10 @@ export class OneNoteClient {
       seen.add(url.href);
       const response = await this.request(url.href, { headers, redirect: 'error', signal: AbortSignal.timeout(15_000) });
       if (generation !== this.generation) throw new Error('OneNote was disconnected');
-      if (!response.ok) { if (response.status === 401) this.accessToken = ''; throw new Error('Could not read OneNote notebooks or sections'); }
+      await this.checkResponse(response, 'read notebooks or sections');
       const data = await response.json() as { value?: Record<string, unknown>[]; '@odata.nextLink'?: string };
       if (!Array.isArray(data.value) || items.length + data.value.length > 1000 || data.value.some((item) => !item || !validOneNoteId(item.id)
-        || typeof item.displayName !== 'string' || item.displayName.length > 1000) || (data['@odata.nextLink'] !== undefined && typeof data['@odata.nextLink'] !== 'string')) throw new Error('Invalid OneNote collection');
+        || typeof item[property] !== 'string' || (item[property] as string).length > 1000) || (data['@odata.nextLink'] !== undefined && typeof data['@odata.nextLink'] !== 'string')) throw new Error('Invalid OneNote collection');
       if (generation !== this.generation) throw new Error('OneNote was disconnected');
       items.push(...data.value); next = data['@odata.nextLink'];
     }
@@ -230,56 +248,155 @@ export class OneNoteClient {
     const selected = this.notebooks.find((item) => item.id === id);
     if (!validOneNoteId(id) || !selected || !(this.refreshToken || this.accessToken)) throw new Error('Choose an available notebook after signing in');
     await this.atomicWrite(path.join(this.directory, 'onenote-notebook.json'), JSON.stringify({ clientId: this.clientId, notebook: selected }));
-    this.notebook = { ...selected }; this.error = null;
+    this.notebook = { ...selected }; this.pages = []; this.error = null;
     return this.getState();
   }
-  private async sectionFor(notebookId: string, headers: Record<string, string>, generation: number): Promise<string> {
+  private async sectionFor(notebookId: string, headers: Record<string, string>, generation: number, create = true): Promise<string> {
     const endpoint = `notebooks/${encodeURIComponent(notebookId)}/sections`;
     const rows = await this.collection(`${endpoint}?$select=id,displayName`, headers, generation);
     const sections = rows.filter((row) => row.displayName === 'TradeFrame');
     if (sections.length > 1) throw new Error('Multiple TradeFrame sections found');
     if (sections.length) return sections[0].id as string;
+    if (!create) return '';
     const response = await this.request(graph + endpoint, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ displayName: 'TradeFrame' }), redirect: 'error', signal: AbortSignal.timeout(15_000) });
     if (generation !== this.generation) throw new Error('OneNote was disconnected');
-    if (!response.ok) throw new Error('Could not create the TradeFrame section in the selected notebook');
+    await this.checkResponse(response, 'create the TradeFrame section');
     const section = await response.json() as { id?: string; displayName?: string };
     if (generation !== this.generation) throw new Error('OneNote was disconnected');
     if (!validOneNoteId(section.id) || section.displayName !== 'TradeFrame') throw new Error('Invalid OneNote section');
     return section.id;
   }
+  private async bytes(response: Response, limit: number, generation: number) {
+    await this.checkResponse(response, 'download setup content');
+    const reader = response.body?.getReader();
+    if (!reader) throw new OneNoteError('Microsoft returned no setup content.');
+    const chunks: Uint8Array[] = []; let size = 0;
+    try {
+      for (;;) {
+        const next = await reader.read();
+        if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
+        if (next.done) break;
+        size += next.value.length;
+        if (size > limit) throw new OneNoteError('OneNote content exceeds the supported size.');
+        chunks.push(next.value);
+      }
+    } finally { await reader.cancel(); }
+    return Buffer.concat(chunks, size);
+  }
+  private async content(id: string, headers: Record<string, string>, generation: number) {
+    if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
+    const response = await this.request(`${graph}pages/${encodeURIComponent(id)}/content`, { headers, redirect: 'error', signal: AbortSignal.timeout(30_000) });
+    return (await this.bytes(response, 5_000_000, generation)).toString('utf8');
+  }
+  private async resource(value: string, headers: Record<string, string>, generation: number, limit: number) {
+    if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
+    const url = new URL(value);
+    const match = url.pathname.match(/^\/(?:v1\.0\/(?:me\/onenote\/)?|api\/v1\.0\/(?:me\/notes\/)?)resources\/([^/]+)\/\$value$/);
+    if (url.protocol !== 'https:' || !['graph.microsoft.com', 'www.onenote.com'].includes(url.hostname) || url.port || url.username || url.password || !match
+      || !validOneNoteId(decodeURIComponent(match[1]))) throw new OneNoteError('OneNote returned an unsupported resource link.');
+    // Rebuild a Graph URL; never forward a token to a URL supplied in page HTML.
+    const response = await this.request(`${graph}resources/${encodeURIComponent(decodeURIComponent(match[1]))}/$value`, { headers, redirect: 'error', signal: AbortSignal.timeout(30_000) });
+    return this.bytes(response, limit, generation);
+  }
+  async listSetups(): Promise<OneNotePage[]> {
+    await this.load();
+    if (!this.notebook) throw new OneNoteError('Choose a OneNote notebook in Connections first.');
+    const generation = this.generation;
+    const headers = { Authorization: `Bearer ${await this.token()}` };
+    const section = await this.sectionFor(this.notebook.id, headers, generation, false);
+    if (!section) return this.pages = [];
+    const rows = await this.collection(`sections/${encodeURIComponent(section)}/pages?$select=id,title,lastModifiedDateTime`, headers, generation, 'title');
+    this.pages = rows.filter((row) => (row.title as string).startsWith('TradeFrame · ')).map((row) => ({ id: row.id as string, title: row.title as string,
+      modifiedAt: typeof row.lastModifiedDateTime === 'string' ? row.lastModifiedDateTime : '' }));
+    return this.pages.map((page) => ({ ...page }));
+  }
+  async openSetup(id: unknown) {
+    if (!validOneNoteId(id) || !this.notebook || !this.pages.some((page) => page.id === id)) throw new OneNoteError('Refresh the OneNote setup list and choose a page.');
+    const generation = this.generation;
+    const headers = { Authorization: `Bearer ${await this.token()}` };
+    return restoreOneNote(await this.content(id, headers, generation), (url, limit) => this.resource(url, headers, generation, limit));
+  }
   async deliver(file: string, section: string, jobId: string, notebookId?: string) {
     if (section !== 'TradeFrame' || !clientIdPattern.test(jobId) || (notebookId !== undefined && !validOneNoteId(notebookId))) throw new Error('Invalid OneNote delivery');
     const loaded = await readSetup(file);
+    const pictures = loaded.screenshots.map((shot) => pngBytes(shot.image));
+    const snapshot = JSON.stringify({ formatVersion: 1, markdown: loaded.markdown, images: pictures.map(imageHash) });
+    // Graph permits 4 MB and six multipart parts, unlike the underlying OneNote API.
+    const limit = 3_900_000;
+    if (pictures.some((bytes) => bytes.length > limit - 100_000) || Buffer.byteLength(snapshot) > limit - 100_000)
+      throw new OneNoteError('OneNote needs each screenshot and the setup details below 3.8 MB. Capture a smaller window; your local setup is safe.');
     const accessToken = await this.token();
     const generation = this.generation;
-    const title = `TradeFrame · ${String(loaded.values.symbol ?? loaded.schema.name).slice(0, 80)} · ${jobId}`;
+    const title = `TradeFrame · ${String(loaded.values.instrument ?? loaded.values.symbol ?? loaded.schema.name).slice(0, 80)} · ${jobId}`;
     const headers = { Authorization: `Bearer ${accessToken}`, 'client-request-id': jobId };
     const pagesPath = notebookId ? `sections/${encodeURIComponent(await this.sectionFor(notebookId, headers, generation))}/pages` : 'pages';
-    const query = new URLSearchParams({ '$filter': `title eq '${title.replace(/'/g, "''")}'`, '$select': 'id,title', '$top': '2' });
+    const query = queryString({ '$filter': `title eq '${title.replace(/'/g, "''")}'`, '$select': 'id,title', '$top': '2' });
     const existing = await this.request(`${graph}${pagesPath}?${query}`, { headers, signal: AbortSignal.timeout(15_000), redirect: 'error' });
-    if (generation !== this.generation) throw new Error('OneNote was disconnected');
-    if (!existing.ok) { if (existing.status === 401) this.accessToken = ''; throw new Error('Could not check OneNote before syncing'); }
+    if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
+    await this.checkResponse(existing, 'check existing pages');
     const pages = await existing.json() as { value?: { id: string; title: string }[] };
-    if (!Array.isArray(pages.value) || pages.value.some((page) => typeof page.id !== 'string' || page.title !== title)) throw new Error('Invalid OneNote response');
-    if (pages.value.length === 1) return;
-    if (pages.value.length > 1) throw new Error('Multiple OneNote pages found for this delivery');
+    if (!Array.isArray(pages.value) || pages.value.some((page) => !validOneNoteId(page.id) || page.title !== title)) throw new OneNoteError('Microsoft returned an invalid setup list.');
+    if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
+    if (pages.value.length > 1) throw new OneNoteError('Multiple OneNote pages were found for this delivery. Review them before retrying.');
+    let pageId = pages.value[0]?.id;
+    const uploaded = new Set<number>();
+    if (pageId) {
+      const html = await this.content(pageId, headers, generation);
+      const saved = assets(html, 'object').filter((item) => item['data-attachment'] === snapshotName);
+      if (!saved.length && assets(html, 'img').some((item) => /^Chart \d+$/.test(item.alt ?? ''))) return;
+      if (saved.length !== 1 || (await this.resource(saved[0].data, headers, generation, 5_000_000)).toString('utf8') !== snapshot)
+        throw new OneNoteError('The existing OneNote page or local setup changed. Save a new copy instead of replacing it.');
+      const resources = assets(html, 'img');
+      for (const [index, picture] of pictures.entries()) {
+        const matches = resources.filter((item) => item.alt === imageAlt(index));
+        if (matches.length > 1) throw new OneNoteError('The OneNote page contains duplicate screenshots. Review it before retrying.');
+        if (matches.length) {
+          const bytes = await this.resource(matches[0]['data-fullres-src'], headers, generation, 32_000_000);
+          if (imageHash(bytes) !== imageHash(picture)) throw new OneNoteError('An uploaded screenshot changed. Save a new copy instead of replacing it.');
+          uploaded.add(index);
+        }
+      }
+    }
     const fields = loaded.schema.fields.filter((field) => Object.hasOwn(loaded.values, field.id)).map((field) =>
       `<h2>${escapeHtml(field.label)}</h2><p>${escapeHtml(Array.isArray(loaded.values[field.id]) ? (loaded.values[field.id] as string[]).join(', ') : loaded.values[field.id] ?? '').replace(/\r?\n/g, '<br />')}</p>`).join('');
-    const images = loaded.screenshots.map((shot, index) => `<h2>Screenshot ${index + 1} · ${escapeHtml(shot.timeframe || 'Timeframe not recorded')}</h2><p>${escapeHtml(shot.caption).replace(/\r?\n/g, '<br />')}</p><img src="name:chart${index}" alt="Chart ${index + 1}" /><p>${escapeHtml(shot.capturedAt)}</p>`).join('');
-    const html = `<!DOCTYPE html><html><head><title>${escapeHtml(title)}</title></head><body>${images}${fields}<p>${escapeHtml(journalTags(loaded.schema, loaded.values).map((tag) => `#${tag}`).join(' '))}</p></body></html>`;
-    const body = new FormData();
-    body.append('Presentation', new Blob([html], { type: 'text/html' }));
-    let bytes = Buffer.byteLength(html);
-    loaded.screenshots.forEach((shot, index) => {
-      const png = pngBytes(shot.image); bytes += png.length;
-      body.append(`chart${index}`, new Blob([new Uint8Array(png)], { type: 'image/png' }), `chart-${index + 1}.png`);
-    });
-    // OneNote has a lower request limit than the local journal; keep the local save regardless.
-    if (bytes > 70_000_000) throw new Error('This setup is too large for OneNote');
-    const response = await this.request(`${graph}${pagesPath}${notebookId ? '' : `?${new URLSearchParams({ sectionName: section })}`}`, {
-      method: 'POST', headers, body, signal: AbortSignal.timeout(60_000), redirect: 'error',
-    });
-    if (!response.ok) { if (response.status === 401) this.accessToken = ''; throw new Error('OneNote upload failed. Retry checks for an existing page first.'); }
+    const imageHtml = (index: number) => {
+      const shot = loaded.screenshots[index];
+      return `<h2>Screenshot ${index + 1} · ${escapeHtml(shot.timeframe || 'Timeframe not recorded')}</h2><p>${escapeHtml(shot.caption).replace(/\r?\n/g, '<br />')}</p><img src="name:chart${index}" alt="${imageAlt(index)}" /><p>${escapeHtml(shot.capturedAt)}</p>`;
+    };
+    const bodyFor = (indices: number[], create: boolean) => {
+      const body = new FormData();
+      const content = indices.map(imageHtml).join('');
+      if (create) {
+        const html = `<!DOCTYPE html><html><head><title>${escapeHtml(title)}</title></head><body>${fields}<p>${escapeHtml(journalTags(loaded.schema, loaded.values).map((tag) => `#${tag}`).join(' '))}</p><p>TradeFrame setup snapshot</p><object data-attachment="${snapshotName}" data="name:setup" type="application/json" />${content}</body></html>`;
+        body.append('Presentation', new Blob([html], { type: 'text/html; charset=utf-8' }));
+        body.append('setup', new Blob([snapshot], { type: 'application/json' }), snapshotName);
+      } else body.append('Commands', new Blob([JSON.stringify([{ target: 'body', action: 'append', content }])], { type: 'application/json' }));
+      for (const index of indices) body.append(`chart${index}`, new Blob([new Uint8Array(pictures[index])], { type: 'image/png' }), `chart-${index + 1}.png`);
+      return body;
+    };
+    let remaining = pictures.map((_, index) => index).filter((index) => !uploaded.has(index));
+    while (!pageId || remaining.length) {
+      const create = !pageId;
+      const batch = remaining.slice(0, create ? 4 : 5);
+      let body = bodyFor(batch, create);
+      while ((await new Response(body).arrayBuffer()).byteLength > limit) {
+        if (!batch.length) throw new OneNoteError('The OneNote setup details exceed Microsoft Graph’s request limit. Your local setup is safe.');
+        batch.pop(); body = bodyFor(batch, create);
+      }
+      if (!create && !batch.length) throw new OneNoteError('A screenshot exceeds Microsoft Graph’s request limit. Capture a smaller window.');
+      if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
+      const endpoint = create ? `${pagesPath}${notebookId ? '' : `?${queryString({ sectionName: section })}`}` : `pages/${encodeURIComponent(pageId!)}/content`;
+      const response = await this.request(graph + endpoint, { method: create ? 'POST' : 'PATCH', headers, body, signal: AbortSignal.timeout(60_000), redirect: 'error' });
+      await this.checkResponse(response, create ? 'create the setup page' : 'add the remaining screenshots');
+      if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
+      remaining = remaining.filter((index) => !batch.includes(index));
+      if (create && remaining.length) {
+        const page = await response.json() as { id?: string };
+        if (!validOneNoteId(page.id)) throw new OneNoteError('Microsoft did not return the new page ID. Retry to find the created page.');
+        pageId = page.id;
+      }
+      if (create && !remaining.length) return;
+    }
   }
 }

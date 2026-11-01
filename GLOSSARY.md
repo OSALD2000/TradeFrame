@@ -80,3 +80,7 @@ result differs from an explicit zero.
 The notebook chosen to receive setup pages, within its TradeFrame section.
 A notebook contains sections; a section contains pages. Selecting a notebook
 does not move pages already delivered elsewhere.
+
+**Cloud setup draft**:
+A setup opened from OneNote for review or further work in TradeFrame. Opening
+preserves the cloud page; saving the draft creates a separate local note.

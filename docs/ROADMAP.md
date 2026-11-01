@@ -9,6 +9,9 @@ The owner authorized implementation of this scope on 30 October 2026, adding
 required per-image timeframes and releases for all three systems on 31 October. No public
 upload, account registration, real-journal access or signing identity is implied.
 
+On 1 November the owner reported missing OneNote delivery, requested opening
+setups from OneNote, and asked for online design research and a more approachable
+interface. Preserve all three requirements until actual acceptance.
 ## Implemented; acceptance still open
 
 1. Multi-image capture with a required timeframe and multiline notes per image,
@@ -29,6 +32,9 @@ upload, account registration, real-journal access or signing identity is implied
    packaged runtime checks and one combined draft release gate. Actual Windows/macOS
    artifacts remain pending until the package workflow succeeds.
 
+Cloud browsing now opens a separate draft with validated snapshots/PNG resources,
+including text/image recovery for older pages. Direct send supports setups saved
+before connecting. Per-destination feedback exposes upload failures.
 Architecture and current verification evidence: [CONTEXT](CONTEXT.md).
 File behavior: [JOURNAL](JOURNAL.md). Integration behavior: [SYNC](SYNC.md).
 Build and publisher instructions: [RELEASE](RELEASE.md).
@@ -45,6 +51,10 @@ Build and publisher instructions: [RELEASE](RELEASE.md).
   discovery/selection, page creation with several images in the chosen notebook,
   refresh/restart, target switching, duplicate retry and disconnect
   using synthetic data and an explicitly chosen account.
+- Confirm the missing-delivery problem is resolved on the real account; verify
+  cloud opening, old/new forms and interrupted multi-request uploads.
+- Choose a workspace direction from the researched options in [DESIGN](DESIGN.md),
+  implement it and verify first-use navigation and desktop/narrow layouts.
 - Verify real Obsidian note/image visibility and Dropbox cloud delivery together,
   then unavailable-target retry and external-file conflict behavior.
 - Run the package workflow and test each OS/architecture claimed in a release;

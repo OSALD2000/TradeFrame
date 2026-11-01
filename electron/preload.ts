@@ -28,6 +28,9 @@ const capture: CaptureAPI = {
   disconnectOneNote: () => ipcRenderer.invoke('onenote:disconnect'),
   refreshOneNoteNotebooks: () => ipcRenderer.invoke('onenote:notebooks'),
   selectOneNoteNotebook: (id) => ipcRenderer.invoke('onenote:notebook', id),
+  listOneNoteSetups: () => ipcRenderer.invoke('onenote:setups'),
+  openOneNoteSetup: (id) => ipcRenderer.invoke('onenote:open', id),
+  sendToOneNote: () => ipcRenderer.invoke('onenote:send'),
   openMicrosoftLogin: () => ipcRenderer.invoke('onenote:browser'),
   onStateChange: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, state: CaptureState) => listener(state);

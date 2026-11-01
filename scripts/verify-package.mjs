@@ -17,6 +17,7 @@ const script = [
   `const { SchemaStore } = require(path.join(${JSON.stringify(application)}, 'dist-electron', 'schema-store.js'));`,
   'const store = new SchemaStore(\':memory:\'); assert.ok(store.list().some(form => form.id === \'journal\')); store.close();',
   `assert.equal(typeof require(path.join(${JSON.stringify(application)}, 'dist-electron', 'journal.js')).writeSetup, 'function');`,
+  `assert.equal(typeof require(path.join(${JSON.stringify(application)}, 'dist-electron', 'onenote.js')).OneNoteClient.prototype.openSetup, 'function');`,
   `const {validTimeframe} = require(path.join(${JSON.stringify(application)}, 'dist-electron', 'form-schema.js')); assert.ok(validTimeframe('2m'));`,
   "console.log('Packaged runtime and SQLite verified:', process.platform, process.arch, process.versions.electron);",
 ].join('\n');

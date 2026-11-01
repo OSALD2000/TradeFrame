@@ -10,7 +10,7 @@ import { MAX_SCREENSHOTS, validTimeframe } from './form-schema';
 import { validateSetup, writeSetup, readSetup, appendScreenshots, pngBytes } from './journal';
 import { SchemaStore } from './schema-store';
 import { ConnectionStore, folderKind } from './connections';
-import { OneNoteClient } from './onenote';
+import { OneNoteClient, OneNoteError } from './onenote';
 import type { SaveResult } from './capture-types';
 
 app.setName('TradeFrame');
@@ -188,7 +188,7 @@ function registerCapture() {
     publish();
   });
   ipcMain.handle('onenote:state', (event) => { assertSender(event, journal); return oneNoteClient().getState(); });
-  for (const operation of ['configure', 'connect', 'poll', 'disconnect', 'notebooks', 'notebook'] as const) {
+  for (const operation of ['configure', 'connect', 'poll', 'disconnect', 'notebooks', 'notebook', 'setups', 'open', 'send'] as const) {
     ipcMain.handle(`onenote:${operation}`, async (event, input: unknown) => {
       assertSender(event, journal);
       if (state.busy) {
@@ -197,6 +197,27 @@ function registerCapture() {
       }
       state.busy = true; publish();
       try {
+        if (operation === 'setups') return await oneNoteClient().listSetups();
+        if (operation === 'open') {
+          const owner = journal;
+          const loaded = await oneNoteClient().openSetup(input);
+          if (journal !== owner) throw new OneNoteError('OneNote import was canceled because the journal window closed.');
+          const setup = validateSetup({ schema: loaded.schema, values: loaded.values });
+          const screenshots = loaded.screenshots.map((shot) => ({ ...shot, image: cacheImage(shot.image) }));
+          schemaStore().remember(setup.schema);
+          state = { ...state, sources: [], screenshots, savedPath: null, requiresTimeframeCopy: screenshots.some((shot) => !shot.timeframe), error: null };
+          savedFingerprint = '';
+          return { ...setup, legacy: loaded.legacy };
+        }
+        if (operation === 'send') {
+          if (!state.savedPath || (await readSetup(state.savedPath)).fingerprint !== savedFingerprint) throw new OneNoteError('OneNote needs an unchanged saved setup. Open or save it first.');
+          const target = await oneNoteClient().getState();
+          if (!target.connected || !target.notebook) throw new OneNoteError('OneNote needs a connection and a selected notebook first.');
+          const store = connectionStore();
+          const jobs = store.enqueue(state.savedPath, target.section, target.notebook.id, false);
+          const sync = await store.retry(jobs.map((job) => job.id), deliverOneNote);
+          return { status: 'saved', path: state.savedPath, sync } satisfies SaveResult;
+        }
         if (operation === 'configure') {
           const result = await oneNoteClient().configure(input);
           connectionStore().cancelOneNote();
@@ -217,6 +238,10 @@ function registerCapture() {
         const result = await oneNoteClient().disconnect();
         connectionStore().cancelOneNote();
         return result;
+      } catch (error) {
+        if (['open', 'setups', 'send'].includes(operation) && !(error instanceof OneNoteError))
+          throw new Error('OneNote could not finish. Check Connections and retry; your current draft is unchanged.');
+        throw error;
       } finally { state.busy = false; publish(); }
     });
   }
@@ -320,7 +345,8 @@ function registerCapture() {
         const jobs = store.enqueue(savedPath, oneNoteState.connected && oneNoteState.notebook ? oneNoteState.section : undefined, oneNoteState.connected ? oneNoteState.notebook?.id : undefined);
         const sync = await store.retry(jobs.map((job) => job.id), deliverOneNote);
         return { status: 'saved', path: savedPath, sync, ...(oneNoteState.connected && !oneNoteState.notebook
-          ? { warning: 'Local save succeeded. Choose a OneNote notebook in Connections, then save a copy to send it.' } : {}) };
+          ? { warning: 'Local save succeeded. Choose a OneNote notebook in Connections, then use Send saved setup to OneNote.' }
+          : !oneNoteState.connected && oneNoteState.notebook ? { warning: 'Local save succeeded. OneNote was not sent: reconnect in Connections, then send the saved setup.' } : {}) };
       } catch {
         return { status: 'saved', path: savedPath, sync: [], warning: 'Local save succeeded, but sync could not finish. Check Connections before retrying.' };
       }

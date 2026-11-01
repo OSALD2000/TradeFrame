@@ -18,11 +18,21 @@ const { FieldInput } = require('../src/FieldInput.tsx');
 const { SchemaEditor } = require('../src/SchemaEditor.tsx');
 const { ScreenshotFields } = require('../src/ScreenshotFields.tsx');
 const { OneNoteApplicationSettings, OneNoteNotebookPicker } = require('../src/OneNoteConnection.tsx');
+const { DeliveryStatus } = require('../src/DeliveryStatus.tsx');
 if (previous.ts) require.extensions['.ts'] = previous.ts; else delete require.extensions['.ts'];
 if (previous.tsx) require.extensions['.tsx'] = previous.tsx; else delete require.extensions['.tsx'];
 
 const field = (type, extra = {}) => ({ id: 'test', key: 'test', label: 'Test', type, required: false, tags: [], ...extra });
 const render = (definition, value) => renderToStaticMarkup(React.createElement(FieldInput, { field: definition, value, onChange: () => {} }));
+
+test('save feedback separates local persistence from a failed OneNote upload and never claims all destinations synced', () => {
+  const markup = renderToStaticMarkup(React.createElement(DeliveryStatus, { result: { status: 'saved', path: '/synthetic/<setup>.md', sync: [
+    { id: '1', kind: 'obsidian', status: 'synced' }, { id: '2', kind: 'onenote', status: 'failed', error: 'HTTP 403 <safe code>' },
+  ] } }));
+  assert.match(markup, /Saved locally/); assert.match(markup, /Obsidian/); assert.match(markup, /Files saved/);
+  assert.match(markup, /HTTP 403 &lt;safe code&gt;/); assert.doesNotMatch(markup, /All destinations synced|Sent to your notebook/);
+  assert.match(markup, /Review connections and retry/); assert.match(markup, /&lt;setup&gt;/);
+});
 
 test('notebook picker shows the chosen notebook by ID and explains empty lists without a silent default', () => {
   const notebooks = [{ id: 'a', displayName: '<Trading>', isDefault: true }, { id: 'b', displayName: '<Trading>', isDefault: false }];

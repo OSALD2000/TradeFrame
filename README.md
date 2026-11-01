@@ -48,7 +48,7 @@ those systems. The archive includes public guides with working relative links.
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.4.0`.
+The top-right toolbar shows the installed app version, for example `v0.5.0`.
 
 
 Click **Capture chart**, then **Screenshot** on the floating bar. Choose a source
@@ -107,6 +107,17 @@ system encryption where supported; otherwise sign-in lasts this session only.
 A new follow-up delivery creates a new OneNote page; existing pages are preserved.
 Failed deliveries survive restart and appear under **Retry sync**. Disconnecting
 cancels outstanding deliveries without deleting existing notes or pages.
+Save feedback lists the local result and each destination separately. After
+connecting, **Send saved setup to OneNote** sends the last saved local version
+without creating another local file. Save pending edits first.
+
+Use **Open from OneNote…** to browse TradeFrame pages in the selected notebook.
+Opening restores a draft; save a new local copy to continue. New pages carry a
+validated snapshot of their original fields and image references. Older standard
+forms are recovered from the page; unknown older forms open as text plus images.
+Manual OneNote edits stay on the page; snapshot import restores the originally
+sent values. Each image must be below 3.8 MB for Graph; multiple images are sent
+in batches. Larger local saves remain available.
 [Behavior, conflicts and verification](docs/SYNC.md)
 
 OneNote application settings stay available after failed sign-in. Use **Save application ID**

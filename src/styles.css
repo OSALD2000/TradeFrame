@@ -179,3 +179,11 @@ button { font-family: inherit; }
 .onenote-notebook label { display: grid; gap: 6px; color: var(--secondary); font-size: 12px; flex: 1 1 240px; }
 .onenote-notebook select { background: var(--canvas); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 9px; font: inherit; min-width: 0; width: 100%; }
 .onenote-notebook .preview-note { flex-basis: 100%; }
+.onenote-browser { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: min(680px, calc(100vw - 48px)); max-height: 80vh; overflow: auto; }
+.onenote-browser::backdrop { background: #000b; }
+.onenote-pages { list-style: none; padding: 0; display: grid; gap: 8px; }
+.onenote-pages button { display: grid; width: 100%; gap: 6px; text-align: left; overflow-wrap: anywhere; white-space: normal; }
+.onenote-pages span { font-size: 12px; color: var(--secondary); }
+.delivery-status { margin-top: 18px; padding: 18px; border: 1px solid var(--border); border-radius: 6px; background: var(--elevated); }
+.delivery-status p, .delivery-status li { color: var(--secondary); }
+.saved-path { overflow-wrap: anywhere; font-size: 12px; }

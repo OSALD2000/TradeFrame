@@ -49,7 +49,7 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.4.0`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.5.0`.
 
 
 **Capture chart** und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
@@ -116,6 +116,16 @@ die Anmeldung nur fuer diese Sitzung. Eine neue Folge-Uebertragung erstellt eine
 neue OneNote-Seite; vorhandene Seiten bleiben erhalten. Fehlgeschlagene Auftraege
 ueberleben Neustarts und stehen unter **Retry sync**. Trennen beendet offene
 Uebertragungen, loescht aber keine vorhandenen Notizen oder Seiten.
+Das Speicherergebnis zeigt lokale Speicherung und jedes Ziel getrennt.
+**Send saved setup to OneNote** sendet die zuletzt lokal gespeicherte Version,
+ohne eine neue lokale Datei anzulegen. Aenderungen vorher speichern.
+**Open from OneNote…** listet TradeFrame-Seiten im gewaehlten Notizbuch. Oeffnen
+stellt einen Entwurf wieder her; Speichern legt eine neue lokale Kopie an.
+Neue Seiten enthalten einen geprueften Wiederherstellungsanhang. Alte Standard-
+formulare werden ausgelesen; unbekannte alte Formulare als Text und Bilder
+geoeffnet. Manuelle OneNote-Aenderungen bleiben dort; der Anhang enthaelt die
+urspruenglich gesendeten Werte. Jedes Bild muss fuer Graph unter 3,8 MB bleiben;
+mehrere Bilder werden in Teilanfragen gesendet. Groessere lokale Setups bleiben.
 [Verhalten, Konflikte und Pruefgrenzen](docs/SYNC.md)
 
 Die OneNote-App-ID bleibt auch nach einem Anmeldefehler aenderbar.

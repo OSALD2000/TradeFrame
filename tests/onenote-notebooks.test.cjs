@@ -81,9 +81,12 @@ test('a late notebook response cannot restore account state after disconnect', a
 });
 
 test('selected notebook section is created once and lost page responses retry in the same section', async (t) => {
-  let sectionExists = false; let pageExists = false; let title; let posts = 0; let sectionPosts = 0;
+  let sectionExists = false; let pageExists = false; let title; let posts = 0; let sectionPosts = 0; let cloudHtml; let snapshot;
   const f = await fixture(t, async (url, options) => {
     const resource = new URL(url).pathname;
+    if (resource.endsWith('/pages/page!1/content')) return new Response(cloudHtml);
+    if (resource.includes('/resources/setup/')) return new Response(snapshot);
+    if (resource.includes('/resources/image/')) return new Response(Buffer.from(image.split(',')[1], 'base64'));
     if (resource.endsWith('/notebooks')) return json({ value: notebooks });
     if (resource === '/v1.0/me/onenote/notebooks/chosen%2F2/sections') {
       if (options.method === 'POST') { sectionPosts++; sectionExists = true; assert.deepEqual(JSON.parse(options.body), { displayName: 'TradeFrame' }); return json({ id: 'section!1', displayName: 'TradeFrame' }, 201); }
@@ -92,6 +95,9 @@ test('selected notebook section is created once and lost page responses retry in
     assert.equal(resource, '/v1.0/me/onenote/sections/section!1/pages', 'No default notebook endpoint may be used');
     if (options.method !== 'POST') return json({ value: pageExists ? [{ id: 'page!1', title }] : [] });
     posts++; const html = await options.body.get('Presentation').text(); title = /<title>(.*?)<\/title>/.exec(html)[1]; pageExists = true;
+    snapshot = await options.body.get('setup').text();
+    cloudHtml = html.replace('src="name:chart0"', 'data-fullres-src="https://graph.microsoft.com/v1.0/me/onenote/resources/image/$value"')
+      .replace('data="name:setup"', 'data="https://graph.microsoft.com/v1.0/me/onenote/resources/setup/$value"');
     throw new Error('Synthetic response lost after successful page creation');
   });
   await f.client.refreshNotebooks(); await f.client.selectNotebook(notebooks[1].id);
@@ -116,7 +122,7 @@ test('an unavailable chosen notebook never falls back to the default notebook', 
   assert.match((await f.client.refreshNotebooks()).error, /unavailable/);
   const file = await writeSetup(f.root, { schema: DEFAULT_SCHEMA, values: { mode: 'live', symbol: 'TEST', direction: 'long', model: 'Example', timeframe: '1m', entryTimeNewYork: '', note: '' } },
     [{ id: 'shot', image, caption: '', capturedAt: '2026-11-01T12:00:00.000Z', timeframe: '1m' }]);
-  await assert.rejects(f.client.deliver(file, 'TradeFrame', randomUUID(), notebooks[1].id), /Could not read/);
+  await assert.rejects(f.client.deliver(file, 'TradeFrame', randomUUID(), notebooks[1].id), /could not read/);
 });
 
 test('legacy connection settings are backed up and notebook destinations stay pinned in version 2 jobs', async (t) => {

@@ -217,7 +217,7 @@ test('image URLs serve only current in-memory PNGs and state updates do not tran
 test('OneNote operations and login browser are unavailable to the capture bar', async () => {
   const { windows, invoke } = await boot();
   await invoke('capture:open-bar');
-  for (const operation of ['state', 'connect', 'configure', 'poll', 'disconnect', 'browser', 'notebooks', 'notebook']) {
+  for (const operation of ['state', 'connect', 'configure', 'poll', 'disconnect', 'browser', 'notebooks', 'notebook', 'setups', 'open', 'send']) {
     await assert.rejects(invoke(`onenote:${operation}`, windows[1]), /Untrusted/);
   }
   await assert.rejects(invoke('onenote:browser'), /Start OneNote sign-in/);
@@ -595,4 +595,53 @@ test('folder connections are journal-only and save sends all screenshots to both
   await invoke('journal:save', windows[0], setupInput());
   assert.equal(selections, 3, 'Saving again uses the remembered journal folder');
   for (const folder of folders.slice(0, 2)) assert.equal((await fs.readdir(path.join(folder, 'TradeFrame'))).length, 2);
+});
+
+test('saved setups can be sent after connecting and cloud opens restore a separate draft without touching files', async (t) => {
+  const fs = require('node:fs/promises');
+  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-cloud-ipc-')));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let now = 0; let title; let html; let snapshot; let png; let corrupt = false;
+  const reply = (data, status = 200) => new Response(JSON.stringify(data), { status });
+  const graph = 'https://graph.microsoft.com/v1.0/me/onenote/';
+  const request = async (url, options) => {
+    if (url.endsWith('devicecode')) return reply({ device_code: 'private', user_code: 'TEST', expires_in: 60, interval: 1 });
+    if (url.endsWith('token')) return reply({ access_token: 'private-access', expires_in: 3600 });
+    const resource = new URL(url).pathname;
+    if (resource.endsWith('/notebooks')) return reply({ value: [{ id: 'book', displayName: 'Synthetic book', isDefault: false }] });
+    if (resource.endsWith('/sections')) return reply({ value: [{ id: 'section', displayName: 'TradeFrame' }] });
+    if (resource.endsWith('/resources/setup/$value')) return new Response(snapshot);
+    if (resource.endsWith('/resources/chart0/$value')) return new Response(corrupt ? Buffer.from('invalid PNG') : png);
+    if (resource.endsWith('/content')) return new Response(html);
+    if (options.method !== 'POST') return reply({ value: title ? [{ id: 'page', title }] : [] });
+    html = await options.body.get('Presentation').text(); title = /<title>(.*?)<\/title>/.exec(html)[1];
+    snapshot = await options.body.get('setup').text(); png = Buffer.from(await options.body.get('chart0').arrayBuffer());
+    html = html.replace('data="name:setup"', `data="${graph}resources/setup/$value"`).replace('src="name:chart0"', `data-fullres-src="${graph}resources/chart0/$value"`);
+    return reply({ id: 'page' }, 201);
+  };
+  const { windows, invoke } = await boot(undefined, async () => ({ canceled: false, filePaths: [root] }), true, { request, now: () => now });
+  await invoke('connections:folder', windows[0], 'obsidian');
+  await invoke('capture:open-bar'); await captureReady(invoke, windows);
+  const saved = await invoke('journal:save', windows[0], setupInput()); const original = await fs.readFile(saved.path);
+  assert.equal(saved.sync.length, 1); assert.equal(saved.sync[0].kind, 'obsidian');
+  await invoke('onenote:configure', windows[0], '11111111-2222-3333-4444-555555555555');
+  await invoke('onenote:connect'); now = 1000; await invoke('onenote:poll');
+  await invoke('onenote:notebooks'); await invoke('onenote:notebook', windows[0], 'book');
+  const sent = await invoke('onenote:send');
+  assert.equal(sent.sync.length, 1); assert.equal(sent.sync[0].kind, 'onenote'); assert.equal(sent.sync[0].status, 'synced');
+  assert.equal((await invoke('connections:get')).jobs.length, 2);
+  await invoke('onenote:setups');
+  const before = await invoke('capture:state');
+  await assert.rejects(invoke('onenote:open', windows[0], 'unknown'), /choose a page/);
+  assert.deepEqual(await invoke('capture:state'), before);
+  corrupt = true;
+  await assert.rejects(invoke('onenote:open', windows[0], 'page'), /OneNote could not finish/);
+  assert.deepEqual(await invoke('capture:state'), before);
+  corrupt = false;
+  const loaded = await invoke('onenote:open', windows[0], 'page');
+  assert.deepEqual(loaded.values, setupInput().values); assert.equal(loaded.legacy, false);
+  const state = await invoke('capture:state'); assert.equal(state.savedPath, null); assert.equal(state.screenshots.length, 1);
+  assert.ok(state.screenshots[0].image.startsWith('tradeframe-image:'));
+  assert.deepEqual(await fs.readFile(saved.path), original);
+  await assert.rejects(invoke('journal:append', windows[0], setupInput()), /Could not append/);
 });

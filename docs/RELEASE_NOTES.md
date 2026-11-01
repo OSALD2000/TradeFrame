@@ -1,4 +1,23 @@
-# TradeFrame 0.4.0 preview
+# TradeFrame 0.5.0 preview
+
+OneNote delivery now percent-encodes filter spaces and respects Graph's documented
+4 MB/six-part limits. Multiple images use bounded requests; retry validates an
+unfinished page and adds only missing images. Oversized images fail visibly and
+leave the local save intact. Safe HTTP status/stage/code diagnostics replace the
+single generic sync failure. Save results show each destination separately.
+
+**Send saved setup to OneNote** supports connecting after a local save.
+**Open from OneNote…** browses the chosen notebook and restores a separate draft.
+New pages include a validated snapshot attachment and original-image hashes;
+older standard forms recover values and images, while unknown older forms become
+text/image imports. Snapshot import restores originally sent values, not later
+handwritten/visible-text edits. Cloud pages and existing local files stay.
+
+The owner also requested a more approachable workspace. Online references and
+three directions are recorded in [DESIGN](DESIGN.md); the larger redesign awaits
+that choice. Current functional controls reuse the existing approved direction.
+Actual account delivery/opening and rendered desktop acceptance remain open.
+
 
 Choose an existing notebook under **Connections → OneNote → OneNote notebook**
 after sign-in. Use **Refresh notebooks** after creating or opening one in OneNote.
@@ -48,6 +67,16 @@ acceptance, trusted signing/notarization and cloud/account tests remain open.
 For publisher setup and platform builds, see [release guidance](RELEASE.md).
 
 ## Deutsch
+
+OneNote sendet Bilder in begrenzten Teilanfragen gemaess Graph-Limits statt einer
+zu grossen Gesamtanfrage. Fehler zeigen HTTP-Status/Schritt/sicheren Code; lokal
+wird unabhaengig davon gespeichert. **Send saved setup to OneNote** sendet nach
+spaeterem Verbinden die gespeicherte Datei. **Open from OneNote…** oeffnet Seiten
+als eigenen Entwurf; bestehende Dateien und Cloud-Seiten bleiben erhalten.
+Neue Seiten enthalten Wiederherstellungsdaten mit Bildpruefsummen. Alte bekannte
+Formulare werden wiederhergestellt, unbekannte als Text/Bilder importiert.
+Der umfassende Designumbau wartet auf die Wahl einer recherchierten Richtung;
+echte Konto-Uebertragung/Oeffnen und visuelle Abnahme sind noch offen.
 
 Nach Anmeldung unter **Connections → OneNote → OneNote notebook** ein
 vorhandenes Notizbuch waehlen; der Name ist frei. **Refresh notebooks** laedt die

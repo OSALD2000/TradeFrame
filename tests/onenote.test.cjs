@@ -153,10 +153,15 @@ test('OneNote sends escaped fields and all images; retry after a lost response f
   let created = false;
   let posts = 0;
   let title;
+  let cloudHtml; let snapshot;
   const request = async (url, options) => {
     if (url.endsWith('devicecode')) return json({ device_code: 'test', user_code: 'TEST', expires_in: 60, interval: 1 });
     if (url.endsWith('token')) return json({ access_token: 'synthetic-access', refresh_token: 'synthetic-refresh', expires_in: 3600 });
     assert.equal(options.headers.Authorization, 'Bearer synthetic-access');
+    const resource = new URL(url).pathname;
+    if (resource.endsWith('/content')) return new Response(cloudHtml);
+    if (resource.includes('/resources/setup/')) return new Response(snapshot);
+    if (resource.includes('/resources/image')) return new Response(Buffer.from(image.split(',')[1], 'base64'));
     assert.ok(url.startsWith('https://graph.microsoft.com/v1.0/me/onenote/pages?'));
     if (options.method !== 'POST') return json({ value: created ? [{ id: 'page-1', title }] : [] });
     posts++;
@@ -170,6 +175,9 @@ test('OneNote sends escaped fields and all images; retry after a lost response f
     assert.equal(options.body.get('chart0').type, 'image/png');
     assert.equal(options.body.get('chart1').size, Buffer.from(image.split(',')[1], 'base64').length);
     title = /<title>(.*?)<\/title>/.exec(html)[1];
+    snapshot = await options.body.get('setup').text();
+    cloudHtml = html.replace(/src="name:chart(\d+)"/g, (_, id) => `data-fullres-src="https://graph.microsoft.com/v1.0/me/onenote/resources/image${id}/$value"`)
+      .replace('data="name:setup"', 'data="https://graph.microsoft.com/v1.0/me/onenote/resources/setup/$value"');
     created = true;
     throw new Error('Synthetic response lost after server accepted upload');
   };

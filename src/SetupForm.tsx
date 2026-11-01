@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import type { CaptureAPI, SetupInput } from '../electron/capture-types';
+import type { CaptureAPI, SetupInput, SaveResult } from '../electron/capture-types';
 import { JOURNAL_SCHEMA, emptyValues, fieldVisible, validateValues, journalValues } from '../electron/form-schema';
 import type { FormSchema, FormValues } from '../electron/form-schema';
 import { FieldInput } from './FieldInput';
 import { SchemaEditor, newField } from './SchemaEditor';
+import { OneNoteBrowser } from './OneNoteBrowser';
+import { DeliveryStatus } from './DeliveryStatus';
 
 export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timeframesReady, requiresTimeframeCopy }: {
   api: CaptureAPI | undefined; busy: boolean; choosing: boolean; hasPreview: boolean; savedPath: string | null; timeframesReady: boolean; requiresTimeframeCopy: boolean;
@@ -17,6 +19,8 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [browsingOneNote, setBrowsingOneNote] = useState(false);
+  const [lastSaved, setLastSaved] = useState<SaveResult | null>(null);
   const hasValues = Object.values(values).some((value) => value !== '' && value !== null && value !== false && (!Array.isArray(value) || value.length));
   useEffect(() => {
     if (!hasValues && !hasPreview) return;
@@ -51,6 +55,7 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
     try {
       const loaded = await api.openSetup();
       if (loaded) {
+        setLastSaved(null);
         setSchema(loaded.schema);
         setValues({ ...emptyValues(loaded.schema), ...loaded.values });
         setMessage('Opened setup. Capture more views to append to this file, or save a separate copy.');
@@ -76,8 +81,7 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
       const result = await (append ? api.appendScreenshots(input) : api.saveSetup(input));
       if (result.status === 'cancelled') setMessage('Save cancelled. Your draft is unchanged.');
       else {
-        const failed = result.sync.filter((job) => job.status !== 'synced').length;
-        setMessage(`Last saved to ${result.path}. ${result.warning ?? (failed ? `${failed} destination(s) need attention in Connections.` : result.sync.length ? 'All destinations synced.' : '')}`);
+        setLastSaved(result);
       }
     } catch {
       setError(append ? 'Could not append. Keep existing fields and screenshots unchanged, capture another image, or reopen a file changed elsewhere. Backups stay beside the original. Use Save copy to change existing details.'
@@ -99,12 +103,28 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
         if (replaceDraft()) setEditing({ formatVersion: 1, id: `form_${crypto.randomUUID()}`, revision: 1, name: 'New form', fields: [newField()] });
       }}>New form</button>
       <button className="secondary-button" type="button" disabled={!ready || busy || saving || !!editing} onClick={open}>Open setup…</button>
+      <button className="secondary-button" type="button" disabled={!ready || busy || saving || !!editing} onClick={() => { if (api && replaceDraft(true)) setBrowsingOneNote(true); }}>Open from OneNote…</button>
+      {savedPath && <button className="secondary-button" type="button" disabled={!ready || busy || saving || !!editing} onClick={async () => {
+        if (!api) return;
+        setSaving(true); setError(''); setMessage('');
+        try {
+          const result = await api.sendToOneNote();
+          if (result.status === 'saved') setLastSaved(result);
+        } catch { setError('Could not send the saved setup. Connect OneNote, choose a notebook and check that the local file is unchanged.'); }
+        finally { setSaving(false); }
+      }}>Send saved setup to OneNote</button>}
       <button className="secondary-button" type="button" disabled={!ready || busy || saving || !!editing} onClick={async () => {
         if (!api || !replaceDraft(true)) return;
-        try { await api.newSetup(); setValues(emptyValues(schema)); setMessage('New setup ready.'); setError(''); }
+        try { await api.newSetup(); setValues(emptyValues(schema)); setLastSaved(null); setMessage('New setup ready.'); setError(''); }
         catch { setError('Could not start a new setup. Wait for the current operation and try again.'); }
       }}>New setup</button>
     </div>
+    {browsingOneNote && api && <OneNoteBrowser api={api} onClose={() => setBrowsingOneNote(false)} onOpen={async (id) => {
+      const loaded = await api.openOneNoteSetup(id);
+      setLastSaved(null);
+      setSchema(loaded.schema); setValues({ ...emptyValues(loaded.schema), ...loaded.values }); setError('');
+      setMessage(loaded.legacy ? 'Opened an older OneNote setup. Check the imported details and timeframes, then save a new local copy.' : 'Opened OneNote setup as a draft. Save a local copy to continue; its OneNote page stays unchanged.');
+    }} />}
     {editing ? <SchemaEditor initial={editing} busy={busy} onCancel={() => setEditing(null)} onSave={async (draft) => {
       const saved = await api!.saveSchema(draft).catch(() => {
         throw new Error('Could not save the form. Check access to the data folder, or reload its latest revision and retry.');
@@ -133,6 +153,7 @@ export function SetupForm({ api, busy, choosing, hasPreview, savedPath, timefram
       <p className="preview-note">{requiresTimeframeCopy ? 'This older setup has no per-image timeframes. Choose them above and Save copy once. The original stays unchanged; future screenshots can be appended to the copy.' : savedPath ? 'Append adds only new screenshots to this file and keeps a Markdown backup. To change earlier fields or images, use Save copy.' : 'Trading journal saves use mode/year/month/day and a readable note name. Other forms keep separate setup folders. Your journal folder is remembered; manage destinations in Connections.'}</p>
       {!timeframesReady && hasPreview && <p className="preview-note" role="status">Choose a timeframe for every screenshot before saving.</p>}
     </form>}
+    {lastSaved && <DeliveryStatus result={lastSaved} />}
     {message && <p className="save-message" role="status">{message}</p>}
     {error && <p className="save-message" role="alert">{error}</p>}
   </>;

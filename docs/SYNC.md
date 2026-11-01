@@ -70,15 +70,28 @@ delivery fails without falling back to another notebook.
 
 Each save/append delivery becomes a new page in the selected notebook's
 `TradeFrame` section, created during delivery if missing. New saves without a
-selection succeed locally with a warning; select a notebook and use Save copy
-to send that setup. Fields, tags and all screenshots are included as escaped HTML and PNG
+selection succeed locally with a warning; select a notebook and use
+**Send saved setup to OneNote** to send that saved version. Fields, tags and all screenshots are included as escaped HTML and PNG
 parts following the [OneNote multipart API](https://learn.microsoft.com/en-us/graph/onenote-create-page).
 The page title includes a unique delivery UUID. Retrying first searches for that
 title and reuses the page if it already exists, including after a lost response.
 Renaming/deleting that page externally removes this duplicate-detection marker;
-retrying then may create another page. Existing pages are never edited by the app.
-The local journal accepts up to 128 MB of images; OneNote delivery is capped at
-70 MB before multipart overhead. A failed upload never undoes the local save.
+retrying then may create another page. Synced pages are never edited by the app.
+An unfinished delivery may append its missing images after verifying the snapshot
+and already uploaded PNGs; changed content fails instead of being replaced.
+
+Graph documents a 4 MB request limit and six multipart parts. TradeFrame keeps
+requests below 3.9 MB, creates a page with its snapshot and up to four images,
+then appends batches of up to five. Individual images/details must be below
+3.8 MB. Larger captures fail with an actionable message; local saves still
+support 128 MB total. A failed upload never undoes the local save. HTTP status,
+a safe service error code and the failing stage appear under Retry sync; raw
+Microsoft/network messages and tokens are never displayed.
+
+A successful local save is shown separately from each destination's result.
+Connecting after saving does not upload automatically. **Send saved setup to
+OneNote** sends only the unchanged, last saved file to the chosen notebook;
+unsaved edits need saving first. It adds no extra Obsidian/Dropbox deliveries.
 
 Refresh tokens are encrypted through Electron 45's asynchronous `safeStorage`
 and written with user-only file permissions. On Linux, persistence requires a
@@ -86,6 +99,28 @@ recognized system secret backend; unavailable/insecure backends keep credentials
 in memory for this session only. Windows/macOS use their OS credential encryption.
 Access tokens remain in memory. Failed decryption asks for reconnection.
 No tokens are stored in the form-definition SQLite database.
+
+## Open from OneNote
+
+**Open from OneNote…** lists TradeFrame pages from the selected notebook's
+TradeFrame section. Listing does not create a section. Choose a page to restore
+an in-memory draft, then save a new local copy. Existing local files and the
+cloud page stay unchanged; the draft cannot append to an unchosen local file.
+
+New pages attach TradeFrame.setup.json with the validated original Markdown and
+PNG hashes. Original image resources are downloaded within bounded limits and
+checked before replacing the draft. Retrieved HTML is never rendered. Resource
+links are validated and rebuilt on Graph; tokens never go to a page-supplied host.
+Old pages without a snapshot recover standard-form values and screenshots,
+keeping the complete original page text in Notes, including manual additions.
+Unknown older forms open as full page text plus screenshots rather than guessed
+field types. Missing timeframes must be chosen. Oversized or inconsistent
+content is rejected without truncation or changing the current draft.
+
+Snapshot import restores what TradeFrame originally sent. Later handwritten or
+visible-text edits in OneNote remain on the page and are not merged into that
+snapshot. This is cloud opening and separate-copy saving, not two-way editing.
+See [snapshot/retry decision](adr/0006-reopen-cloud-setups-with-validated-snapshots.md).
 
 ## Queue, retries and conflicts
 
@@ -128,7 +163,8 @@ Temporary-folder tests cover parallel destinations, restart/retry, missing roots
 conflicts, symlink rejection and old-file preservation. Mocked Microsoft responses
 cover code polling, encrypted-token calls, refresh, escaped multipart content and
 duplicate detection after a lost response, paginated notebook discovery, target
-selection/restart, unavailable notebooks and version-1 connection backups. The
+selection/restart, unavailable notebooks, version-1 connection backups, Graph
+request limits, interrupted multipart delivery and old/new cloud setup opening. The
 owner reported successful Microsoft connection on 1 November; a real page upload
 to a chosen notebook is still unverified. Automated tests do not prove a cloud
 upload, real Dropbox delivery or native folder dialogs.

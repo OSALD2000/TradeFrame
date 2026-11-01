@@ -8,6 +8,7 @@ import { appendDocument, createFile, recoverAppend } from './append-store';
 import { calendarPath, journalDirectory, safeNoteFilename } from './journal-layout';
 import type { FolderKind, SyncJob, Connections } from './capture-types';
 import { validOneNoteId } from './capture-types';
+import { OneNoteError } from './onenote';
 
 export function folderKind(value: unknown): asserts value is FolderKind {
   if (!['journal', 'obsidian', 'dropbox'].includes(String(value))) throw new Error('Invalid connection');
@@ -68,11 +69,11 @@ export class ConnectionStore {
     this.commit(next);
     return this.get();
   }
-  enqueue(source: string, oneNoteSection?: string, notebookId?: string): SyncJob[] {
+  enqueue(source: string, oneNoteSection?: string, notebookId?: string, includeFolders = true): SyncJob[] {
     if (!validPath(source)) throw new Error('Invalid saved setup');
     if (notebookId !== undefined && (!oneNoteSection || !validOneNoteId(notebookId))) throw new Error('Invalid OneNote notebook');
     const next = this.get();
-    const jobs: SyncJob[] = (['obsidian', 'dropbox'] as const).flatMap((kind) => next.folders[kind]
+    const jobs: SyncJob[] = (['obsidian', 'dropbox'] as const).flatMap((kind) => includeFolders && next.folders[kind]
       ? [{ id: randomUUID(), kind, source, folder: next.folders[kind]!, status: 'pending' as const, error: null }] : []);
     if (oneNoteSection) jobs.push({ id: randomUUID(), kind: 'onenote', section: oneNoteSection, ...(notebookId ? { notebookId } : {}), source, status: 'pending', error: null });
     next.jobs = [...next.jobs.filter((job) => job.status !== 'synced'), ...next.jobs.filter((job) => job.status === 'synced').slice(-50), ...jobs];
@@ -95,8 +96,8 @@ export class ConnectionStore {
           if (!deliverOneNote) throw new Error('OneNote is not connected');
           await deliverOneNote(job.source, job.section, job.id, job.notebookId);
         } else await copySnapshot(job.source, path.join(job.folder, 'TradeFrame'));
-      } catch {
-        status = 'failed'; error = job.kind === 'onenote' ? 'Could not sync OneNote. Check your sign-in, connection and setup size, then retry.'
+      } catch (cause) {
+        status = 'failed'; error = job.kind === 'onenote' ? cause instanceof OneNoteError ? cause.message : 'Could not sync OneNote. Check your sign-in, connection and setup size, then retry.'
           : 'Could not sync. Check folder access, available space, and conflicting files, then retry.';
       }
       const next = this.get();

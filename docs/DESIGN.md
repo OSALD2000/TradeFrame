@@ -117,3 +117,33 @@ neutral Refresh notebooks action in the existing Connections section. Show the
 selected notebook name and TradeFrame section together. Require an explicit
 choice before sending new setups; never imply the notebook name is a free-text
 field. Keep setup/retry errors inline. Reuse the locked Linear form/focus styling.
+
+## 1 November usability research and pending redesign
+
+Brief: a desktop trading journal for new users, with an obvious route from chart
+capture to saved setup, accessible local/OneNote opening and visible delivery
+results. Keep real chart images and existing data. No marketing illustration or
+invented trading statistics. Research: public Refero style systems above, plus
+[Linear onboarding](https://linear.app/docs/start-guide) and
+[Craft organization](https://www.craft.do/organize). Refero MCP remains unavailable.
+
+Three directions offered to the owner; the choice is pending:
+
+1. Guided dark workspace (recommended). Linear owns black stepped surfaces,
+   restrained typography, 6px controls and one primary action; borrow only Craft's
+   separation of capture and organization. Separate New setup, Open and Connections;
+   visible Capture / Describe / Save progress. Reject dense dashboard widgets.
+2. Chart-focused dark journal. Fey owns near-black depth, prominent real chart
+   media and calm typography; borrow Linear's short action labels. Compact tools
+   and a larger preview. Reject decorative gradients and fictional performance.
+3. Light organized workspace. Attio owns white/pale-gray surfaces, fine borders,
+   compact lists and generous grouping; borrow Craft's clear organization.
+   Dark primary buttons, cobalt only for focus/navigation. Reject dense terminal UI.
+
+Do not treat these as three copied apps or mix their token roles. No bitmap
+assets are needed. The selected direction must become the new reference lock
+before a substantial redesign. Existing approved styles cover the functional
+OneNote browser and save-result panel: native modal focus, short task copy,
+separate local/service results and a direct retry link. The browser never renders
+retrieved HTML. Local preview serving was rechecked and fails with listen EPERM;
+rendered desktop/narrow QA remains blocked, not passed by SSR tests.
