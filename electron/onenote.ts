@@ -1,5 +1,5 @@
 import { OneNoteError } from './onenote-error';
-import { oneNoteResourceUrl } from './onenote-resource';
+import { OneNoteGraph } from './onenote-graph';
 import { readFile, mkdir, writeFile, rename, rm } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
@@ -20,7 +20,6 @@ type Encryption = Pick<
   | 'getSelectedStorageBackend'
 >;
 const identity = 'https://login.microsoftonline.com/common/oauth2/v2.0/';
-const graph = 'https://graph.microsoft.com/v1.0/me/onenote/';
 const scope = 'https://graph.microsoft.com/Notes.ReadWrite offline_access';
 const clientIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const escapeHtml = (text: unknown) =>
@@ -34,6 +33,7 @@ const queryString = (values: Record<string, string>) =>
 export { OneNoteError } from './onenote-error';
 
 export class OneNoteClient {
+  private graph: OneNoteGraph;
   private clientId = '';
   private customApplicationId = false;
   private notebook: OneNoteNotebook | null = null;
@@ -61,7 +61,14 @@ export class OneNoteClient {
     private publisherClientId = '',
     private request: typeof fetch = fetch,
     private now: () => number = Date.now,
-  ) {}
+  ) {
+    this.graph = new OneNoteGraph((url, options) => this.request(url, options), {
+      generation: () => this.generation,
+      invalidateAccessToken: () => {
+        this.accessToken = '';
+      },
+    });
+  }
 
   private async atomicWrite(file: string, value: string | Buffer) {
     await mkdir(this.directory, { recursive: true, mode: 0o700 });
@@ -339,30 +346,8 @@ export class OneNoteClient {
     this.notebooks = [];
     this.pages = [];
   }
-  private async checkResponse(response: Response, action: string) {
-    if (response.ok) return;
-    if (response.status === 401) this.accessToken = '';
-    let code = '';
-    try {
-      const data = (await response.json()) as { error?: { code?: unknown } };
-      if (typeof data.error?.code === 'string' && /^[A-Za-z0-9_.-]{1,60}$/.test(data.error.code))
-        code = `, code ${data.error.code}`;
-    } catch {
-      /* The status remains useful when Microsoft returns no JSON. */
-    }
-    const help =
-      response.status === 401
-        ? 'Reconnect OneNote.'
-        : response.status === 403
-          ? 'Check notebook write access and Microsoft Notes.ReadWrite consent.'
-          : response.status === 413
-            ? 'This request exceeds Microsoft Graph’s 4 MB limit.'
-            : response.status === 429
-              ? 'Microsoft is throttling requests. Wait, then retry.'
-              : response.status === 404
-                ? 'The selected notebook, section or page is unavailable.'
-                : 'Retry in Connections; your local setup is safe.';
-    throw new OneNoteError(`OneNote could not ${action} (HTTP ${response.status}${code}). ${help}`);
+  private checkResponse(response: Response, action: string) {
+    return this.graph.checkResponse(response, action);
   }
   async disconnect() {
     await this.load();
@@ -377,57 +362,13 @@ export class OneNoteClient {
     this.error = null;
     return this.getState();
   }
-  private async collection(
+  private collection(
     endpoint: string,
     headers: Record<string, string>,
     generation: number,
     property = 'displayName',
   ): Promise<Record<string, unknown>[]> {
-    const initial = new URL(graph + endpoint);
-    let next: string | undefined = initial.href;
-    const seen = new Set<string>();
-    const items: Record<string, unknown>[] = [];
-    while (next) {
-      const url = new URL(next);
-      if (
-        url.origin !== initial.origin ||
-        decodeURIComponent(url.pathname) !== decodeURIComponent(initial.pathname) ||
-        url.username ||
-        url.password ||
-        seen.has(url.href) ||
-        seen.size >= 100
-      )
-        throw new Error('Invalid OneNote pagination');
-      seen.add(url.href);
-      const response = await this.request(url.href, {
-        headers,
-        redirect: 'error',
-        signal: AbortSignal.timeout(15_000),
-      });
-      if (generation !== this.generation) throw new Error('OneNote was disconnected');
-      await this.checkResponse(response, 'read notebooks or sections');
-      const data = (await response.json()) as {
-        value?: Record<string, unknown>[];
-        '@odata.nextLink'?: string;
-      };
-      if (
-        !Array.isArray(data.value) ||
-        items.length + data.value.length > 1000 ||
-        data.value.some(
-          (item) =>
-            !item ||
-            !validOneNoteId(item.id) ||
-            typeof item[property] !== 'string' ||
-            (item[property] as string).length > 1000,
-        ) ||
-        (data['@odata.nextLink'] !== undefined && typeof data['@odata.nextLink'] !== 'string')
-      )
-        throw new Error('Invalid OneNote collection');
-      if (generation !== this.generation) throw new Error('OneNote was disconnected');
-      items.push(...data.value);
-      next = data['@odata.nextLink'];
-    }
-    return items;
+    return this.graph.collection(endpoint, headers, generation, property);
   }
   async refreshNotebooks() {
     await this.load();
@@ -487,7 +428,7 @@ export class OneNoteClient {
     if (sections.length > 1) throw new Error('Multiple TradeFrame sections found');
     if (sections.length) return sections[0].id as string;
     if (!create) return '';
-    const response = await this.request(graph + endpoint, {
+    const response = await this.graph.send(endpoint, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ displayName: 'TradeFrame' }),
@@ -502,48 +443,17 @@ export class OneNoteClient {
       throw new Error('Invalid OneNote section');
     return section.id;
   }
-  private async bytes(response: Response, limit: number, generation: number) {
-    await this.checkResponse(response, 'download setup content');
-    const reader = response.body?.getReader();
-    if (!reader) throw new OneNoteError('Microsoft returned no setup content.');
-    const chunks: Uint8Array[] = [];
-    let size = 0;
-    try {
-      for (;;) {
-        const next = await reader.read();
-        if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
-        if (next.done) break;
-        size += next.value.length;
-        if (size > limit) throw new OneNoteError('OneNote content exceeds the supported size.');
-        chunks.push(next.value);
-      }
-    } finally {
-      await reader.cancel();
-    }
-    return Buffer.concat(chunks, size);
+
+  private content(id: string, headers: Record<string, string>, generation: number) {
+    return this.graph.content(id, headers, generation);
   }
-  private async content(id: string, headers: Record<string, string>, generation: number) {
-    if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
-    const response = await this.request(`${graph}pages/${encodeURIComponent(id)}/content`, {
-      headers,
-      redirect: 'error',
-      signal: AbortSignal.timeout(30_000),
-    });
-    return (await this.bytes(response, 5_000_000, generation)).toString('utf8');
-  }
-  private async resource(
+  private resource(
     value: string,
     headers: Record<string, string>,
     generation: number,
     limit: number,
   ) {
-    if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
-    const response = await this.request(oneNoteResourceUrl(value), {
-      headers,
-      redirect: 'error',
-      signal: AbortSignal.timeout(30_000),
-    });
-    return this.bytes(response, limit, generation);
+    return this.graph.resource(value, headers, generation, limit);
   }
   async listSetups(): Promise<OneNotePage[]> {
     await this.load();
@@ -611,7 +521,7 @@ export class OneNoteClient {
       $select: 'id,title',
       $top: '2',
     });
-    const existing = await this.request(`${graph}${pagesPath}?${query}`, {
+    const existing = await this.graph.send(`${pagesPath}?${query}`, {
       headers,
       signal: AbortSignal.timeout(15_000),
       redirect: 'error',
@@ -726,7 +636,7 @@ export class OneNoteClient {
       const endpoint = create
         ? `${pagesPath}${notebookId ? '' : `?${queryString({ sectionName: section })}`}`
         : `pages/${encodeURIComponent(pageId!)}/content`;
-      const response = await this.request(graph + endpoint, {
+      const response = await this.graph.send(endpoint, {
         method: create ? 'POST' : 'PATCH',
         headers,
         body,

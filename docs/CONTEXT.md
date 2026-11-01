@@ -134,6 +134,15 @@ client callback, not a newly created account/session. All 134 tests pass, and
 14 direct queue comparisons preserve immediate/awaited state, errors, callback
 arguments, legacy backup and cancellation. Underlying promises are returned directly.
 
+The owner also approved the Graph protocol adapter in `onenote-graph.ts`.
+`OneNoteClient` keeps its account/session, notebook selection and public setup API;
+Graph requests, response errors, pagination and bounded downloads are delegated.
+The adapter receives HTTP plus generation/token-invalidation callbacks, with no
+credential or settings ownership. All 140 tests pass; 77 before/after scenarios
+match URLs/options, bytes, safe errors, cancellation and microtask ordering.
+The moved protocol bodies and remaining client methods retain their syntax
+apart from session-port access and the three delegated HTTP requests.
+
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
 lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,
 new windows and off-app navigation remain blocked. `preload.ts` exposes only
@@ -145,8 +154,8 @@ owns staged file publication, prepared intents and process-crash recovery.
 `form-definition.ts` owns form rules, `setup-document.ts` owns Markdown conversion,
 and `form-schema.ts` preserves their existing public exports. `schema-store.ts` owns form revisions;
 `connections.ts` owns preferences and its delivery queue; connector adapters own transfers.
-`onenote.ts` owns OAuth,
-secure-token calls and Graph requests. The renderer cannot submit arbitrary
+`onenote.ts` owns OAuth, secure-token calls and setup workflows;
+`onenote-graph.ts` owns Graph protocol handling. The renderer cannot submit arbitrary
 screenshot bytes, filesystem paths or API URLs. [SYNC](SYNC.md) defines delivery
 boundaries; [RELEASE](RELEASE.md) defines packaging and publisher setup.
 

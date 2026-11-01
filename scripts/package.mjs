@@ -80,6 +80,7 @@ try {
     'folder-connector',
     'onenote-connector',
     'onenote',
+    'onenote-graph',
     'onenote-error',
     'onenote-resource',
     'onenote-content',

@@ -22,14 +22,17 @@ hierarchy. Packaging must include every new native module it needs.
 | `electron/schema-store.ts`                                                                        | Versioned form definitions in SQLite                                              | Setup values and screenshots do not enter this database                                                             |
 | `electron/connections.ts`                                                                         | Folder preferences and durable delivery job state                                 | Uses the connector factory; delivery failures do not undo a local save                                              |
 | `electron/connector.ts`, `connector-factory.ts`, `folder-connector.ts` and `onenote-connector.ts` | Delivery contract, provider selection and delivery-specific adapters              | Constructors perform no transfer or sign-in; adapters own delivery and failure messages                             |
-| `electron/onenote.ts` and `electron/onenote-content.ts`                                           | Microsoft authorization, Graph requests and validated cloud conversion            | Tokens stay native; returned HTML is parsed as data, never rendered                                                 |
+| `electron/onenote.ts`                                                                             | Account/session ownership, notebook selection and setup workflows                 | Keeps the existing client API; delegates Graph transport without creating another session                           |
+| `electron/onenote-graph.ts`                                                                       | Graph transport, response errors, pagination and bounded downloads                | Receives HTTP and a narrow session port; owns no credentials, settings or notebook selection                        |
+| `electron/onenote-content.ts`                                                                     | Validated cloud document conversion                                               | Returned HTML is parsed as data, never rendered                                                                     |
 | `electron/onenote-resource.ts` and `electron/onenote-error.ts`                                    | Pure resource URL validation and the shared safe error type                       | No HTTP, credentials, settings or account lifecycle; the existing public error export keeps the same class identity |
 | `scripts/`                                                                                        | Native distribution, platform branding and runtime verification                   | Uses an explicit public-file allowlist                                                                              |
 | `tests/`                                                                                          | Behavioral regressions using synthetic data and temporary folders                 | Does not require real journals, accounts or desktop capture                                                         |
 
-The UI and native code share validation rules and type definitions. This is a
-modular Electron application, not a claim that the current code implements a
-complete Clean Architecture or is already fully separated by responsibility.
+The UI and native code share validation rules and type definitions. Responsibility
+and dependency boundaries follow the ownership map above within the existing
+modular Electron application. SOLID does not require a new folder hierarchy or
+a separate class for every IPC handler.
 The existing persistence decisions remain in [the ADRs](adr/0001-local-first-journal.md).
 
 ## Implemented pattern inventory
@@ -64,10 +67,22 @@ authorization and Graph to setup operations such as listing, opening and
 delivery. `electron/onenote-content.ts` converts page HTML
 and attached snapshots into validated TradeFrame values and PNG references.
 
+The owner approved extracting Graph protocol handling into `OneNoteGraph` in
+`electron/onenote-graph.ts`. It owns response diagnostics, bounded pagination and
+streamed downloads. Graph writes also pass through its direct-return `send`
+operation. `OneNoteClient` remains the facade for account/session ownership,
+notebook selection and setup workflows, including upload batching and retry.
+Device authorization and refresh requests stay with that account lifecycle.
+
+The Graph adapter receives the existing HTTP dependency through a closure that
+retains the client receiver and observes dependency replacement. Its session port
+only reads the current generation and invalidates an access token on HTTP 401.
+Constructing it performs no request or account operation. Facade forwarding
+methods return the original promises directly, preserving asynchronous ordering.
+
 React does not know HTTP endpoints or token storage. Resource host validation,
-scope normalization, download limits and image hashes remain part of this
-adapter boundary. The current client still combines several responsibilities;
-the adapter role alone does not prove single responsibility.
+scope normalization, download limits and image hashes remain part of the native
+adapter boundary. No credential, notebook, page or delivery format changes.
 
 ### Custom Hook controller and presentation
 
@@ -211,13 +226,13 @@ These techniques are important, but are not additional GoF class patterns:
 
 ## Applying SOLID without changing behavior
 
-| Principle             | Current evidence and cleanup rule                                                                                                                                                                                                                           |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Single responsibility | Draft workflows, view markup, form rules, document conversion and delivery adapters have separate modules. Native orchestration and Microsoft protocol/session ownership remain review boundaries; each further extraction is agreed before implementation. |
-| Open/closed           | The delivery queue uses `SetupConnector`; provider behavior and error policy live in adapters selected by the composition factory. Domain kinds/configuration remain explicit rather than pretending arbitrary plugins are already supported.               |
-| Liskov substitution   | Connector adapters preserve the delivery completion/failure contract. Tests exercise both implementations, original promise identity and synchronous failures; callback and facade compatibility remain intact.                                             |
-| Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.                                                          |
-| Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                                                                  |
+| Principle             | Current evidence and cleanup rule                                                                                                                                                                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Single responsibility | Draft workflows, view markup, form rules, document conversion, delivery adapters and Graph protocol handling have separate owners. Native lifecycle/IPC coordinates those services; the OneNote facade owns the account and setup workflow, not HTTP protocol rules. |
+| Open/closed           | The delivery queue uses `SetupConnector`; provider behavior and error policy live in adapters selected by the composition factory. Domain kinds/configuration remain explicit rather than pretending arbitrary plugins are already supported.                        |
+| Liskov substitution   | Connector adapters preserve the delivery completion/failure contract. Tests exercise both implementations, original promise identity and synchronous failures; callback and facade compatibility remain intact.                                                      |
+| Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.                                                                   |
+| Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                                                                           |
 
 SOLID is a review discipline, not a requirement to turn every function into a
 class. A short module can still have several responsibilities; a long composition
@@ -230,13 +245,13 @@ The owner approved and the code now implements the extraction of pure OneNote
 resource URL validation/normalization into `electron/onenote-resource.ts`.
 The shared `OneNoteError` class lives in `electron/onenote-error.ts`, retaining
 its existing export from `onenote.ts`. The OneNote connector adapter depends on the error
-definition without importing the Microsoft client. `OneNoteClient` continues to
-own HTTP and authorization.
+definition without importing the Microsoft client. `OneNoteClient` owns
+authorization; the subsequently approved `OneNoteGraph` owns Graph HTTP.
 
 This uses existing modular functions and explicit dependencies; it adds no new
 pattern or framework. Alternatives were to keep these responsibilities in the
-client or undertake the substantially larger authentication/Graph split. The
-latter remains a separate owner decision.
+client or undertake the larger authentication/Graph split. The owner subsequently
+approved that protocol split, implemented as described in the adapter section.
 
 The generation check still happens before URL validation. Error class identity,
 messages, URL reconstruction, request options and size limits are preserved.
@@ -270,7 +285,27 @@ remain. The 33 renderer/native TypeScript modules have no runtime import cycles
 across 55 project dependencies. Form definitions, document conversion and resource
 validation have no native I/O dependencies, including their imported helpers.
 
-The remaining proposed Graph HTTP extraction is awaiting the owner's decision.
-It has not been implemented. Passing these checks is not a claim that every
-possible runtime behavior has been proven equivalent or that every future
-responsibility split is necessary.
+The approved Graph extraction passes all 140 tests. Five additional boundary
+tests were established against the previous client before moving code; a sixth
+checks the new transport's inert construction, promise identity and synchronous
+failures. Direct comparison with the previous compiled client covers 77 scenarios,
+including HTTP diagnostics, token invalidation, pagination, URL normalization,
+stream limits/cancellation, request binding and microtask traces.
+
+The five moved protocol bodies retain their syntax apart from the two session-port
+operations. All 33 existing fields/methods outside that extraction retain their
+syntax except the three direct Graph requests now delegated to `send`.
+Authentication, credential persistence and public setup workflows remain intact.
+The native packaging allowlist includes `onenote-graph.js`.
+The final module graph contains 34 renderer/native modules and 58 internal
+runtime dependencies, with no cycles; the existing directories and paths remain.
+
+The original-file audit accounts for all 45 source/config/test paths: 33 match the
+formatter-only output, six produce identical canonical JavaScript despite type
+changes, and four runtime files implement the approved, compared extractions.
+The remaining two differences are the native packaging allowlist and an added
+export-contract test. No unrelated runtime change is part of this cleanup.
+
+Passing these checks is not a proof of every possible runtime behavior or a new
+desktop/account acceptance on Linux, Windows or macOS. Further responsibility
+changes remain owner decisions; module length alone does not require a split.
