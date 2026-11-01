@@ -48,7 +48,7 @@ those systems. The archive includes public guides with working relative links.
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.6.1`.
+The top-right toolbar shows the installed app version, for example `v0.6.2`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup

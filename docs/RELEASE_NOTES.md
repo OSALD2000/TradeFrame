@@ -1,4 +1,24 @@
-# TradeFrame 0.6.1 preview
+# TradeFrame 0.6.2 preview
+
+The owner's 0.6.1 diagnostic identifies the rejected path as
+`/v1.0/users(…)/onenote/resources/…/$value`. Resource downloads now parse OData
+owner keys and normalize them to the checked Graph slash-key `/content` endpoint.
+Quoted, percent-encoded and unquoted keys are supported; doubled apostrophes
+inside quoted keys are decoded. Malformed keys still fail before download.
+The regression reproduced the owner's exact error before the fix and checks
+original fields/PNGs for all supported owner scopes. Live import still needs
+owner confirmation. No authentication, storage format or cloud pages are changed.
+
+## Deutsch — 0.6.2
+
+Die neue Fehlermeldung zeigt den konkreten fehlenden Pfad: `users(…)`.
+Der Import wandelt diese OData-Schreibweise in den geprueften Graph-Pfad
+`users/…` um. Formularwerte und Originalbilder sind im Regressionstest enthalten;
+ungueltige Schluessel bleiben gesperrt. Der Fehler wurde vor der Korrektur exakt
+reproduziert. Das Oeffnen des echten Setups muss noch bestaetigt werden.
+Die separate Electron-Warnung zur synchronen Schluesselbund-API bleibt bestehen.
+
+## Previous preview — 0.6.1
 
 OneNote imports now accept the documented Graph user/group/site resource paths,
 retaining their scope and normalizing downloads to `/content`. Unknown links

@@ -49,7 +49,7 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.1`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.2`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →

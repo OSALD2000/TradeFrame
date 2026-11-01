@@ -308,12 +308,17 @@ export class OneNoteClient {
     };
     if (url.protocol !== 'https:' || !['graph.microsoft.com', 'www.onenote.com'].includes(url.hostname) || url.port || url.username || url.password) throw unsupported();
     const match = url.pathname.match(url.hostname === 'graph.microsoft.com'
-      ? /^\/v1\.0\/(?:(?<scope>me|(?:users|groups|sites)\/[^/]+)\/onenote\/)?resources\/(?<id>[^/]+)\/(?:content|\$value)$/
+      ? /^\/v1\.0\/(?:(?<scope>me|(?:users|groups|sites)(?:\/[^/]+|\([^/]+\)))\/onenote\/)?resources\/(?<id>[^/]+)\/(?:content|\$value)$/
       : /^\/api\/v1\.0\/(?:me\/notes\/)?resources\/(?<id>[^/]+)\/(?:content|\$value)$/);
     if (!match?.groups) throw unsupported();
     let id: string; let owner: string[];
     try { id = decodeURIComponent(match.groups.id); owner = (match.groups.scope ?? 'me').split('/').map(decodeURIComponent); }
     catch { throw unsupported(); }
+    if (owner.length === 1 && owner[0] !== 'me') {
+      const key = owner[0].match(/^(users|groups|sites)\((?:'((?:[^']|'')+)'|([^'()]+))\)$/);
+      if (!key) throw unsupported();
+      owner = [key[1], key[2] !== undefined ? key[2].replace(/''/g, "'") : key[3]];
+    }
     if (!validOneNoteId(id) || !owner.every(validOneNoteId)) throw unsupported();
     // Rebuild a Graph URL; never forward a token to a URL supplied in page HTML.
     const response = await this.request(`https://graph.microsoft.com/v1.0/${owner.map(encodeURIComponent).join('/')}/onenote/resources/${encodeURIComponent(id)}/content`, { headers, redirect: 'error', signal: AbortSignal.timeout(30_000) });

@@ -7,6 +7,15 @@ simultaneous destinations and multiple screenshots per setup on 30 October 2026.
 The original Super+Ctrl+j script was inspected as a workflow reference only;
 no private journals or account data were opened.
 
+0.6.2: the owner supplied the redacted live path rejected by 0.6.1:
+`/v1.0/users(…)/onenote/resources/…/$value`. The same error was reproduced before
+the fix. Resource parsing now accepts OData owner keys, validates quoted/unquoted
+syntax and normalizes to Graph slash-key scope endpoints. Tests cover original
+fields/PNGs, percent encoding, doubled apostrophes, and malformed keys. Account
+data was not accessed. Live import acceptance remains open; the separate Linux
+safeStorage deprecation warning remains with the documented compatibility path.
+The build and all 118 tests pass locally; this is not a live account test.
+
 0.6.1 follow-up: the owner reports imports still fail with an unsupported resource
 link on installed 0.6.0. The live URL shape remains unknown. A focused regression
 reproduces rejection of Microsoft's documented user/group/site resource paths;

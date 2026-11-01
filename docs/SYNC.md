@@ -125,6 +125,8 @@ PNG hashes. Original image resources are downloaded within bounded limits and
 checked before replacing the draft. Both modern `/content` and older `/$value`
 resource links are accepted and normalized to the authenticated Graph `/content`
 endpoint, preserving documented `me`, `users`, `groups` and `sites` scopes.
+OData owner keys such as `users('…')` are parsed and rebuilt as `users/…`;
+quoted-string escaping is validated before decoding the key.
 See Microsoft's [resource endpoints](https://learn.microsoft.com/en-us/graph/api/resource-get?view=graph-rest-1.0).
 Unrecognized links report only a redacted path shape, never raw URLs or IDs.
 The picker requires connection and notebook selection before listing.

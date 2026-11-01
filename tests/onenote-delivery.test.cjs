@@ -118,6 +118,26 @@ test('20 screenshot setups upload within Graph limits and open losslessly from t
   assert.deepEqual(loaded.screenshots.map(({ id, ...shot }) => shot), original.screenshots.map(({ id, ...shot }) => shot));
 });
 
+test('OneNote output with OData owner keys restores original fields and PNGs through slash-key Graph endpoints', async (t) => {
+  const f = await fixture(t);
+  await f.client.deliver(f.file, 'TradeFrame', randomUUID(), 'book'); await f.client.listSetups();
+  const html = f.state.html;
+  for (const [owner, normalized] of [
+    ["users('11111111-2222-3333-4444-555555555555')", 'users/11111111-2222-3333-4444-555555555555'],
+    ['users(11111111-2222-3333-4444-555555555555)', 'users/11111111-2222-3333-4444-555555555555'],
+    ['users(%27synthetic%40example.invalid%27)', 'users/synthetic%40example.invalid'],
+    ["users('O''Brian%40example.invalid')", "users/O'Brian%40example.invalid"],
+    ["groups('group-id')", 'groups/group-id'], ["sites('site-id')", 'sites/site-id'],
+  ]) {
+    f.state.html = html.replaceAll('/me/onenote/', `/${owner.replaceAll("'", '&#39;')}/onenote/`);
+    const before = f.state.requests.length;
+    const loaded = await f.client.openSetup('page');
+    assert.deepEqual(loaded.values, f.values); assert.equal(loaded.screenshots.length, 2);
+    assert.ok(loaded.screenshots.every((shot) => shot.image === image));
+    assert.ok(f.state.requests.slice(before + 1).every((url) => url.startsWith(`https://graph.microsoft.com/v1.0/${normalized}/onenote/resources/`) && url.endsWith('/content')));
+  }
+});
+
 test('a partial upload with a lost PATCH response resumes without another page or duplicate images', async (t) => {
   const f = await fixture(t, 14); f.state.losePatch = 1;
   const id = randomUUID();
@@ -149,7 +169,9 @@ test('cloud resources reject external URLs, foreign paths and changed image byte
     'http://graph.microsoft.com/v1.0/me/onenote/resources/setup/content',
     'https://private-user:private-password@graph.microsoft.com/v1.0/me/onenote/resources/setup/content',
     'https://graph.microsoft.com:444/v1.0/me/onenote/resources/setup/content',
-    graph+"resources('private-resource')/$value?private-query=do-not-log"]) {
+    graph+"resources('private-resource')/$value?private-query=do-not-log",
+    ...["users('private)", "users('private'key')", "users('')", "users('..')", 'users(%ZZ)'].map((owner) =>
+      `https://graph.microsoft.com/v1.0/${owner}/onenote/resources/setup/$value`)]) {
     f.state.html = html.replace(graph+'resources/setup/$value', target);
     const before = f.state.requests.length;
     await assert.rejects(f.client.openSetup('page'), (error) => {

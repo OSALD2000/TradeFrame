@@ -40,8 +40,10 @@ Cloud browsing now opens a separate draft with validated snapshots/PNG resources
 including text/image recovery for older pages. Direct send supports setups saved
 before connecting. Per-destination feedback exposes upload failures.
 The owner reports 0.6.0 still rejects an import link. 0.6.1 adds documented
-resource scopes and redacted path diagnostics; the live shape is still unknown.
+resource scopes and redacted path diagnostics to identify the missing shape.
 Verify that import and Linux secure sign-in persistence survive an app restart.
+The 0.6.1 diagnostic now identifies OData `users(…)` owner syntax; 0.6.2 parses
+and normalizes that observed shape. Confirm the same real setup opens completely.
 Architecture and current verification evidence: [CONTEXT](CONTEXT.md).
 File behavior: [JOURNAL](JOURNAL.md). Integration behavior: [SYNC](SYNC.md).
 Build and publisher instructions: [RELEASE](RELEASE.md).
