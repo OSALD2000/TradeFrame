@@ -214,6 +214,17 @@ test('image URLs serve only current in-memory PNGs and state updates do not tran
   assert.equal(serve({ method: 'GET', url }).status, 404);
 });
 
+test('workspace hash navigation keeps native journal requests trusted without changing sender checks', async () => {
+  const { windows, invoke } = await boot();
+  const frame = windows[0].webContents.mainFrame;
+  const original = frame.url;
+  for (const view of ['journal', 'open', 'connections']) {
+    frame.url = `${original}#${view}`;
+    assert.equal((await invoke('connections:get')).version, 2);
+    assert.equal((await invoke('onenote:state')).notebook, null);
+  }
+});
+
 test('OneNote operations and login browser are unavailable to the capture bar', async () => {
   const { windows, invoke } = await boot();
   await invoke('capture:open-bar');

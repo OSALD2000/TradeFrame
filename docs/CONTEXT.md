@@ -234,3 +234,22 @@ send/open is still needed to establish resolution of the owner's report.
 The requested larger redesign remains pending the owner's reference-direction
 choice. Functional browser/save status reuse the approved lock. Local preview
 serving was rechecked: listen EPERM, so desktop/narrow rendering remains open.
+
+1 November shared workspace flow (0.5.1): before the optional visual-direction
+choice, implement the task structure common to all offered variants using the
+existing approved dark design system. App.tsx owns hash-based Create/Open/
+Connections navigation; the bootstrap remains in main.tsx. The controlled form
+stays mounted while pages hide, so navigating does not reset it. Local and cloud
+opening live on Open setup and retain replacement confirmation. Capture events
+that need selection return to Create setup. A numbered capture/describe/save
+sequence and direct first capture action replace abstract empty-state copy.
+Advanced form tools are collapsed; actual destinations and OneNote session/login
+status appear before save. No persistence, credential or native API changes.
+Build and 108 tests pass. Added checks cover route whitelisting, navigation and
+persistent form markup in SSR, safe destination status and native sender trust
+with hash routes. Pending capture/form editing is explained before opening
+another setup, preventing hidden unfinished work from being replaced. SSR does not establish live draft interaction, focus, layout
+or native capture routing; these remain owner acceptance with desktop/narrow QA.
+The new visual identity choice remains pending, not silently selected. The last
+installed version checked is still 0.4.0, with no new OneNote job; real account
+resolution and cloud opening remain unconfirmed. The full owner goal is active.

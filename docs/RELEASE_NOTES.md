@@ -1,4 +1,14 @@
-# TradeFrame 0.5.0 preview
+# TradeFrame 0.5.1 preview
+
+The workspace now separates **Create setup**, **Open setup** and **Connections**.
+Navigation keeps the draft mounted. The first screen explains Capture → Describe
+→ Save & send and offers a direct capture action. File/OneNote opening has its
+own page; optional form editing stays collapsed. Save review shows real local,
+folder and OneNote targets, including a session-only or missing sign-in.
+Native capture requests return to the setup view when selection needs attention.
+This implements the task flow shared by the researched directions using the
+existing approved dark style; a new visual direction and rendered QA remain open.
+
 
 OneNote delivery now percent-encodes filter spaces and respects Graph's documented
 4 MB/six-part limits. Multiple images use bounded requests; retry validates an
@@ -67,6 +77,13 @@ acceptance, trusted signing/notarization and cloud/account tests remain open.
 For publisher setup and platform builds, see [release guidance](RELEASE.md).
 
 ## Deutsch
+
+**Create setup**, **Open setup** und **Connections** sind getrennte Seiten.
+Entwuerfe bleiben beim Wechsel erhalten. Der Einstieg zeigt Aufnehmen →
+Beschreiben → Speichern/Senden; Formularwerkzeuge sind optional eingeklappt.
+Vor dem Speichern werden die echten Ziele und der OneNote-Anmeldestatus gezeigt.
+Die gemeinsame Bedienlogik nutzt die bereits freigegebene dunkle Gestaltung;
+eine neue visuelle Richtung und deren Abnahme bleiben offen.
 
 OneNote sendet Bilder in begrenzten Teilanfragen gemaess Graph-Limits statt einer
 zu grossen Gesamtanfrage. Fehler zeigen HTTP-Status/Schritt/sicheren Code; lokal

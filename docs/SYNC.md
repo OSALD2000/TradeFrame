@@ -4,7 +4,7 @@ TradeFrame keeps the local journal as the source. Every explicit save creates
 a Markdown/PNG setup copy; later screenshots can append to the same file. Connections deliver that state to any
 combination of Obsidian, Dropbox and OneNote. External edits are not imported,
 overwritten or deleted. Append screenshots preserves existing text/images and extends matching folder
-copies with the same suffix. Save copy creates a new independent note.
+copies with the same suffix. Save a separate copy creates a new independent note.
 
 ## Folder connections
 
@@ -102,7 +102,7 @@ No tokens are stored in the form-definition SQLite database.
 
 ## Open from OneNote
 
-**Open from OneNote…** lists TradeFrame pages from the selected notebook's
+**Open setup → Browse OneNote setups…** lists TradeFrame pages from the selected notebook's
 TradeFrame section. Listing does not create a section. Choose a page to restore
 an in-memory draft, then save a new local copy. Existing local files and the
 cloud page stay unchanged; the draft cannot append to an unchosen local file.

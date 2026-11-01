@@ -32,7 +32,7 @@ export function OneNoteBrowser({ api, onClose, onOpen }: {
         catch { setError('Could not open this setup. It may be incomplete or changed in OneNote. Your draft is unchanged. Retry its upload if screenshots are missing.'); setLoading(false); setOpening(false); }
       }}>{page.title}<span>{page.modifiedAt && Number.isFinite(Date.parse(page.modifiedAt)) ? new Date(page.modifiedAt).toLocaleString() : 'Saved in OneNote'}</span></button>
     </li>)}</ul> : !error && <p>No TradeFrame setups found. Save and send a setup to this notebook first.</p>}
-    {error && <p className="save-message" role="alert">{error}</p>}
+    {error && <p className="save-message" role="alert">{error} <a href="#connections" onClick={onClose}>Open Connections</a></p>}
     <button type="button" className="secondary-button" disabled={loading} onClick={() => void refresh()}>Refresh setups</button>
   </dialog>;
 }

@@ -32,6 +32,10 @@ interface. Preserve all three requirements until actual acceptance.
    packaged runtime checks and one combined draft release gate. Actual Windows/macOS
    artifacts remain pending until the package workflow succeeds.
 
+The shared Create/Open/Connections task flow is implemented using the existing
+approved style: draft-preserving navigation, optional form tools, capture/details/
+save guidance and destination review. A new visual direction remains pending.
+
 Cloud browsing now opens a separate draft with validated snapshots/PNG resources,
 including text/image recovery for older pages. Direct send supports setups saved
 before connecting. Per-destination feedback exposes upload failures.
@@ -43,7 +47,9 @@ Build and publisher instructions: [RELEASE](RELEASE.md).
 
 - Verify the final package and checksum, clean extraction, absence of private
   files, and actual installed/downloaded launch with sandboxing enabled.
-- Inspect desktop/narrow layouts and execute native form, capture, multiple
+- Inspect desktop/narrow layouts, keyboard focus and unsaved-draft preservation
+  across Create/Open/Connections. Verify returning from file/cloud open and
+  capture selection while another page is active. Execute native form, capture, multiple
   screenshots, calendar filing by historical market date, name collisions,
   long image notes, append, backup/reopen and recovery after terminating the process during append, new
   setup and close-warning flows. Verify that concurrent launches focus one window.

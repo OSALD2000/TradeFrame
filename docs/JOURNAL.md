@@ -7,7 +7,8 @@ remain in Markdown and screenshots remain PNG files. See the
 
 ## Save flow
 
-1. Select a form under Setup details, or use **New form** / **Edit form**.
+1. Use **Create setup**. To change templates/fields, expand
+   **Customize the form (optional)** for the form selector, **New form** and **Edit form**.
    Trading journal is selected for new work. It includes market date, New York
    HH:mm time, session, instrument, direction (including No Trade), model, daily
    bias, result (pending/win/loss/breakeven/notrade) and optional signed R.
@@ -17,7 +18,7 @@ remain in Markdown and screenshots remain PNG files. See the
    Choose a required timeframe for each image, such as `1m`, `2m` or `1h`.
    Each image has optional multiline notes (up to 20,000 characters).
    The original Trading setup form retains its separate setup-level Timeframe.
-3. Click **Save setup…** and choose a journal folder with the native picker
+3. Click **Save setup** and choose a journal folder with the native picker
    if none is configured. Connections remembers the folder for subsequent saves.
 4. Trading journal saves to `<root>/backtesting|live/YYYY/MM/DD/` using the market
    date, not the capture day. A note name contains date, optional HHmm New York
@@ -30,16 +31,16 @@ remain in Markdown and screenshots remain PNG files. See the
    directories with `setup.md` and the original fixed image names.
    Every save creates a separate note; no existing note or image is overwritten.
 
-**Open setup…** restores an explicitly chosen TradeFrame Markdown file, its
-schema snapshot, typed values and all sibling chart PNGs. **Save copy** creates a
+**Open setup → Choose a local setup…** restores an explicitly chosen TradeFrame Markdown file, its
+schema snapshot, typed values and all sibling chart PNGs. **Save a separate copy** creates a
 new note with a new creation timestamp and leaves the source unchanged.
-**New setup** asks before clearing current fields/screenshots. Removing an image
+**Start a new setup** asks before clearing current fields/screenshots. Removing an image
 affects the draft only. Closing/reloading a populated draft prompts before discard;
 there is no automatic draft recovery after a crash.
 
 **Append screenshots** adds follow-up images to the same current file, including
 after reopening it. Existing fields and images must remain unchanged; edits to
-those require Save copy. The app checks the original Markdown/image fingerprint,
+those require Save a separate copy. The app checks the original Markdown/image fingerprint,
 prepares a Markdown backup as `<file>.<UUID>.bak` and stages complete image files
 plus the exact Markdown suffix in an owned `.tradeframe-append-<UUID>/` folder.
 A complete recovery record (`.tradeframe-write.lock` for `setup.md`, or
@@ -152,7 +153,7 @@ PNG resolution limits remain those of [CAPTURE](CAPTURE.md).
 
 Versions 1–4 remain readable without modifying their files. Missing image
 timeframes stay empty; the app does not guess from setup answers or captions.
-Choose a timeframe for every legacy image and use Save copy once to produce a
+Choose a timeframe for every legacy image and use Save a separate copy once to produce a
 separate version-5 file before appending. Versions 1/2 retain their original
 trading fields and New York wall-clock semantics. Appending preserves the original
 metadata/body and adds a `tradeframe-screenshot` JSON comment followed by its

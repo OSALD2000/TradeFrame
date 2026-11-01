@@ -19,11 +19,59 @@ const { SchemaEditor } = require('../src/SchemaEditor.tsx');
 const { ScreenshotFields } = require('../src/ScreenshotFields.tsx');
 const { OneNoteApplicationSettings, OneNoteNotebookPicker } = require('../src/OneNoteConnection.tsx');
 const { DeliveryStatus } = require('../src/DeliveryStatus.tsx');
+const { DestinationSummary } = require('../src/SaveDestinations.tsx');
+const { App, viewFromHash } = require('../src/App.tsx');
+const { SetupForm } = require('../src/SetupForm.tsx');
 if (previous.ts) require.extensions['.ts'] = previous.ts; else delete require.extensions['.ts'];
 if (previous.tsx) require.extensions['.tsx'] = previous.tsx; else delete require.extensions['.tsx'];
 
 const field = (type, extra = {}) => ({ id: 'test', key: 'test', label: 'Test', type, required: false, tags: [], ...extra });
 const render = (definition, value) => renderToStaticMarkup(React.createElement(FieldInput, { field: definition, value, onChange: () => {} }));
+
+test('workspace routes accept only known screens and leave in-page skip anchors alone', () => {
+  assert.equal(viewFromHash('#journal'), 'journal');
+  assert.equal(viewFromHash('#open'), 'open');
+  assert.equal(viewFromHash('#connections'), 'connections');
+  for (const hash of ['', '#workspace-content', '#save-title', '#unknown', 'javascript:alert(1)']) assert.equal(viewFromHash(hash), null);
+});
+
+test('workspace screens highlight the right navigation and include the draft form on every route', () => {
+  const previousWindow = global.window;
+  try {
+    for (const screen of ['journal', 'open', 'connections']) {
+      global.window = { location: { hash: `#${screen}` }, capture: undefined };
+      const markup = renderToStaticMarkup(React.createElement(App));
+      assert.match(markup, new RegExp(`<a class="nav-item" href="#${screen}" aria-current="page"`));
+      assert.equal((markup.match(/aria-current="page"/g) ?? []).length, 1);
+      assert.match(markup, /<form class="setup-form"[^>]*aria-label="Setup details"/);
+      assert.match(markup, /<details class="form-customization"><summary>Customize the form/);
+      assert.match(markup, /Choose a local setup/); assert.match(markup, /Browse OneNote setups/);
+      assert.match(markup, /Capture your first chart/);
+      const journalTag = markup.match(/<section id="journal"[^>]*>/)[0];
+      const openTag = markup.match(/<section id="open"[^>]*>/)[0];
+      assert.equal(journalTag.includes('hidden'), screen !== 'journal');
+      assert.equal(openTag.includes('hidden'), screen !== 'open');
+    }
+  } finally { if (previousWindow === undefined) delete global.window; else global.window = previousWindow; }
+});
+
+test('destination review distinguishes an optional connection, a selected notebook and a session-only login from delivery', () => {
+  const connections = { folders: { journal: '/synthetic/journal', obsidian: '/synthetic/vault', dropbox: null } };
+  const notebook = { id: 'book', displayName: '<Selected book>', isDefault: false };
+  const markup = renderToStaticMarkup(React.createElement(DestinationSummary, { connections, oneNote: { connected: true, durable: false, notebook } }));
+  assert.match(markup, /Required local copy/); assert.match(markup, /Notebook selected/); assert.match(markup, /&lt;Selected book&gt; \/ TradeFrame/);
+  assert.match(markup, /Sign-in lasts this session only/); assert.doesNotMatch(markup, /Sent to your notebook|All destinations synced/);
+  const disconnected = renderToStaticMarkup(React.createElement(DestinationSummary, { connections, oneNote: { connected: false, notebook } }));
+  assert.match(disconnected, /Sign in again/); assert.doesNotMatch(disconnected, /Notebook selected/);
+});
+
+test('open screen explains why a pending capture must be selected or canceled before replacing the draft', () => {
+  const markup = renderToStaticMarkup(React.createElement(SetupForm, { api: undefined, busy: false, choosing: true, hasPreview: false,
+    savedPath: null, timeframesReady: true, requiresTimeframeCopy: false, view: 'open', onOpened: () => {} }));
+  assert.match(markup, /Choose or cancel the pending screenshot selection/);
+  assert.match(markup, /href="#journal">Create setup/);
+  assert.match(markup, /Choose a local setup/); assert.match(markup, /Browse OneNote setups/);
+});
 
 test('save feedback separates local persistence from a failed OneNote upload and never claims all destinations synced', () => {
   const markup = renderToStaticMarkup(React.createElement(DeliveryStatus, { result: { status: 'saved', path: '/synthetic/<setup>.md', sync: [

@@ -147,3 +147,20 @@ OneNote browser and save-result panel: native modal focus, short task copy,
 separate local/service results and a direct retry link. The browser never renders
 retrieved HTML. Local preview serving was rechecked and fails with listen EPERM;
 rendered desktop/narrow QA remains blocked, not passed by SSR tests.
+
+## Shared task flow before the visual choice
+
+Build target: the existing approved Linear dark design system. This work changes
+navigation/content grouping shared by all three offered directions, without
+choosing a new palette, typography or visual identity. The larger style choice
+remains pending. Preserve the black surfaces, 6px controls, accent-only primary
+action and full-width fields below real screenshots. Borrow only Craft's
+separation of capture and organization and the user's explicit first-use goal.
+
+Route Create setup, Open setup and Connections separately. Keep the form/draft
+mounted while navigating; opening or clearing still requires the existing
+replacement confirmation. Put file/cloud opening on Open setup, form editing
+behind optional customization, and actual destinations before saving. Show the
+capture/details/save sequence and a direct first capture action in the empty
+state. Automatically return to the setup when a native capture needs attention.
+No sample trades, decorative metrics, generated images or extra dependencies.

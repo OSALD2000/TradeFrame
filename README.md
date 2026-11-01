@@ -48,17 +48,21 @@ those systems. The archive includes public guides with working relative links.
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.5.0`.
+The top-right toolbar shows the installed app version, for example `v0.5.1`.
 
+Use the sidebar to switch between **Create setup**, **Open setup** and
+**Connections**. Your draft stays in memory when switching pages. Create setup
+shows Capture → Describe → Save & send. Form selection/editing is under
+**Customize the form (optional)**, leaving the first capture in focus.
 
-Click **Capture chart**, then **Screenshot** on the floating bar. Choose a source
+Click **Capture your first chart** (or **Capture chart**), then **Screenshot** on the floating bar. Choose a source
 if prompted. Each capture adds a view. Choose its **Timeframe (required)**, such
 as `1m`, `2m` or `1h`; add optional multiline notes for this view. Every image needs
 its own timeframe before saving. The older Trading setup form retains its separate setup-level Timeframe field.
-Remove individual draft images or use **New setup** to clear the current setup.
+Remove individual draft images or use **Start a new setup** to clear the current setup.
 The bar stays open until closed from the journal or with **×**.
 
-Enter **Setup details** and **Save setup…**. The first save asks for a journal
+Enter **Setup details** and **Save setup**. The first save asks for a journal
 folder; later saves remember it. Choose the parent of `backtesting` and `live`.
 The selected Trading journal form saves by **market date**, for example:
 
@@ -71,14 +75,14 @@ backtesting/2025/01/07/
 Capture dates stay separate. Same-name notes receive `(2)`, `(3)`, etc.; images
 use a unique note ID. Earlier/custom forms retain their separate `setup.md` folders.
 If the journal folder is already inside your Obsidian vault, it is directly
-visible there without also connecting that vault as a second destination. **Open setup…** restores the complete form and images.
+visible there without also connecting that vault as a second destination. **Open setup → Choose a local setup…** restores the complete form and images.
 Capture another view and **Append screenshots** to extend that same file while
 preserving its original bytes and creating a Markdown backup. Earlier values
-and images must stay unchanged; **Save copy** creates a separate note for
+and images must stay unchanged; **Save a separate copy** creates a separate note for
 those edits. Never use a real journal to test failure/recovery behavior.
 
 Older files still open unchanged. Choose the missing image timeframes and use
-**Save copy** once to create a version-5 file; future screenshots can append to
+**Save a separate copy** once to create a version-5 file; future screenshots can append to
 that copy. Timeframes are never guessed from captions or setup fields.
 
 Closing/reloading a populated draft asks before discarding it. A crash can lose
@@ -111,7 +115,7 @@ Save feedback lists the local result and each destination separately. After
 connecting, **Send saved setup to OneNote** sends the last saved local version
 without creating another local file. Save pending edits first.
 
-Use **Open from OneNote…** to browse TradeFrame pages in the selected notebook.
+Use **Open setup → Browse OneNote setups…** to browse TradeFrame pages in the selected notebook.
 Opening restores a draft; save a new local copy to continue. New pages carry a
 validated snapshot of their original fields and image references. Older standard
 forms are recovered from the page; unknown older forms open as text plus images.

@@ -22,7 +22,7 @@ export function Connections({ api, busy }: { api: CaptureAPI | undefined; busy: 
   }
   const pending = connections?.jobs.filter((job) => job.status !== 'synced') ?? [];
   return <section className="connections" id="connections" aria-labelledby="connections-title">
-    <div className="preview-heading"><div><h2 id="connections-title">Connections</h2>
+    <div className="preview-heading"><div><h2 id="connections-title">Destinations</h2>
       <p>Save locally, then send the same setup to every connected destination.</p></div>
       {pending.length > 0 && <button className="secondary-button" disabled={!api || busy || working} onClick={() => api && update(api.retrySync)}>Retry sync ({pending.length})</button>}
     </div>

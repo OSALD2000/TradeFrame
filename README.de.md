@@ -49,18 +49,22 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.5.0`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.5.1`.
 
+Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
+Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →
+Beschreiben → Speichern und Senden. Formularwahl und Bearbeitung liegen unter
+**Customize the form (optional)**, damit der Einstieg uebersichtlich bleibt.
 
-**Capture chart** und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
+**Capture your first chart** (oder **Capture chart**) und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
 eine Quelle auswaehlen. Unter jedem Bild **Timeframe (required)** auswaehlen,
 zum Beispiel `1m`, `2m` oder `1h`. Jedes Bild braucht vor dem Speichern einen
 eigenen Timeframe; mehrzeiliger Text je Bild ist optional. Das alte Formular
 Trading setup behaelt sein zusaetzliches Setup-Timeframe-Feld. Einzelne Entwurfsbilder lassen sich entfernen;
-**New setup** leert nach Rueckfrage das aktuelle Setup. Die Leiste bleibt bis
+**Start a new setup** leert nach Rueckfrage das aktuelle Setup. Die Leiste bleibt bis
 zum Schliessen im Journal oder ueber **×** offen.
 
-**Setup details** ausfuellen und **Save setup…** anklicken. Beim ersten Speichern
+**Setup details** ausfuellen und **Save setup** anklicken. Beim ersten Speichern
 einen Journalordner waehlen; er wird danach gemerkt. Den gemeinsamen Elternordner
 von `backtesting` und `live` waehlen, beispielsweise `Trading/journaling`.
 Trading journal legt nach dem **Marktdatum** ab, etwa:
@@ -74,11 +78,11 @@ backtesting/2025/01/07/
 Aufnahmezeit und Marktdatum bleiben getrennt. Gleiche Notiznamen erhalten `(2)`,
 `(3)` usw.; jede Notiz hat eindeutige Bildnamen. Alte/eigene Formulare behalten
 ihre separaten `setup.md`-Ordner. Liegt der Journalordner bereits im Obsidian-Vault,
-sind die Dateien dort ohne eine zweite Verbindung zu demselben Vault sichtbar. **Open setup…** stellt Formular und
+sind die Dateien dort ohne eine zweite Verbindung zu demselben Vault sichtbar. **Open setup → Choose a local setup…** stellt Formular und
 Bilder wieder her. Weitere Ansicht aufnehmen und **Append screenshots** nutzen:
 Das erweitert dieselbe Datei, erhaelt deren bisherige Bytes und erstellt eine
 Markdown-Sicherung. Bestehende Werte/Bilder bleiben dabei unveraendert;
-**Save copy** legt fuer solche Aenderungen eine separate Notiz an.
+**Save a separate copy** legt fuer solche Aenderungen eine separate Notiz an.
 Fehler- und Wiederherstellungstests niemals mit echten Journalen ausfuehren.
 
 Vor dem Schliessen/Neuladen eines gefuellten Entwurfs erscheint eine Rueckfrage.
@@ -89,7 +93,7 @@ Sicherungen und Anhaenge-Sperren: [Lokale Setup-Dateien](docs/JOURNAL.md).
 [Aufnahme und Berechtigungen](docs/CAPTURE.md)
 
 Alte Dateien lassen sich unveraendert oeffnen. Fehlende Bild-Timeframes auswaehlen
-und einmal **Save copy** nutzen: Die separate Kopie verwendet Format 5 und kann
+und einmal **Save a separate copy** nutzen: Die separate Kopie verwendet Format 5 und kann
 anschliessend weitere Bilder aufnehmen. Timeframes werden weder aus Beschriftungen
 noch aus Setup-Feldern geraten.
 
@@ -119,7 +123,7 @@ Uebertragungen, loescht aber keine vorhandenen Notizen oder Seiten.
 Das Speicherergebnis zeigt lokale Speicherung und jedes Ziel getrennt.
 **Send saved setup to OneNote** sendet die zuletzt lokal gespeicherte Version,
 ohne eine neue lokale Datei anzulegen. Aenderungen vorher speichern.
-**Open from OneNote…** listet TradeFrame-Seiten im gewaehlten Notizbuch. Oeffnen
+**Open setup → Browse OneNote setups…** listet TradeFrame-Seiten im gewaehlten Notizbuch. Oeffnen
 stellt einen Entwurf wieder her; Speichern legt eine neue lokale Kopie an.
 Neue Seiten enthalten einen geprueften Wiederherstellungsanhang. Alte Standard-
 formulare werden ausgelesen; unbekannte alte Formulare als Text und Bilder

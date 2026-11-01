@@ -89,7 +89,7 @@ Use a synthetic chart/test window without personal or employer data.
   earlier preview must survive cancellation.
 - Add another screenshot and deny/cancel OS access. The journal must return; an earlier preview
   must remain. Permission prompts may be cached differently by each desktop.
-- Remove one of several screenshots; confirm the others remain. Start New setup
+- Remove one of several screenshots; confirm the others remain. Use Start a new setup
   and verify the confirmation. Closing a populated draft must ask before discard.
   Reopen saved Markdown and append another image to that same file; verify its
   old text/images and Markdown backup remain, including after restart.
