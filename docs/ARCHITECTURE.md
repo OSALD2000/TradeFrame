@@ -45,7 +45,7 @@ that the application implements the GoF Bridge pattern.
 
 Renderer consumers now declare smaller capability contracts in `capture-types.ts`:
 `OneNoteBrowserAPI`, `OneNoteConnectionAPI`, `SaveDestinationsAPI`, `ConnectionsAPI`
-and `SetupFormAPI`. They use `Pick` and intersections of the existing facade;
+and `SetupFormAPI`. The draft controller separately receives `SetupDraftAPI`. They use `Pick` and intersections of the existing facade;
 parents retain the capabilities needed by their child components. For example,
 OneNote browsing requires only `getOneNote` and `listOneNoteSetups`.
 
@@ -65,6 +65,25 @@ React does not know HTTP endpoints or token storage. Resource host validation,
 scope normalization, download limits and image hashes remain part of this
 adapter boundary. The current client still combines several responsibilities;
 the adapter role alone does not prove single responsibility.
+
+### Custom Hook controller and presentation
+
+The owner approved separating `SetupForm` state and workflows from its markup.
+`src/useSetupForm.ts` now owns draft state, effects, validation, save/append,
+local/cloud open, replacement confirmation and form revision commands.
+`src/SetupForm.tsx` retains the presentation and event-to-field bindings.
+
+The hook accepts `SetupDraftAPI`, a narrower command contract than the view's
+`SetupFormAPI`, and receives the existing field factory as an explicit dependency.
+It does not import UI components. The existing hook order, state update sequence,
+messages, API payloads and replacement guards remain unchanged. No memoization,
+state framework or new runtime pattern was introduced.
+
+Eight workflow tests were established against the original component before the
+split. All 130 tests pass afterward, and a direct comparison of 30 view/command
+states matches the previous component, including cancellation, failure, revision
+migration, cloud images and generated form IDs. Native emitted files are unchanged.
+These checks do not simulate a real browser or replace desktop acceptance.
 
 ### Repository-style store: form revisions
 
@@ -144,13 +163,13 @@ These techniques are important, but are not additional GoF class patterns:
 
 ## Applying SOLID without changing behavior
 
-| Principle             | Current evidence and cleanup rule                                                                                                                                                                               |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Single responsibility | Pure validation and document conversion already have module boundaries. `main.ts`, `OneNoteClient`, `form-schema.ts` and `SetupForm` still combine concerns; propose each extraction before changing ownership. |
-| Open/closed           | Existing injected operations provide extension points. Add another abstraction only for a real variation; retain explicit domain cases where they are clearer.                                                  |
-| Liskov substitution   | There is no service inheritance hierarchy to extend. Substituted callbacks and ports must preserve observable results, failures and cancellation behavior.                                                      |
-| Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.              |
-| Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                      |
+| Principle             | Current evidence and cleanup rule                                                                                                                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Single responsibility | Setup draft state/workflows, view markup and pure resource validation have separate modules. Native orchestration, Microsoft client ownership and form document conversion are reviewed as separate responsibilities; each further extraction is agreed before implementation. |
+| Open/closed           | Existing injected operations provide extension points. Add another abstraction only for a real variation; retain explicit domain cases where they are clearer.                                                                                                                 |
+| Liskov substitution   | There is no service inheritance hierarchy to extend. Substituted callbacks and ports must preserve observable results, failures and cancellation behavior.                                                                                                                     |
+| Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.                                                                             |
+| Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                                                                                     |
 
 SOLID is a review discipline, not a requirement to turn every function into a
 class. A short module can still have several responsibilities; a long composition
@@ -195,4 +214,4 @@ After the approved extraction, all 122 tests pass. A direct comparison with the
 previous compiled client's resource method covers 47 cases, checking exact
 request URLs/headers/redirects, bytes, error types/messages and cancellation
 precedence. Larger responsibility changes in native orchestration, authorization
-or React form state have not been selected or implemented.
+remain separate owner decisions. React form state is now separated as described above.

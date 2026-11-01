@@ -116,7 +116,7 @@ export type ConnectionsAPI = Pick<
 > &
   OneNoteConnectionAPI;
 
-export type SetupFormAPI = Pick<
+export type SetupDraftAPI = Pick<
   CaptureAPI,
   | 'newSetup'
   | 'saveSetup'
@@ -126,6 +126,6 @@ export type SetupFormAPI = Pick<
   | 'openSetup'
   | 'openOneNoteSetup'
   | 'sendToOneNote'
-> &
-  OneNoteBrowserAPI &
-  SaveDestinationsAPI;
+>;
+
+export type SetupFormAPI = SetupDraftAPI & OneNoteBrowserAPI & SaveDestinationsAPI;

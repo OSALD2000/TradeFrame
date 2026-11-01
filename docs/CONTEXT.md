@@ -113,6 +113,12 @@ compile successfully; unrelated operations are rejected by compile checks. All
 17 emitted files remain byte-identical, and the 122 tests pass. No public bridge,
 persistence, account or UI behavior changes are introduced by this step.
 
+The owner subsequently approved separating draft workflows into `src/useSetupForm.ts`
+while `SetupForm.tsx` retains markup. The hook receives only draft capabilities
+and an injected field factory; it imports no view components. Eight workflow
+characterizations pass before/after, all 130 tests pass, and 30 direct view/command
+comparisons agree. Native emitted files remain byte-identical during this step.
+
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
 lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,
 new windows and off-app navigation remain blocked. `preload.ts` exposes only
