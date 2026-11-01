@@ -1,4 +1,6 @@
 import type { FormSchema, FormValues } from './form-schema';
+import type { FilingRules, FilingRule } from './filing-rules';
+export type SetupHelpTopic = 'entra' | 'notebooks' | 'registration' | 'permissions';
 export type FolderKind = 'journal' | 'obsidian' | 'dropbox';
 export type SyncJob = {
   id: string;
@@ -61,6 +63,9 @@ export type CaptureState = {
 };
 
 export type CaptureAPI = {
+  getFilingRules(): Promise<FilingRules>;
+  saveFilingRule(kind: FolderKind, rule: FilingRule): Promise<FilingRules>;
+  openSetupHelp(topic: SetupHelpTopic): Promise<void>;
   getState(): Promise<CaptureState>;
   openBar(): Promise<void>;
   takeScreenshot(): Promise<void>;
@@ -114,7 +119,11 @@ export type ConnectionsAPI = Pick<
   CaptureAPI,
   'getConnections' | 'connectFolder' | 'disconnectFolder' | 'retrySync'
 > &
-  OneNoteConnectionAPI;
+  OneNoteConnectionAPI &
+  FilingRulesAPI;
+
+export type FilingRulesAPI = Pick<CaptureAPI, 'getFilingRules' | 'saveFilingRule'>;
+export type SetupGuideAPI = Pick<CaptureAPI, 'getOneNote' | 'openSetupHelp'>;
 
 export type SetupDraftAPI = Pick<
   CaptureAPI,

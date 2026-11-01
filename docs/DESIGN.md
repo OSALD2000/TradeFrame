@@ -242,3 +242,20 @@ fails with listen EPERM. Desktop/narrow, native capture-bar geometry, live focus
 and motion/reduced-motion behavior require desktop acceptance; no sandbox or
 browser protections were disabled. The owner has confirmed upload with 0.5.1;
 new import rendering is not yet confirmed on their account.
+
+## Release-preparation additions
+
+The owner accepted the current direction and requested filing configuration, a
+first-use/OneNote guide, a hidden desktop menu and a Statistics Coming soon area.
+Use the existing dark reference lock directly. The new guide uses numbered
+instructions with advanced registration in a disclosure; the empty workspace
+links to it without interrupting a draft. Filing uses native selects, ordered
+blocks with labeled movement/removal buttons, and a readable example. No drag
+framework or free-form path language is introduced. Existing motion tokens and
+reduced-motion overrides cover the new content. Statistics shows an explicit
+placeholder with no fabricated metrics or journal scan.
+
+The Linux/Windows window menu is hidden by default while Alt and editing
+shortcuts retain the native menu. macOS keeps its operating-system menu. New
+views/rules still require desktop/narrow/native acceptance; prior browser policy
+and serving restrictions remain, and no bypass or security relaxation is allowed.

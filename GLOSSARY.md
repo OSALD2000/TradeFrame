@@ -4,6 +4,21 @@ TradeFrame records trading opportunities, decisions, and their outcomes.
 
 ## Language
 
+**Filing rule**:
+The chosen folder levels and note-name parts for one folder destination, applied
+when a new setup is saved.
+_Avoid_: A connection folder as a synonym for the way notes are organized within it.
+
+**Filing snapshot**:
+The filing choices belonging to one saved setup, retained for later deliveries
+and follow-up screenshots even when preferences change.
+_Avoid_: Current preferences as a substitute for an older setup's filing choices.
+
+**Note name**:
+The name under which a setup note appears in a folder destination. Different
+destinations can use different names for the same setup.
+_Avoid_: Using title to mean both a note name and a OneNote page title.
+
 **Setup**:
 A trading opportunity being considered or documented, whether or not a position
 is opened. A setup may contain multiple chart screenshots.

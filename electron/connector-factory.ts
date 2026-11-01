@@ -7,7 +7,7 @@ export function createConnector(job: SyncJob, deliverOneNote?: OneNoteDelivery):
   switch (job.kind) {
     case 'obsidian':
     case 'dropbox':
-      return new FolderConnector(job.folder);
+      return new FolderConnector(job.folder, job.kind);
     case 'onenote':
       return new OneNoteConnector(job.section, job.notebookId, deliverOneNote);
   }

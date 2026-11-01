@@ -30,6 +30,7 @@ const { DeliveryStatus } = require('../src/DeliveryStatus.tsx');
 const { DestinationSummary } = require('../src/SaveDestinations.tsx');
 const { App, viewFromHash } = require('../src/App.tsx');
 const { SetupForm } = require('../src/SetupForm.tsx');
+const { FilingRules } = require('../src/FilingRules.tsx');
 const { oneNoteMessage, oneNotePageTitle } = require('../src/OneNoteBrowser.tsx');
 if (previous.ts) require.extensions['.ts'] = previous.ts;
 else delete require.extensions['.ts'];
@@ -79,7 +80,7 @@ test('workspace routes accept only known screens and leave in-page skip anchors 
 test('workspace screens highlight the right navigation and include the draft form on every route', () => {
   const previousWindow = global.window;
   try {
-    for (const screen of ['journal', 'open', 'connections']) {
+    for (const screen of ['journal', 'open', 'connections', 'guide', 'statistics']) {
       global.window = { location: { hash: `#${screen}` }, capture: undefined };
       const markup = renderToStaticMarkup(React.createElement(App));
       assert.match(markup, new RegExp(`<a class="nav-item" href="#${screen}" aria-current="page"`));
@@ -93,11 +94,36 @@ test('workspace screens highlight the right navigation and include the draft for
       const openTag = markup.match(/<section id="open"[^>]*>/)[0];
       assert.equal(journalTag.includes('hidden'), screen !== 'journal');
       assert.equal(openTag.includes('hidden'), screen !== 'open');
+      if (screen === 'guide') {
+        for (const text of [
+          'Your first setup',
+          'Application (client) ID',
+          'Notes.ReadWrite',
+          'Allow public client flows',
+        ])
+          assert.ok(markup.includes(text), text);
+      }
+      if (screen === 'statistics') {
+        assert.match(markup, /Coming soon/);
+        assert.match(markup, /Statistics are not available in this release/);
+        assert.doesNotMatch(markup, /Win rate|Total profit|0%/);
+      }
     }
   } finally {
     if (previousWindow === undefined) delete global.window;
     else global.window = previousWindow;
   }
+});
+
+test('filing rule editor explains new-note scope and renders ordered accessible controls and a preview', () => {
+  const markup = renderToStaticMarkup(
+    React.createElement(FilingRules, { api: undefined, kind: 'obsidian', busy: false }),
+  );
+  assert.match(markup, /Existing notes keep their saved rules/);
+  assert.match(markup, /Move Folder: Mode up/);
+  assert.match(markup, /Remove File name: Market date/);
+  assert.match(markup, /TradeFrame\/backtesting\/2026\/11\/01\/2026-11-01 0930 EURUSD Long FVG.md/);
+  assert.match(markup, /Reset draft to defaults/);
 });
 
 test('destination review distinguishes an optional connection, a selected notebook and a session-only login from delivery', () => {

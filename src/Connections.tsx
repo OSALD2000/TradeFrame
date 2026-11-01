@@ -5,6 +5,7 @@ import type {
   FolderKind,
 } from '../electron/capture-types';
 import { OneNoteConnection } from './OneNoteConnection';
+import { FilingRules } from './FilingRules';
 
 const labels: Record<FolderKind | 'onenote', string> = {
   journal: 'Local journal',
@@ -62,41 +63,46 @@ export function Connections({ api, busy }: { api: ConnectionsAPI | undefined; bu
         )}
       </div>
       {(['journal', 'obsidian', 'dropbox'] as const).map((kind) => (
-        <div className="connection-row" key={kind} data-connected={!!connections?.folders[kind]}>
-          <div>
-            <span className="connection-mark" aria-hidden="true">
-              {labels[kind].charAt(0)}
-            </span>
-            <h3>{labels[kind]}</h3>
-            <p>
-              {connections?.folders[kind] ??
-                (kind === 'journal' ? 'Choose once, or when you first save.' : 'Not connected')}
-            </p>
-            {kind === 'obsidian' && <p>Choose your vault. Setups go into its TradeFrame folder.</p>}
-            {kind === 'dropbox' && (
+        <div className="folder-destination" key={kind}>
+          <div className="connection-row" data-connected={!!connections?.folders[kind]}>
+            <div>
+              <span className="connection-mark" aria-hidden="true">
+                {labels[kind].charAt(0)}
+              </span>
+              <h3>{labels[kind]}</h3>
               <p>
-                Choose a folder synced by the Dropbox desktop app. Dropbox handles cloud delivery.
+                {connections?.folders[kind] ??
+                  (kind === 'journal' ? 'Choose once, or when you first save.' : 'Not connected')}
               </p>
-            )}
-          </div>
-          <div className="connection-actions">
-            <button
-              className="secondary-button"
-              disabled={!api || busy || working}
-              onClick={() => api && update(() => api.connectFolder(kind))}
-            >
-              {connections?.folders[kind] ? 'Change folder…' : 'Choose folder…'}
-            </button>
-            {connections?.folders[kind] && (
+              {kind === 'obsidian' && (
+                <p>Choose your vault. New Trading journal notes follow the filing rules below.</p>
+              )}
+              {kind === 'dropbox' && (
+                <p>
+                  Choose a folder synced by the Dropbox desktop app. Dropbox handles cloud delivery.
+                </p>
+              )}
+            </div>
+            <div className="connection-actions">
               <button
                 className="secondary-button"
                 disabled={!api || busy || working}
-                onClick={() => api && update(() => api.disconnectFolder(kind))}
+                onClick={() => api && update(() => api.connectFolder(kind))}
               >
-                {kind === 'journal' ? 'Reset' : 'Disconnect'}
+                {connections?.folders[kind] ? 'Change folder…' : 'Choose folder…'}
               </button>
-            )}
+              {connections?.folders[kind] && (
+                <button
+                  className="secondary-button"
+                  disabled={!api || busy || working}
+                  onClick={() => api && update(() => api.disconnectFolder(kind))}
+                >
+                  {kind === 'journal' ? 'Reset' : 'Disconnect'}
+                </button>
+              )}
+            </div>
           </div>
+          <FilingRules api={api} kind={kind} busy={busy || working} />
         </div>
       ))}
       <OneNoteConnection api={api} busy={busy} />

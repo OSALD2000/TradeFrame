@@ -2,6 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type { CaptureAPI, CaptureState } from './capture-types';
 
 const capture: CaptureAPI = {
+  getFilingRules: () => ipcRenderer.invoke('filing:get'),
+  saveFilingRule: (kind, rule) => ipcRenderer.invoke('filing:set', kind, rule),
+  openSetupHelp: (topic) => ipcRenderer.invoke('guide:open', topic),
   getState: () => ipcRenderer.invoke('capture:state'),
   openBar: () => ipcRenderer.invoke('capture:open-bar'),
   takeScreenshot: () => ipcRenderer.invoke('capture:screenshot'),

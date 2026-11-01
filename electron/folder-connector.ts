@@ -1,13 +1,24 @@
 import { mkdir, lstat, readFile, rm, realpath } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { deserializeSetup } from './form-schema';
+import { deserializeSetup, journalValues } from './form-schema';
 import { readSetup, pngBytes } from './journal';
 import { appendDocument, createFile, recoverAppend } from './append-store';
-import { calendarPath, journalDirectory, safeNoteFilename } from './journal-layout';
+import {
+  calendarPath,
+  journalDirectory,
+  safeNoteFilename,
+  destinationNoteFilename,
+} from './journal-layout';
+import { filingPath } from './filing-rules';
+import type { FilingDestination } from './filing-rules';
 import type { ConnectorDelivery, SetupConnector } from './connector';
 
-export async function copySnapshot(source: string, targetRoot: string): Promise<string> {
+export async function copySnapshot(
+  source: string,
+  targetRoot: string,
+  kind: FilingDestination = 'obsidian',
+): Promise<string> {
   const loaded = await readSetup(source);
   const markdown = loaded.markdown;
   const document = deserializeSetup(markdown);
@@ -18,14 +29,25 @@ export async function copySnapshot(source: string, targetRoot: string): Promise<
   // Targets must already exist; a removed/unmounted destination must not be recreated elsewhere.
   const root = await realpath(path.dirname(targetRoot));
   if (root !== path.dirname(targetRoot)) throw new Error('Connection folder moved');
-  await mkdir(targetRoot, { recursive: true });
-  if (!(await lstat(targetRoot)).isDirectory() || (await lstat(targetRoot)).isSymbolicLink())
-    throw new Error('Invalid sync folder');
+  const custom = document.filing
+    ? filingPath(document.filing[kind], journalValues(document.schema, document.values)!)
+    : null;
+  if (!custom) {
+    await mkdir(targetRoot, { recursive: true });
+    if (!(await lstat(targetRoot)).isDirectory() || (await lstat(targetRoot)).isSymbolicLink())
+      throw new Error('Invalid sync folder');
+  }
   const calendar = calendarPath(document);
-  const target = calendar
-    ? await journalDirectory(root, [path.basename(targetRoot), ...calendar])
-    : path.join(targetRoot, name);
-  const filename = calendar ? path.basename(source) : 'setup.md';
+  const target = custom
+    ? await journalDirectory(root, custom.segments)
+    : calendar
+      ? await journalDirectory(root, [path.basename(targetRoot), ...calendar])
+      : path.join(targetRoot, name);
+  const filename = custom
+    ? await destinationNoteFilename(target, custom.filename, document.journalId!)
+    : calendar
+      ? path.basename(source)
+      : 'setup.md';
   if (!safeNoteFilename(filename)) throw new Error('Invalid sync note filename');
   const files = loaded.screenshots.map((shot, index) => ({
     name: document.screenshots?.[index].file ?? 'chart.png',
@@ -92,9 +114,12 @@ export async function copySnapshot(source: string, targetRoot: string): Promise<
 }
 
 export class FolderConnector implements SetupConnector {
-  constructor(private folder: string) {}
+  constructor(
+    private folder: string,
+    private kind: FilingDestination = 'obsidian',
+  ) {}
   deliver(delivery: ConnectorDelivery): Promise<string> {
-    return copySnapshot(delivery.source, path.join(this.folder, 'TradeFrame'));
+    return copySnapshot(delivery.source, path.join(this.folder, 'TradeFrame'), this.kind);
   }
   failureMessage(): string {
     return 'Could not sync. Check folder access, available space, and conflicting files, then retry.';

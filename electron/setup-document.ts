@@ -1,3 +1,5 @@
+import { validateFilingRules } from './filing-rules';
+import type { FilingRules } from './filing-rules';
 import {
   MAX_SCREENSHOTS,
   validTimeframe,
@@ -26,7 +28,8 @@ export type SetupDocument = {
   values: FormValues;
   createdAt: string;
   screenshots?: ScreenshotReference[];
-  schemaVersion?: 2 | 3 | 4 | 5;
+  schemaVersion?: 2 | 3 | 4 | 5 | 6;
+  filing?: FilingRules;
   journalId?: string;
 };
 
@@ -98,26 +101,33 @@ export function serializeSetup(document: SetupDocument): string {
   );
   const info = journalValues(schema, values);
   const version = document.schemaVersion ?? (document.screenshots ? 5 : 2);
-  const exportedTags = version === 5 ? journalTags(schema, values) : valueTags(schema, values);
-  check([2, 3, 4, 5].includes(version), 'Unsupported setup version');
+  const exportedTags = version >= 5 ? journalTags(schema, values) : valueTags(schema, values);
+  check([2, 3, 4, 5, 6].includes(version), 'Unsupported setup version');
   const screenshots =
     document.screenshots === undefined
       ? undefined
       : validateScreenshots(document.screenshots, version >= 4, version, document.journalId);
   check(
     document.journalId === undefined ||
-      (version === 5 &&
+      (version >= 5 &&
         !!info &&
         /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(document.journalId)),
     'Invalid journal identity',
   );
   check(version >= 3 === !!screenshots, 'Setup version does not match screenshot metadata');
+  check(
+    (version === 6) === (document.filing !== undefined),
+    'Setup version does not match filing rules',
+  );
+  const filing = document.filing === undefined ? undefined : validateFilingRules(document.filing);
+  check(!filing || !!document.journalId, 'Filing rules need a trading journal identity');
   const metadata: Record<string, unknown> = {
     schemaVersion: version,
     createdAt: document.createdAt,
     tradeframe: {
       formatVersion: 1,
       schema,
+      ...(filing ? { filing } : {}),
       ...(screenshots ? { screenshots } : {}),
       ...(document.journalId ? { journalId: document.journalId } : {}),
     },
@@ -125,7 +135,7 @@ export function serializeSetup(document: SetupDocument): string {
   };
   for (const field of schema.fields)
     if (Object.hasOwn(values, field.id)) metadata[field.key] = values[field.id];
-  if (version === 5 && info) {
+  if (version >= 5 && info) {
     metadata.captured = screenshots![0].capturedAt.slice(0, 10);
     metadata.cssclasses = ['journal', `dir-${info.direction}`, `result-${info.result}`];
   }
@@ -137,7 +147,7 @@ export function serializeSetup(document: SetupDocument): string {
     ? screenshots.map((shot, index) => renderScreenshot(shot, index, version)).join('')
     : '![Chart](chart.png)\n\n';
   const title =
-    version === 5 && info
+    version >= 5 && info
       ? `${info.date}${info.time ? ` ${info.time} NY` : ''} – ${info.instrument} ${directionLabel(info.direction)} ${info.model}`
       : 'Setup';
   const markdown = `---\n${Object.entries(metadata)
@@ -199,28 +209,31 @@ function deserializeBase(markdown: string): SetupDocument {
     (metadata.schemaVersion === 2 ||
       metadata.schemaVersion === 3 ||
       metadata.schemaVersion === 4 ||
-      metadata.schemaVersion === 5) &&
+      metadata.schemaVersion === 5 ||
+      metadata.schemaVersion === 6) &&
       record(metadata.tradeframe) &&
       metadata.tradeframe.formatVersion === 1,
     'Unsupported setup format',
   );
+  const version = metadata.schemaVersion;
   keys(
     metadata.tradeframe,
-    metadata.schemaVersion >= 3
+    version >= 3
       ? [
           'formatVersion',
           'schema',
           'screenshots',
-          ...(metadata.schemaVersion === 5 ? ['journalId'] : []),
+          ...(version >= 5 ? ['journalId'] : []),
+          ...(version === 6 ? ['filing'] : []),
         ]
       : ['formatVersion', 'schema'],
   );
   const screenshots =
-    metadata.schemaVersion >= 3
+    version >= 3
       ? validateScreenshots(
           metadata.tradeframe.screenshots,
-          metadata.schemaVersion >= 4,
-          metadata.schemaVersion,
+          version >= 4,
+          version,
           metadata.tradeframe.journalId as string | undefined,
         )
       : undefined;
@@ -232,9 +245,7 @@ function deserializeBase(markdown: string): SetupDocument {
         'createdAt',
         'tradeframe',
         'tags',
-        ...(metadata.schemaVersion === 5 && schema.id === JOURNAL_SCHEMA.id
-          ? ['captured', 'cssclasses']
-          : []),
+        ...(version >= 5 && schema.id === JOURNAL_SCHEMA.id ? ['captured', 'cssclasses'] : []),
         ...schema.fields.map((field) => field.key),
       ].includes(key),
     ),
@@ -252,25 +263,22 @@ function deserializeBase(markdown: string): SetupDocument {
   );
   check(
     JSON.stringify(metadata.tags) ===
-      JSON.stringify(
-        metadata.schemaVersion === 5
-          ? journalTags(schema, validated)
-          : valueTags(schema, validated),
-      ),
+      JSON.stringify(version >= 5 ? journalTags(schema, validated) : valueTags(schema, validated)),
     'Markdown tags do not match the schema values',
   );
   const document: SetupDocument = {
+    ...(version === 6 ? { filing: validateFilingRules(metadata.tradeframe.filing) } : {}),
     schema,
     values: validated,
     createdAt: metadata.createdAt,
-    ...(metadata.schemaVersion >= 3 ? { schemaVersion: metadata.schemaVersion } : {}),
+    ...(version >= 3 ? { schemaVersion: version } : {}),
     ...(screenshots ? { screenshots } : {}),
     ...(metadata.tradeframe.journalId === undefined
       ? {}
       : { journalId: metadata.tradeframe.journalId as string }),
   };
   const canonical = serializeSetup(document);
-  if (metadata.schemaVersion === 5 && schema.id === JOURNAL_SCHEMA.id) {
+  if (version >= 5 && schema.id === JOURNAL_SCHEMA.id) {
     const info = journalValues(schema, validated)!;
     const expected = ['journal', `dir-${info.direction}`, `result-${info.result}`];
     check(

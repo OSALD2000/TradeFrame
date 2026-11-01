@@ -55,7 +55,7 @@ and `SetupFormAPI`. The draft controller separately receives `SetupDraftAPI`. Th
 parents retain the capabilities needed by their child components. For example,
 OneNote browsing requires only `getOneNote` and `listOneNoteSetups`.
 
-The public `CaptureAPI` and preload object are unchanged. These are compile-time
+During the interface-only cleanup, the public `CaptureAPI` and preload object stayed unchanged. These are compile-time
 contracts, not new runtime security permissions. All 17 emitted files remain
 byte-identical after this interface-only change; negative compile checks confirm
 consumers cannot call unrelated commands through their declared contracts.
@@ -117,7 +117,7 @@ an Abstract Factory for families of objects. There is no plugin registry or
 service container. New supported destinations require explicit factory wiring
 and a separate decision about their UI and persisted configuration.
 
-The folder adapter owns the unchanged `copySnapshot` implementation; its old
+The factory extraction moved `copySnapshot` without behavior changes; its old
 export from `connections.ts` remains compatible. The OneNote adapter receives
 the existing delivery callback, preserving section, notebook and job identity.
 Creating an adapter does not authenticate, upload or instantiate another
@@ -309,3 +309,26 @@ export-contract test. No unrelated runtime change is part of this cleanup.
 Passing these checks is not a proof of every possible runtime behavior or a new
 desktop/account acceptance on Linux, Windows or macOS. Further responsibility
 changes remain owner decisions; module length alone does not require a split.
+
+## Configurable filing and first-use guidance
+
+The owner approved ordered filing blocks per folder destination and a version-6
+filing snapshot for new Trading journal notes. `filing-rules.ts` is a pure shared
+validator/formatter; `FilingStore` in `filing-store.ts` owns separately persisted
+preferences. `setup-document.ts` validates and retains each note's rules, while
+`journal-layout.ts` and the folder adapter resolve safe paths and collision
+identities. Existing factory routing and the delivery queue format remain intact.
+These reuse the documented store, snapshot, facade and adapter patterns.
+The trade-off is recorded in [ADR 0007](adr/0007-snapshot-filing-rules-for-new-setups.md).
+
+The feature adds three named preload commands: filing preferences get/set and
+opening a named setup-help page. `FilingRulesAPI` and `SetupGuideAPI` expose only
+their required capabilities. Native IPC validates the journal sender, filing
+values and a fixed HTTPS help-page whitelist; it does not accept arbitrary URLs
+or a filesystem path from a text field. Native composition owns the lazy store.
+The earlier interface-only cleanup's byte-equivalence claims apply to that step,
+not to these explicitly authorized feature additions.
+
+`SetupGuide` and `FilingRules` stay inside the existing src directory; Statistics
+is a static route. The setup form remains mounted across all routes to preserve
+its draft. Statistics does not calculate metrics or read saved journals.

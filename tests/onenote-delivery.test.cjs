@@ -169,6 +169,41 @@ test('Graph content resource links restore both fields and original screenshots 
   assert.ok(loaded.screenshots.every((shot) => shot.image === image));
 });
 
+test('format 6 filing snapshots survive OneNote upload and opening without changing fields or PNGs', async (t) => {
+  const f = await fixture(t);
+  const { JOURNAL_SCHEMA, deserializeSetup } = require('../dist-electron/form-schema');
+  const { DEFAULT_FILING_RULES } = require('../dist-electron/filing-rules');
+  const rules = structuredClone(DEFAULT_FILING_RULES);
+  rules.obsidian.root = 'Trading';
+  const values = {
+    mode: 'backtest',
+    date: '2025-01-07',
+    time_ny: '',
+    session: 'NY AM',
+    symbol: 'TEST',
+    direction: 'long',
+    model: 'Example',
+    d_bias: '',
+    result: 'pending',
+    r: null,
+    note: 'Synthetic journal',
+  };
+  const file = await writeSetup(
+    await fs.realpath(f.root),
+    { schema: JOURNAL_SCHEMA, values },
+    (await readSetup(f.file)).screenshots,
+    rules,
+  );
+  await f.client.deliver(file, 'TradeFrame', randomUUID(), 'book');
+  await f.client.listSetups();
+  const opened = await f.client.openSetup('page');
+  assert.deepEqual(opened.values, values);
+  assert.ok(opened.screenshots.every((shot) => shot.image === image));
+  const snapshot = JSON.parse(f.state.resources.get('setup').toString());
+  assert.equal(deserializeSetup(snapshot.markdown).schemaVersion, 6);
+  assert.deepEqual(deserializeSetup(snapshot.markdown).filing, rules);
+});
+
 test('legacy OneNote-host resource links use authenticated Graph content downloads without forwarding tokens', async (t) => {
   const f = await fixture(t);
   f.state.linkSuffix = 'content';

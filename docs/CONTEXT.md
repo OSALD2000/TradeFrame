@@ -391,3 +391,15 @@ errors and remove technical delivery IDs from visible titles. A regression was
 observed before each resource/state fix. Base text/surface contrast was checked
 at minimum 6.89:1; reduced-motion overrides are present in the stylesheet. This
 does not replace real rendering, focus, motion or account import acceptance.
+
+## Release-preparation feature scope
+
+The owner accepted the polished UI and requested configurable filing, menu-bar
+hiding, a first-use/OneNote guide and a Statistics Coming soon area. The approved
+filing design uses per-destination ordered blocks with preview, separately stored
+preferences and immutable rule snapshots in newly saved format-6 Trading journal
+notes. Old notes are not relocated/migrated; older/custom forms keep their layout.
+The guide is always accessible and linked from the first empty workspace.
+Statistics is a labeled placeholder only. Linux/Windows menus auto-hide; native
+editing shortcuts and the macOS system menu remain. See [GETTING_STARTED](GETTING_STARTED.md)
+and the [filing decision](adr/0007-snapshot-filing-rules-for-new-setups.md).

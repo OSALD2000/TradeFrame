@@ -150,3 +150,5 @@ added for SQLite, integrations or packaging.
 Saved-setup browsing, general Markdown importing, two-way sync, direct Dropbox
 OAuth, automatic updates, broker and AI features are not implemented. No source
 license has been selected. The owner performs pushes and public release uploads.
+
+[First use, filing rules and OneNote connection](docs/GETTING_STARTED.md).

@@ -1655,6 +1655,262 @@ textarea:user-invalid {
     transform: rotate(45deg) scale(1);
   }
 }
+
+/* Guided setup and per-destination filing use the existing control and motion tokens. */
+.first-use-guide {
+  margin-top: 22px;
+  font-size: 14px;
+  color: var(--secondary);
+  text-underline-offset: 4px;
+}
+.setup-guide {
+  padding: 0 36px 36px;
+}
+.guide-intro {
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  margin-bottom: 28px;
+}
+.guide-intro h2 {
+  margin: 16px 0 12px;
+  font-size: 24px;
+  letter-spacing: -0.6px;
+  font-weight: 600;
+  max-width: 28ch;
+}
+.guide-intro p,
+.guide-section p {
+  color: var(--secondary);
+  line-height: 1.75;
+  max-width: 78ch;
+  font-size: 14px;
+}
+.guide-intro > a {
+  margin-top: 22px;
+  text-decoration: none;
+}
+.guide-section {
+  padding-block: 26px;
+  border-top: 1px solid var(--border);
+}
+.guide-section h2 {
+  font-size: 20px;
+  margin-bottom: 18px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.guide-section > p + p {
+  margin-top: 12px;
+}
+.guide-section > a {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 14px;
+  text-underline-offset: 4px;
+}
+.guide-steps {
+  padding-left: 25px;
+  display: grid;
+  gap: 22px;
+  font-size: 14px;
+  margin-block: 20px;
+}
+.guide-steps li {
+  padding-left: 9px;
+}
+.guide-steps li::marker {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.guide-steps strong {
+  font-weight: 600;
+}
+.guide-steps p {
+  margin-top: 6px;
+}
+.guide-steps button {
+  margin-top: 14px;
+}
+.guide-registration,
+.filing-rules {
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  margin-block: 18px;
+}
+.guide-registration > summary,
+.filing-rules > summary {
+  min-height: 48px;
+  padding-block: 12px;
+  cursor: pointer;
+  color: var(--secondary);
+  font-size: 14px;
+}
+.guide-registration[open],
+.filing-rules[open] {
+  padding-bottom: 18px;
+}
+.guide-registration > p,
+.filing-rules > p {
+  color: var(--secondary);
+  font-size: 14px;
+  line-height: 1.75;
+  max-width: 80ch;
+}
+.guide-callout {
+  padding: 16px;
+  background: var(--surface);
+  border-left: 2px solid var(--success);
+}
+.statistics-placeholder {
+  padding: 60px 24px 80px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 22px;
+}
+.statistics-placeholder > svg {
+  width: 64px;
+  height: 64px;
+  color: var(--muted);
+  stroke-width: 1.5;
+}
+.statistics-placeholder h2 {
+  font-size: 27px;
+  font-weight: 600;
+  letter-spacing: -0.6px;
+  text-wrap: balance;
+}
+.statistics-placeholder p {
+  color: var(--secondary);
+  max-width: 48ch;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.filing-rules {
+  margin-top: 0;
+  margin-bottom: 22px;
+}
+.filing-rules form > fieldset {
+  border: 0;
+  margin: 20px 0;
+  padding: 0;
+  min-width: 0;
+}
+.filing-rules label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--secondary);
+}
+.filing-rules input,
+.filing-rules select {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-control);
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 14px;
+  background: var(--input);
+  color: var(--text);
+}
+.filing-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  margin-block: 22px;
+}
+.rule-blocks > strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.rule-blocks ol {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+  margin: 12px 0;
+}
+.rule-blocks li {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px;
+  min-width: 0;
+}
+.rule-blocks li > span {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 0 8px;
+  overflow-wrap: anywhere;
+}
+.rule-blocks li > button {
+  min-width: 44px;
+  padding-inline: 8px;
+  background: transparent;
+}
+.filing-preview {
+  padding: 16px;
+  border-left: 2px solid var(--border-strong);
+  background: var(--elevated);
+  font-size: 13px;
+}
+.filing-preview strong {
+  font-weight: 500;
+  color: var(--secondary);
+}
+.filing-preview p {
+  font-family: ui-monospace, Consolas, monospace;
+  line-height: 1.8;
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+.filing-preview small {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 12px;
+}
+.setup-guide,
+.statistics-placeholder,
+.guide-registration[open] .guide-steps,
+.filing-rules[open] form {
+  animation: panel-enter var(--motion-panel) var(--motion-ease);
+}
+@media (max-width: 800px) {
+  .filing-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .setup-guide {
+    padding: 0 22px 24px;
+  }
+  .guide-intro {
+    padding: 22px;
+  }
+  .guide-intro h2 {
+    font-size: 22px;
+  }
+  .statistics-placeholder {
+    padding: 36px 22px;
+  }
+  .filing-rules,
+  .guide-registration {
+    padding-inline: 14px;
+  }
+}
 @media (max-width: 1000px) {
   .workspace {
     grid-template-columns: 208px minmax(0, 1fr);

@@ -129,7 +129,17 @@ async function boot(
       showOpenDialog: selectFolder,
       showMessageBoxSync: () => 1,
     },
-    Menu: { buildFromTemplate: (template) => template, setApplicationMenu: () => {} },
+    Menu: {
+      buildFromTemplate: (template) => template,
+      setApplicationMenu: (menu) => {
+        app.applicationMenu = menu;
+      },
+    },
+    shell: {
+      openExternal: async (url) => {
+        (app.openedHelp ??= []).push(url);
+      },
+    },
   };
   const dirname = path.resolve(__dirname, '../dist-electron');
   vm.runInNewContext(readFileSync(path.join(dirname, 'main.js'), 'utf8'), {
@@ -194,6 +204,11 @@ test('startup loads only local UI with isolation and blocks navigation/new windo
   } = await boot();
   assert.equal(window.file, path.resolve(__dirname, '../dist/index.html'));
   assert.equal(window.options.icon, path.resolve(__dirname, '../dist/tradeframe-icon.png'));
+  assert.equal(window.options.autoHideMenuBar, true);
+  assert.deepEqual(
+    Array.from(app.applicationMenu, (item) => item.role),
+    ['fileMenu', 'editMenu', 'viewMenu', 'windowMenu'],
+  );
   assert.equal(window.visible, false);
   window.emit('ready-to-show');
   assert.equal(window.visible, true);
@@ -999,4 +1014,67 @@ test('saved setups can be sent after connecting and cloud opens restore a separa
   assert.ok(state.screenshots[0].image.startsWith('tradeframe-image:'));
   assert.deepEqual(await fs.readFile(saved.path), original);
   await assert.rejects(invoke('journal:append', windows[0], setupInput()), /Could not append/);
+});
+
+test('setup help opens only named official pages from the journal window', async () => {
+  const { app, windows, invoke } = await boot();
+  await invoke('guide:open', windows[0], 'entra');
+  await invoke('guide:open', windows[0], 'notebooks');
+  assert.deepEqual(app.openedHelp, [
+    'https://entra.microsoft.com/',
+    'https://onenote.cloud.microsoft/notebooks',
+  ]);
+  for (const topic of ['javascript:alert(1)', 'file:///private', '__proto__', null])
+    await assert.rejects(invoke('guide:open', windows[0], topic), /Invalid help page/);
+  await invoke('capture:open-bar');
+  await assert.rejects(invoke('guide:open', windows[1], 'entra'));
+  assert.equal(app.openedHelp.length, 2);
+});
+
+test('native filing preferences validate changes and new saves retain all destination rules', async (t) => {
+  const fs = require('node:fs/promises');
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-filing-ipc-')),
+  );
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const { windows, invoke } = await boot(undefined, async () => ({
+    canceled: false,
+    filePaths: [root],
+  }));
+  const original = await invoke('filing:get');
+  const rule = {
+    ...original.obsidian,
+    root: 'Trading',
+    folders: ['instrument', 'year'],
+    name: ['date', 'instrument'],
+  };
+  await invoke('filing:set', windows[0], 'obsidian', rule);
+  await assert.rejects(
+    invoke('filing:set', windows[0], 'obsidian', { ...rule, root: '../outside' }),
+  );
+  assert.equal((await invoke('filing:get')).obsidian.root, 'Trading');
+  await invoke('capture:open-bar');
+  await assert.rejects(invoke('filing:get', windows[1]));
+  await captureReady(invoke, windows);
+  const { JOURNAL_SCHEMA, deserializeSetup } = require('../dist-electron/form-schema');
+  const result = await invoke('journal:save', windows[0], {
+    schema: JOURNAL_SCHEMA,
+    values: {
+      mode: 'backtest',
+      date: '2025-01-07',
+      time_ny: '',
+      session: '',
+      symbol: 'TEST',
+      direction: 'long',
+      model: 'Example',
+      d_bias: '',
+      result: 'pending',
+      r: null,
+      note: '',
+    },
+  });
+  assert.equal(result.status, 'saved');
+  const saved = deserializeSetup(await fs.readFile(result.path, 'utf8'));
+  assert.equal(saved.schemaVersion, 6);
+  assert.deepEqual(saved.filing.obsidian, rule);
 });

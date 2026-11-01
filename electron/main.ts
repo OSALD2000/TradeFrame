@@ -20,6 +20,7 @@ import { MAX_SCREENSHOTS, validTimeframe } from './form-schema';
 import { validateSetup, writeSetup, readSetup, appendScreenshots, pngBytes } from './journal';
 import { SchemaStore } from './schema-store';
 import { ConnectionStore, folderKind } from './connections';
+import { FilingStore } from './filing-store';
 import { OneNoteClient, OneNoteError } from './onenote';
 import type { SaveResult } from './capture-types';
 
@@ -62,6 +63,10 @@ function connectionStore() {
   ));
 }
 let oneNote: OneNoteClient | null = null;
+let filing: FilingStore | null = null;
+function filingStore() {
+  return (filing ??= new FilingStore(path.join(app.getPath('userData'), 'filing-rules.json')));
+}
 function oneNoteClient() {
   if (oneNote) return oneNote;
   const configuration = path.join(__dirname, 'integrations.json');
@@ -237,6 +242,29 @@ async function takeScreenshot() {
 }
 
 function registerCapture() {
+  ipcMain.handle('filing:get', (event) => {
+    assertSender(event, journal);
+    return filingStore().get();
+  });
+  ipcMain.handle('filing:set', (event, kind: unknown, rule: unknown) => {
+    assertSender(event, journal);
+    if (state.busy) throw new Error('Wait for the current operation to finish');
+    folderKind(kind);
+    return filingStore().set(kind, rule);
+  });
+  ipcMain.handle('guide:open', async (event, topic: unknown) => {
+    assertSender(event, journal);
+    const pages = {
+      entra: 'https://entra.microsoft.com/',
+      notebooks: 'https://onenote.cloud.microsoft/notebooks',
+      registration:
+        'https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app',
+      permissions: 'https://learn.microsoft.com/en-us/graph/permissions-reference#notesreadwrite',
+    };
+    if (typeof topic !== 'string' || !Object.hasOwn(pages, topic))
+      throw new Error('Invalid help page');
+    await shell.openExternal(pages[topic as keyof typeof pages]);
+  });
   ipcMain.handle('journal:new', (event) => {
     assertSender(event, journal);
     if (state.busy) throw new Error('Wait for the current operation to finish');
@@ -487,7 +515,7 @@ function registerCapture() {
           if (!state.savedPath) throw new Error('Open or save a setup before adding screenshots');
           await appendScreenshots(state.savedPath, savedFingerprint, setup, screenshots);
           savedPath = state.savedPath;
-        } else savedPath = await writeSetup(folder!, setup, screenshots);
+        } else savedPath = await writeSetup(folder!, setup, screenshots, filingStore().snapshot());
         state.savedPath = savedPath;
         state.requiresTimeframeCopy = false;
         savedFingerprint = (await readSetup(savedPath)).fingerprint;
@@ -620,6 +648,7 @@ function createWindow() {
     height: 760,
     minWidth: 640,
     minHeight: 480,
+    autoHideMenuBar: true,
     icon,
     show: false,
     backgroundColor: '#000000',

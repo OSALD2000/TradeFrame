@@ -16,6 +16,8 @@ import {
 } from './form-schema';
 import { appendDocument, createFile, recoverAppend } from './append-store';
 import { calendarPath, journalDirectory, journalFilename } from './journal-layout';
+import { validateFilingRules } from './filing-rules';
+import type { FilingRules } from './filing-rules';
 
 export function validateSetup(input: unknown): SetupInput {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Invalid setup');
@@ -44,10 +46,12 @@ export async function writeSetup(
   folder: string,
   setup: SetupInput,
   screenshots: Screenshot[],
+  filingRules?: FilingRules | null,
 ): Promise<string> {
   const validated = validateSetup(setup);
   const createdAt = new Date().toISOString();
   const journalId = journalValues(validated.schema, validated.values) ? randomUUID() : undefined;
+  const filing = filingRules ? validateFilingRules(filingRules) : undefined;
   const references = validateScreenshots(
     screenshots.map((shot, index) => ({
       file: screenshotFile(index, journalId),
@@ -66,8 +70,9 @@ export async function writeSetup(
     ...validated,
     createdAt,
     screenshots: references,
-    schemaVersion: 5 as const,
+    schemaVersion: filing && journalId ? (6 as const) : (5 as const),
     ...(journalId ? { journalId } : {}),
+    ...(filing && journalId ? { filing } : {}),
   };
   const markdown = serializeSetup(document);
   const calendar = calendarPath(document);

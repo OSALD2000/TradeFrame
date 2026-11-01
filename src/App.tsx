@@ -3,10 +3,11 @@ import { useCapture } from './capture';
 import { SetupForm } from './SetupForm';
 import { Connections } from './Connections';
 import { ScreenshotFields } from './ScreenshotFields';
+import { SetupGuide } from './SetupGuide';
 import { validTimeframe } from '../electron/form-schema';
 import { version } from '../package.json';
 
-export type WorkspaceView = 'journal' | 'open' | 'connections';
+export type WorkspaceView = 'journal' | 'open' | 'connections' | 'guide' | 'statistics';
 export function viewFromHash(hash: string): WorkspaceView | null {
   return hash === '#journal'
     ? 'journal'
@@ -14,13 +15,25 @@ export function viewFromHash(hash: string): WorkspaceView | null {
       ? 'open'
       : hash === '#connections'
         ? 'connections'
-        : null;
+        : hash === '#guide'
+          ? 'guide'
+          : hash === '#statistics'
+            ? 'statistics'
+            : null;
 }
-const titles = { journal: 'Create a setup', open: 'Open a setup', connections: 'Connections' };
+const titles = {
+  journal: 'Create a setup',
+  open: 'Open a setup',
+  connections: 'Connections',
+  guide: 'Setup guide',
+  statistics: 'Statistics',
+};
 const descriptions = {
   journal: 'Capture a chart, add your reasoning, and save it.',
   open: 'Continue from a local file or your OneNote notebook.',
   connections: 'Choose your local journal and the services that receive saved setups.',
+  guide: 'Your first setup, filing rules and OneNote connection, step by step.',
+  statistics: 'A place to review your trading journal. Coming soon.',
 };
 
 export function App() {
@@ -93,6 +106,26 @@ export function App() {
               <rect x="12.5" y="12" width="5" height="5" rx="1.5" />
             </svg>
             Connections
+          </a>
+          <a
+            className="nav-item"
+            href="#statistics"
+            aria-current={view === 'statistics' ? 'page' : undefined}
+          >
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M3 3v14h14M7 13V9m4 4V5m4 8v-3" />
+            </svg>
+            Statistics
+          </a>
+          <a
+            className="nav-item"
+            href="#guide"
+            aria-current={view === 'guide' ? 'page' : undefined}
+          >
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 5v11M3 4.5C5 3 8 3 10 5c2-2 5-2 7-.5V16c-2-1.5-5-1.5-7 0-2-1.5-5-1.5-7 0z" />
+            </svg>
+            Setup guide
           </a>
         </nav>
         <div className="sidebar-bottom">
@@ -283,12 +316,18 @@ export function App() {
                         : 'The floating bar lets you take screenshots without leaving your chart.'
                       : 'Open the desktop app to capture and save setups. This browser view is a preview only.'}
                   </p>
+                  <a className="first-use-guide" href="#guide">
+                    First time here? Follow the setup guide →
+                  </a>
                 </section>
               )}
             </section>
             <section
               className={view === 'open' ? 'open-workspace' : 'setup-details'}
-              hidden={view === 'connections' || (view === 'journal' && state.sources.length > 0)}
+              hidden={
+                (view !== 'journal' && view !== 'open') ||
+                (view === 'journal' && state.sources.length > 0)
+              }
               aria-label={view === 'open' ? 'Open setup sources' : 'Setup details'}
             >
               {view === 'journal' && state.screenshots.length > 0 && (
@@ -312,6 +351,23 @@ export function App() {
             <div className="connections-view" hidden={view !== 'connections'}>
               <Connections api={api} busy={state.busy} />
             </div>
+            {view === 'guide' && <SetupGuide api={api} />}
+            {view === 'statistics' && (
+              <section className="statistics-placeholder" aria-labelledby="statistics-title">
+                <span className="preview-badge">Coming soon</span>
+                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+                  <path d="M12 12v40h40M24 42V30m12 12V18m12 24v-8" />
+                </svg>
+                <h2 id="statistics-title">Your journal. A clearer perspective.</h2>
+                <p>
+                  Statistics are not available in this release. Keep recording your setups; this
+                  area will bring performance insights into focus.
+                </p>
+                <a className="secondary-button" href="#journal">
+                  Back to your journal
+                </a>
+              </section>
+            )}
             <footer className="journal-footer">
               <span>Saved setups stay in your chosen folder</span>
               <span>Drafts stay in memory until saved</span>

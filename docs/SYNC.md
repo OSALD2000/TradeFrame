@@ -197,3 +197,19 @@ to a chosen notebook is still unverified. Automated tests do not prove a cloud
 upload, real Dropbox delivery or native folder dialogs.
 Those acceptance checks remain open until run with explicitly chosen accounts
 and synthetic setups on the target desktops.
+
+## Per-destination filing preferences
+
+Local journal, Obsidian and Dropbox each offer ordered folder/name blocks in
+Connections, with a preview. The default root beneath an Obsidian/Dropbox folder
+is TradeFrame; a new-note rule can use another single subfolder or the selected
+folder directly. Configuration does not transfer or relocate files.
+
+New format-6 Trading journal notes retain all three rules. Changing preferences
+does not redirect their pending transfers or follow-up screenshots. Independent
+notes with the same rendered name receive numbered files; their journal identity
+keeps subsequent deliveries associated with the correct note. Edited targets
+remain conflicts. Older/custom notes retain their previous delivery layout.
+OneNote notebook/section organization and connection credentials are unchanged.
+See [GETTING_STARTED](GETTING_STARTED.md) for registration, sign-in, notebook
+selection, imports and troubleshooting.

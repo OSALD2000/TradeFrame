@@ -86,6 +86,8 @@ try {
     'onenote-content',
     'append-store',
     'journal-layout',
+    'filing-rules',
+    'filing-store',
   ]) {
     await cp(
       path.join(root, 'dist-electron', `${module}.js`),
@@ -129,6 +131,7 @@ try {
     'docs/CONTEXT.md',
     'docs/ARCHITECTURE.md',
     'docs/CODE_STYLE.md',
+    'docs/GETTING_STARTED.md',
     'docs/ROADMAP.md',
     'docs/DESIGN.md',
     'docs/adr/0001-local-first-journal.md',
@@ -137,6 +140,7 @@ try {
     'docs/adr/0004-organize-journals-by-market-date.md',
     'docs/adr/0005-pin-onenote-deliveries-to-selected-notebooks.md',
     'docs/adr/0006-reopen-cloud-setups-with-validated-snapshots.md',
+    'docs/adr/0007-snapshot-filing-rules-for-new-setups.md',
   ]) {
     await mkdir(path.dirname(path.join(staging, document)), { recursive: true });
     await cp(path.join(root, document), path.join(staging, document));

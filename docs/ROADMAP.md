@@ -89,3 +89,16 @@ OAuth, crop/annotations, statistics and broker/AI features. The requested folder
 connection uses Dropbox's desktop client; no direct Dropbox account API is claimed.
 No global shortcut is registered: the existing personal Super+Ctrl+j binding stays
 owned by the desktop script. TradeFrame is usable through its mouse capture bar.
+
+## Owner-requested first-release preparation, 1 November 2026
+
+Per-destination filing rules and previews, new-note filing snapshots, native
+menu auto-hide, the first-use/OneNote guide and the explicit Statistics Coming
+soon area implement the requested feature scope. New Trading journal notes with
+configured rules use format 6; old notes are unchanged and retain their paths.
+
+Before publication, verify the new block editor and first-use flow in real
+windows, per-target Obsidian/Dropbox filing and collision/follow-up behavior,
+OneNote round trips for format 6, and each claimed OS package. The placeholder
+does not bring statistics implementation into scope. Existing signing/license/
+publisher and cross-platform acceptance gates above still apply.

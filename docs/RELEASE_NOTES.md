@@ -1,3 +1,33 @@
+# TradeFrame 0.7.0 preview preparation
+
+Local journal, Obsidian and Dropbox now have independent folder/name rules in
+Connections. Choose ordered field blocks and preview the result. New Trading
+journal notes with configured preferences retain their filing choices in format
+6, including for retries and follow-up screenshots. Same-name destination notes
+use safe numbered filenames and stable journal identities, including case-only
+collisions. Existing notes and custom forms keep their original paths/layouts;
+no existing files are moved, renamed or migrated. Format-6 notes need this updated
+app; older readers reject them.
+
+The sidebar adds a first-use Setup guide with optional Microsoft app registration,
+permission/client-ID instructions, sign-in and notebook selection. Help buttons
+open only named official pages through the validated native bridge. Statistics
+is an explicit Coming soon placeholder without calculated or fabricated metrics.
+The Linux/Windows window menu is hidden by default and can be revealed with Alt;
+editing shortcuts and the macOS system menu remain native.
+
+The owner approved the preceding dark-workspace polish. New views reuse its
+motion, focus and reduced-motion rules. Automated checks cover legacy formats,
+filing preferences/path validation, collisions, follow-ups, redirects/symlinks,
+format-6 OneNote round trips, route composition and native helper/menu behavior.
+This is preparation for owner review, not a published release. Real window,
+Obsidian/Dropbox, OneNote-account and other-platform acceptance still need the
+applicable checks in [RELEASE](RELEASE.md). No credentials were migrated and no
+account permissions were changed by this work.
+
+[First-use guide](GETTING_STARTED.md) · [Filing behavior](JOURNAL.md) ·
+[Decision](adr/0007-snapshot-filing-rules-for-new-setups.md)
+
 # TradeFrame 0.6.3 preview
 
 The owner confirms OneNote imports work with 0.6.2 and sign-in now survives

@@ -198,3 +198,26 @@ capture event, and stale initial state replies are ignored after a newer event
 or explicit restore. Empty responses cannot report a successful open. This
 changes the internal bridge response, not existing Markdown/PNG files. Restart
 the app fully after updating the package to keep native and renderer code aligned.
+
+## Configurable filing for new Trading journal notes
+
+Under Connections, each folder destination has its own Folder structure & file
+name editor. Select and reorder field blocks, optionally choose a single
+subfolder name, and review the synthetic example before Save rules. Empty
+optional fields are skipped. Notes use a safe .md name; collisions receive a
+number without replacing earlier files. Paths reject traversal, separators in
+subfolder names, redirected directories and reserved device names.
+
+After preferences have been configured, new Trading journal notes use format 6.
+The note carries validated filing snapshots for the local journal, Obsidian and
+Dropbox, never the absolute connection paths. Follow-ups/retries use those saved
+choices rather than newer preferences. Destination filename lookup uses the
+existing journal identity, so a missing earlier numbered file cannot relocate a
+follow-up. Existing targets still undergo complete byte/conflict verification.
+
+Opening a note does not migrate it. Formats 1–5 and their append rendering remain
+readable; unconfigured exports and older/custom forms keep their existing layout.
+Save copy creates a new identity using current preferences. Format-6 notes require
+the updated app and are rejected by older readers. See the
+[filing decision](adr/0007-snapshot-filing-rules-for-new-setups.md) and
+[first-use guide](GETTING_STARTED.md).

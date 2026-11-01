@@ -161,3 +161,5 @@ Nicht umgesetzt: Setup-Browser, allgemeiner Markdown-Import, Zweiwege-Sync,
 direkte Dropbox-OAuth-Anmeldung, automatische Updates, Broker- und KI-Funktionen.
 Eine Quellcode-Lizenz ist noch nicht gewaehlt. Push und oeffentliche Release-Uploads
 fuehrt der Nutzer selbst aus.
+
+[Ersteinrichtung, Ablageregeln und OneNote-Verbindung](docs/GETTING_STARTED.md).
