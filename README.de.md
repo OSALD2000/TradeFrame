@@ -47,6 +47,9 @@ braucht der Linux-Build `dpkg-deb`. Windows/macOS werden auf diesen Systemen
 gebaut. Das Archiv enthaelt die oeffentlichen Anleitungen mit funktionierenden
 relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
+Entwicklungsregeln: [Architektur und verwendete Patterns](docs/ARCHITECTURE.md)
+und [Codestil und Formatierung](docs/CODE_STYLE.md).
+
 ## Journal bedienen
 
 Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.3`.

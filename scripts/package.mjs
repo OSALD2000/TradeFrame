@@ -118,6 +118,8 @@ try {
     'docs/CAPTURE.md',
     'docs/SYNC.md',
     'docs/CONTEXT.md',
+    'docs/ARCHITECTURE.md',
+    'docs/CODE_STYLE.md',
     'docs/ROADMAP.md',
     'docs/DESIGN.md',
     'docs/adr/0001-local-first-journal.md',

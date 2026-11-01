@@ -95,6 +95,12 @@ redacted failures, Linux provider initialization/restart and picker prerequisite
 
 ## Code ownership
 
+The implemented pattern inventory, SOLID review rules and pending responsibility
+proposal are in [ARCHITECTURE](ARCHITECTURE.md). The pinned formatter and shared
+development conventions are in [CODE_STYLE](CODE_STYLE.md). The formatting step
+preserves the accepted 0.6.3 behavior and existing directories; structural changes
+still require the owner's decision.
+
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
 lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,
 new windows and off-app navigation remain blocked. `preload.ts` exposes only

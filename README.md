@@ -46,6 +46,9 @@ also requires `dpkg-deb` for the Debian installer. Windows/macOS builds run on
 those systems. The archive includes public guides with working relative links.
 [Build/download instructions and acceptance](docs/RELEASE.md)
 
+Development conventions: [architecture and implemented patterns](docs/ARCHITECTURE.md)
+and [code style and formatting](docs/CODE_STYLE.md).
+
 ## Journal workflow
 
 The top-right toolbar shows the installed app version, for example `v0.6.3`.
