@@ -141,9 +141,11 @@ named commands; form, path, source and value validation remain native.
 
 `journal.ts` owns file persistence and append preservation; `journal-layout.ts`
 owns safe calendar paths and filenames; `append-store.ts`
-owns staged file publication, prepared intents and process-crash recovery; `form-schema.ts`
-owns types, validation and Markdown. `schema-store.ts` owns form revisions;
-`connections.ts` owns folder delivery and its queue; `onenote.ts` owns OAuth,
+owns staged file publication, prepared intents and process-crash recovery.
+`form-definition.ts` owns form rules, `setup-document.ts` owns Markdown conversion,
+and `form-schema.ts` preserves their existing public exports. `schema-store.ts` owns form revisions;
+`connections.ts` owns preferences and its delivery queue; connector adapters own transfers.
+`onenote.ts` owns OAuth,
 secure-token calls and Graph requests. The renderer cannot submit arbitrary
 screenshot bytes, filesystem paths or API URLs. [SYNC](SYNC.md) defines delivery
 boundaries; [RELEASE](RELEASE.md) defines packaging and publisher setup.

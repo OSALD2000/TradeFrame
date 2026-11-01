@@ -15,7 +15,8 @@ hierarchy. Packaging must include every new native module it needs.
 | `src/`                                                                                            | React screens, form editing, capture subscriptions and user feedback              | Calls the named preload API; no direct filesystem, credentials or Graph access                                      |
 | `electron/preload.ts` and `electron/capture-types.ts`                                             | Renderer-facing commands, events and their contracts                              | Expose individual commands rather than arbitrary IPC or native capabilities                                         |
 | `electron/main.ts`                                                                                | Electron startup, windows, capture state, trusted IPC and composition             | Verifies senders, owns in-memory image access and coordinates services                                              |
-| `electron/form-definition.ts` and `electron/journal-layout.ts`                                    | Form definition/value rules and calendar identity                                 | Pure rules are shared without importing Electron or account services                                                |
+| `electron/form-definition.ts`                                                                     | Form definition and value rules                                                   | Pure rules are shared without importing Electron or account services                                                |
+| `electron/journal-layout.ts`                                                                      | Calendar identity, readable names and safe directory traversal                    | Checks native paths before journal files are accessed                                                               |
 | `electron/setup-document.ts` and the compatible `electron/form-schema.ts` facade                  | Versioned Markdown and screenshot references, with the established public exports | Document conversion depends on definitions; definitions do not depend on document conversion                        |
 | `electron/journal.ts` and `electron/append-store.ts`                                              | Markdown/PNG persistence, append preservation and recovery                        | Filesystem operations validate inputs and preserve conflicting external data                                        |
 | `electron/schema-store.ts`                                                                        | Versioned form definitions in SQLite                                              | Setup values and screenshots do not enter this database                                                             |
@@ -176,7 +177,7 @@ ownership. A direct comparison covers 35 validation, Markdown version 1–5 and
 error cases. The existing format, append/recovery and cloud tests pass; a facade
 contract test protects its export set and shared function identities.
 
-`electron/form-schema.ts` embeds the form definition, values
+`electron/setup-document.ts`, exposed through `form-schema.ts`, embeds the form definition, values
 and ordered screenshot references in the saved document. OneNote's
 `TradeFrame.setup.json` adds the original Markdown and image hashes.
 
@@ -210,13 +211,13 @@ These techniques are important, but are not additional GoF class patterns:
 
 ## Applying SOLID without changing behavior
 
-| Principle             | Current evidence and cleanup rule                                                                                                                                                                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Single responsibility | Setup draft state/workflows, view markup and pure resource validation have separate modules. Native orchestration, Microsoft client ownership and form document conversion are reviewed as separate responsibilities; each further extraction is agreed before implementation. |
-| Open/closed           | The delivery queue uses `SetupConnector`; provider behavior and error policy live in adapters selected by the composition factory. Domain kinds/configuration remain explicit rather than pretending arbitrary plugins are already supported.                                  |
-| Liskov substitution   | Connector adapters preserve the delivery completion/failure contract. Tests exercise both implementations, original promise identity and synchronous failures; callback and facade compatibility remain intact.                                                                |
-| Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.                                                                             |
-| Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                                                                                     |
+| Principle             | Current evidence and cleanup rule                                                                                                                                                                                                                           |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Single responsibility | Draft workflows, view markup, form rules, document conversion and delivery adapters have separate modules. Native orchestration and Microsoft protocol/session ownership remain review boundaries; each further extraction is agreed before implementation. |
+| Open/closed           | The delivery queue uses `SetupConnector`; provider behavior and error policy live in adapters selected by the composition factory. Domain kinds/configuration remain explicit rather than pretending arbitrary plugins are already supported.               |
+| Liskov substitution   | Connector adapters preserve the delivery completion/failure contract. Tests exercise both implementations, original promise identity and synchronous failures; callback and facade compatibility remain intact.                                             |
+| Interface segregation | Renderer consumers receive smaller capability contracts derived from `CaptureAPI`; parent contracts compose their children's requirements. The public facade and emitted runtime remain unchanged.                                                          |
+| Dependency inversion  | HTTP, clock and secure storage are already supplied to OneNote. Native composition should wire concrete services; domain validation must not depend on Electron or the UI.                                                                                  |
 
 SOLID is a review discipline, not a requirement to turn every function into a
 class. A short module can still have several responsibilities; a long composition
@@ -228,7 +229,7 @@ ownership and preserved contracts.
 The owner approved and the code now implements the extraction of pure OneNote
 resource URL validation/normalization into `electron/onenote-resource.ts`.
 The shared `OneNoteError` class lives in `electron/onenote-error.ts`, retaining
-its existing export from `onenote.ts`. `ConnectionStore` depends on the error
+its existing export from `onenote.ts`. The OneNote connector adapter depends on the error
 definition without importing the Microsoft client. `OneNoteClient` continues to
 own HTTP and authorization.
 
@@ -262,3 +263,14 @@ previous compiled client's resource method covers 47 cases, checking exact
 request URLs/headers/redirects, bytes, error types/messages and cancellation
 precedence. Larger responsibility changes in native orchestration, authorization
 remain separate owner decisions. React form state is now separated as described above.
+
+After the approved controller, document and connector splits, all 134 tests pass.
+The same 10 tracked directories and all 45 original source/config/test paths
+remain. The 33 renderer/native TypeScript modules have no runtime import cycles
+across 55 project dependencies. Form definitions, document conversion and resource
+validation have no native I/O dependencies, including their imported helpers.
+
+The remaining proposed Graph HTTP extraction is awaiting the owner's decision.
+It has not been implemented. Passing these checks is not a claim that every
+possible runtime behavior has been proven equivalent or that every future
+responsibility split is necessary.
