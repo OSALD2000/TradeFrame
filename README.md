@@ -48,7 +48,7 @@ those systems. The archive includes public guides with working relative links.
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.3.2`.
+The top-right toolbar shows the installed app version, for example `v0.4.0`.
 
 
 Click **Capture chart**, then **Screenshot** on the floating bar. Choose a source
@@ -98,7 +98,11 @@ client, which handles cloud synchronization. TradeFrame does not authenticate
 to the Dropbox API or treat a local copy as proof of a cloud upload.
 
 OneNote uses Microsoft consent and creates a page containing fields, tags and
-all images in the default notebook's TradeFrame section. Refresh tokens use
+all images in the chosen notebook's TradeFrame section. After sign-in, select it
+in **Connections → OneNote → OneNote notebook**. Use **Refresh notebooks** after
+creating or opening one in OneNote; its name is unrestricted. The selection
+survives restart. Switching notebooks cancels pending OneNote deliveries without
+moving existing pages. New saves require a selection. Refresh tokens use
 system encryption where supported; otherwise sign-in lasts this session only.
 A new follow-up delivery creates a new OneNote page; existing pages are preserved.
 Failed deliveries survive restart and appear under **Retry sync**. Disconnecting

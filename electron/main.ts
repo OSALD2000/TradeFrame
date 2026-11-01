@@ -44,7 +44,7 @@ function oneNoteClient() {
     ?? (existsSync(configuration) ? JSON.parse(readFileSync(configuration, 'utf8')).microsoftClientId : '');
   return oneNote = new OneNoteClient(app.getPath('userData'), safeStorage, clientId);
 }
-const deliverOneNote = (file: string, section: string, id: string) => oneNoteClient().deliver(file, section, id);
+const deliverOneNote = (file: string, section: string, id: string, notebookId?: string) => oneNoteClient().deliver(file, section, id, notebookId);
 let state: CaptureState = { barOpen: false, busy: false, sources: [], screenshots: [], savedPath: null, requiresTimeframeCopy: false, error: null };
 let savedFingerprint = '';
 let capturedAt = '';
@@ -188,7 +188,7 @@ function registerCapture() {
     publish();
   });
   ipcMain.handle('onenote:state', (event) => { assertSender(event, journal); return oneNoteClient().getState(); });
-  for (const operation of ['configure', 'connect', 'poll', 'disconnect'] as const) {
+  for (const operation of ['configure', 'connect', 'poll', 'disconnect', 'notebooks', 'notebook'] as const) {
     ipcMain.handle(`onenote:${operation}`, async (event, input: unknown) => {
       assertSender(event, journal);
       if (state.busy) {
@@ -202,7 +202,17 @@ function registerCapture() {
           connectionStore().cancelOneNote();
           return result;
         }
-        if (operation === 'connect') return await oneNoteClient().begin();
+        if (operation === 'notebooks') return await oneNoteClient().refreshNotebooks();
+        if (operation === 'notebook') {
+          const current = await oneNoteClient().getState();
+          if (!current.connected || !current.notebooks.some((item) => item.id === input)) throw new Error('Choose an available notebook after signing in');
+          connectionStore().cancelOneNote();
+          return await oneNoteClient().selectNotebook(input);
+        }
+        if (operation === 'connect') {
+          connectionStore().cancelOneNote();
+          return await oneNoteClient().begin();
+        }
         if (operation === 'poll') return await oneNoteClient().poll();
         const result = await oneNoteClient().disconnect();
         connectionStore().cancelOneNote();
@@ -307,9 +317,10 @@ function registerCapture() {
       savedFingerprint = (await readSetup(savedPath)).fingerprint;
       try {
         const oneNoteState = await oneNoteClient().getState();
-        const jobs = store.enqueue(savedPath, oneNoteState.connected ? oneNoteState.section : undefined);
+        const jobs = store.enqueue(savedPath, oneNoteState.connected && oneNoteState.notebook ? oneNoteState.section : undefined, oneNoteState.connected ? oneNoteState.notebook?.id : undefined);
         const sync = await store.retry(jobs.map((job) => job.id), deliverOneNote);
-        return { status: 'saved', path: savedPath, sync };
+        return { status: 'saved', path: savedPath, sync, ...(oneNoteState.connected && !oneNoteState.notebook
+          ? { warning: 'Local save succeeded. Choose a OneNote notebook in Connections, then save a copy to send it.' } : {}) };
       } catch {
         return { status: 'saved', path: savedPath, sync: [], warning: 'Local save succeeded, but sync could not finish. Check Connections before retrying.' };
       }

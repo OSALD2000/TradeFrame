@@ -111,3 +111,9 @@ Version label: show the manifest version next to the local-first status in the
 existing toolbar, using secondary text and tabular digits. It remains visible
 when the local-first label is hidden at narrow widths, so installed builds can
 be identified immediately. This follows the owner's 1 November version request.
+
+Notebook destination: after Microsoft sign-in, use a labeled native select and a
+neutral Refresh notebooks action in the existing Connections section. Show the
+selected notebook name and TradeFrame section together. Require an explicit
+choice before sending new setups; never imply the notebook name is a free-text
+field. Keep setup/retry errors inline. Reuse the locked Linear form/focus styling.

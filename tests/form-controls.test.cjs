@@ -17,12 +17,26 @@ for (const extension of ['.ts', '.tsx']) require.extensions[extension] = (module
 const { FieldInput } = require('../src/FieldInput.tsx');
 const { SchemaEditor } = require('../src/SchemaEditor.tsx');
 const { ScreenshotFields } = require('../src/ScreenshotFields.tsx');
-const { OneNoteApplicationSettings } = require('../src/OneNoteConnection.tsx');
+const { OneNoteApplicationSettings, OneNoteNotebookPicker } = require('../src/OneNoteConnection.tsx');
 if (previous.ts) require.extensions['.ts'] = previous.ts; else delete require.extensions['.ts'];
 if (previous.tsx) require.extensions['.tsx'] = previous.tsx; else delete require.extensions['.tsx'];
 
 const field = (type, extra = {}) => ({ id: 'test', key: 'test', label: 'Test', type, required: false, tags: [], ...extra });
 const render = (definition, value) => renderToStaticMarkup(React.createElement(FieldInput, { field: definition, value, onChange: () => {} }));
+
+test('notebook picker shows the chosen notebook by ID and explains empty lists without a silent default', () => {
+  const notebooks = [{ id: 'a', displayName: '<Trading>', isDefault: true }, { id: 'b', displayName: '<Trading>', isDefault: false }];
+  const props = { state: { notebook: notebooks[1], notebooks }, disabled: false, onRefresh: async () => {}, onSelect: async () => {} };
+  const markup = renderToStaticMarkup(React.createElement(OneNoteNotebookPicker, props));
+  assert.match(markup, /OneNote notebook/);
+  assert.match(markup, /value="b" selected/);
+  assert.match(markup, /&lt;Trading&gt;/); assert.doesNotMatch(markup, /<Trading>/);
+  assert.match(markup, /Refresh notebooks/);
+  assert.match(markup, /cancels pending OneNote deliveries/);
+  const empty = renderToStaticMarkup(React.createElement(OneNoteNotebookPicker, { ...props, state: { notebook: null, notebooks: [] } }));
+  assert.match(empty, /<select[^>]*disabled/);
+  assert.match(empty, /Create or open a notebook in OneNote first/);
+});
 
 test('configured OneNote IDs remain editable and removable after failed sign-in', () => {
   const markup = renderToStaticMarkup(React.createElement(OneNoteApplicationSettings, {

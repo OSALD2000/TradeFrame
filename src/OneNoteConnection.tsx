@@ -20,6 +20,9 @@ export function OneNoteConnection({ api, busy }: { api: CaptureAPI | undefined; 
     }, 2000);
     return () => { active = false; window.clearInterval(timer); };
   }, [api, state?.login?.userCode]);
+  useEffect(() => {
+    if (api && state?.connected) void update(api.refreshOneNoteNotebooks);
+  }, [api, state?.connected]);
   async function update(action: () => Promise<OneNoteState>) {
     setWorking(true); setError('');
     try { setState(await action()); }
@@ -29,7 +32,7 @@ export function OneNoteConnection({ api, busy }: { api: CaptureAPI | undefined; 
   return <div className="onenote-connection">
     <div className="connection-row">
       <div><h3>OneNote</h3><p>{state?.connected ? `Connected${state.durable ? '' : ' for this session'} · ${state.section}` : state?.login ? 'Waiting for Microsoft sign-in' : 'Not connected'}</p>
-        <p>New saves send your fields and screenshots to the TradeFrame section in your default Microsoft notebook.</p>
+        <p>Choose the notebook for new saves below. Pages go into its TradeFrame section.</p>
       </div>
       <div className="connection-actions">
         {state?.connected || state?.login
@@ -42,6 +45,8 @@ export function OneNoteConnection({ api, busy }: { api: CaptureAPI | undefined; 
       <button className="secondary-button" disabled={!api} onClick={() => api?.openMicrosoftLogin().catch(() => setError('Open microsoft.com/devicelogin in your browser to sign in.'))}>Open Microsoft sign-in</button>
       <p>Expires at {new Date(state.login.expiresAt).toLocaleTimeString()}. Keep this window open; connection is checked automatically.</p>
     </div>}
+    {state?.connected && <OneNoteNotebookPicker state={state} disabled={!api || busy || working}
+      onRefresh={() => update(api!.refreshOneNoteNotebooks)} onSelect={(id) => update(() => api!.selectOneNoteNotebook(id))} />}
     {state && <OneNoteApplicationSettings state={state} disabled={!api || busy || working}
       onConfigure={(id) => update(() => api!.configureOneNote(id))} />}
     {state?.connected && !state.durable && <p className="preview-note">Sign-in is kept only until you close the app. Unlock a supported system keyring to keep it securely across restarts.</p>}
@@ -67,4 +72,23 @@ export function OneNoteApplicationSettings({ state, disabled, onConfigure }: {
       {state.customApplicationId && <button className="secondary-button" disabled={disabled} type="button" onClick={() => void onConfigure('')}>Remove custom ID</button>}
     </form>
   </details>;
+}
+
+export function OneNoteNotebookPicker({ state, disabled, onRefresh, onSelect }: {
+  state: OneNoteState; disabled: boolean; onRefresh(): Promise<void>; onSelect(id: string): Promise<void>;
+}) {
+  const missing = state.notebook && !state.notebooks.some((item) => item.id === state.notebook!.id);
+  return <div className="onenote-notebook">
+    <label>OneNote notebook
+      <select value={state.notebook?.id ?? ''} disabled={disabled || !state.notebooks.length} onChange={(event) => void onSelect(event.target.value)}>
+        <option value="" disabled>Choose a notebook…</option>
+        {missing && <option value={state.notebook!.id} disabled>{state.notebook!.displayName} (unavailable)</option>}
+        {state.notebooks.map((item) => <option key={item.id} value={item.id}>{item.displayName}{item.isDefault ? ' (default)' : ''}
+          {state.notebooks.filter((other) => other.displayName === item.displayName).length > 1 ? ` · ${item.id.slice(-8)}` : ''}</option>)}
+      </select>
+    </label>
+    <button className="secondary-button" disabled={disabled} onClick={() => void onRefresh()}>Refresh notebooks</button>
+    <p className="preview-note">{state.notebook ? `New setups go to ${state.notebook.displayName} → TradeFrame.` : 'Choose a notebook before sending new setups to OneNote. Create or open a notebook in OneNote first if the list is empty.'}
+      {' '}Changing the notebook cancels pending OneNote deliveries. Existing pages and local notes stay.</p>
+  </div>;
 }

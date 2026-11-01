@@ -42,8 +42,10 @@ no private journals or account data were opened.
 - OneNote uses Microsoft device authorization, delegated Notes.ReadWrite and
   offline_access, refresh, encrypted refresh-token persistence where supported,
   multipart pages with all screenshots, and duplicate checks before retrying.
-  A publisher Microsoft application ID and live account acceptance are pending.
-  OneNote creates a new page per saved delivery, including a follow-up delivery.
+  The owner reported successful connection; actual page upload remains unverified.
+  New saves require selection of an existing notebook in Connections. Its ID is
+  persisted and pinned to queued jobs; pages use its TradeFrame section. OneNote
+  creates a new page per saved delivery, including a follow-up delivery.
 - Packaging produces native runtime archives/checksums; Linux also builds a
   Debian installer with a desktop entry and sandbox metadata. No dependency was
   added. The lockfile was reviewed and adopted; CI uses npm ci. Packaging targets
@@ -182,3 +184,19 @@ The renderer imports only the version from package.json; the package builder
 uses that same manifest. No journal format, form revision or credential changes
 are part of this update. It includes the earlier calendar journal and OneNote
 ID correction/removal fixes. Native visual acceptance remains with the owner.
+
+1 November notebook selection (0.4.0): Connections lists existing notebooks after
+sign-in with explicit selection and Refresh notebooks. Selection survives secure
+restart; disconnect, app-ID changes and new sign-in clear it. Switching targets
+or starting a new sign-in cancels pending OneNote jobs without moving existing
+pages. New saves without a target stay local with a warning. Missing notebooks
+fail without fallback; TradeFrame sections are discovered/created in the selected
+notebook, and duplicate checks are scoped to that section. Graph pagination is
+restricted to the same collection. Version-2 connection settings preserve an
+original version-1 backup on first mutation and prevent older apps from ignoring
+notebook IDs. Legacy jobs without an ID retain default-notebook delivery.
+Build and 94 tests pass with synthetic data, including native IPC, picker markup,
+pagination boundaries, restart, switching/cancellation, section creation, lost
+responses and configuration preservation. The owner reported connection success;
+actual notebook discovery/upload and desktop/narrow visual acceptance remain open.
+See [ADR 0005](adr/0005-pin-onenote-deliveries-to-selected-notebooks.md).

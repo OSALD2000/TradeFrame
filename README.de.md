@@ -49,7 +49,7 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.3.2`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.4.0`.
 
 
 **Capture chart** und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
@@ -105,7 +105,12 @@ Ordner. Die Dropbox-App uebernimmt die Cloud-Synchronisierung. TradeFrame meldet
 sich nicht an der Dropbox-API an; eine lokale Kopie beweist keinen Cloud-Upload.
 
 OneNote nutzt Microsoft-Zustimmung und erstellt eine Seite mit Feldern, Tags
-und allen Bildern im Bereich TradeFrame des Standardnotizbuchs. Refresh-Tokens
+und allen Bildern im Abschnitt TradeFrame des ausgewaehlten Notizbuchs. Nach
+der Anmeldung unter **Connections → OneNote → OneNote notebook** waehlen.
+Der Name ist frei. Nach Anlegen/Oeffnen in OneNote **Refresh notebooks** nutzen.
+Die Auswahl bleibt nach Neustart erhalten; ein Wechsel beendet offene OneNote-
+Auftraege und verschiebt keine vorhandenen Seiten. Neue Uebertragungen brauchen
+eine Auswahl. Refresh-Tokens
 werden bei geeigneter Systemverschluesselung geschuetzt gespeichert; sonst gilt
 die Anmeldung nur fuer diese Sitzung. Eine neue Folge-Uebertragung erstellt eine
 neue OneNote-Seite; vorhandene Seiten bleiben erhalten. Fehlgeschlagene Auftraege

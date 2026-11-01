@@ -1,4 +1,16 @@
-# TradeFrame 0.3.2 preview
+# TradeFrame 0.4.0 preview
+
+Choose an existing notebook under **Connections → OneNote → OneNote notebook**
+after sign-in. Use **Refresh notebooks** after creating or opening one in OneNote.
+Names are unrestricted; pages go into its TradeFrame section, created as needed.
+Selection persists across restart. Changing it cancels pending OneNote jobs;
+existing pages and local notes stay. New saves need a selected notebook for
+OneNote delivery. Missing targets fail without default-notebook fallback.
+
+Connection settings use version 2, preserving a version-1 backup on first change.
+Older apps reject the new settings instead of ignoring selected destinations.
+Journal files remain unchanged. Microsoft connection was reported successful;
+real selected-notebook uploads and visual/native acceptance remain open.
 
 The journal toolbar now shows the app version, including narrow windows. It is
 bundled directly from package.json, matching the version of the installer.
@@ -36,6 +48,13 @@ acceptance, trusted signing/notarization and cloud/account tests remain open.
 For publisher setup and platform builds, see [release guidance](RELEASE.md).
 
 ## Deutsch
+
+Nach Anmeldung unter **Connections → OneNote → OneNote notebook** ein
+vorhandenes Notizbuch waehlen; der Name ist frei. **Refresh notebooks** laedt die
+Liste neu. Seiten kommen in dessen Abschnitt TradeFrame. Die Auswahl bleibt
+nach Neustart erhalten. Ein Wechsel beendet offene OneNote-Auftraege; vorhandene
+Seiten und lokale Notizen bleiben. Verbindungseinstellungen nutzen Format 2 mit
+Sicherung des alten Formats; aeltere Apps lehnen die neuen Einstellungen ab.
 
 Die Journal-Kopfleiste zeigt jetzt die App-Version auch im schmalen Fenster.
 Die Nummer kommt aus package.json und entspricht der Installationsdatei.

@@ -1,9 +1,13 @@
 import type { FormSchema, FormValues } from './form-schema';
 export type FolderKind = 'journal' | 'obsidian' | 'dropbox';
 export type SyncJob = { id: string; source: string; status: 'pending' | 'synced' | 'failed'; error: string | null }
-  & ({ kind: 'obsidian' | 'dropbox'; folder: string } | { kind: 'onenote'; section: string });
-export type Connections = { version: 1; folders: Record<FolderKind, string | null>; jobs: SyncJob[] };
+  & ({ kind: 'obsidian' | 'dropbox'; folder: string } | { kind: 'onenote'; section: string; notebookId?: string });
+export type Connections = { version: 1 | 2; folders: Record<FolderKind, string | null>; jobs: SyncJob[] };
+export type OneNoteNotebook = { id: string; displayName: string; isDefault: boolean };
+export const validOneNoteId = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && value.length <= 2048
+  && value !== '.' && value !== '..' && !/[\x00-\x20\x7f]/.test(value);
 export type OneNoteState = { configured: boolean; applicationId: string; customApplicationId: boolean; connected: boolean; durable: boolean; section: string; error: string | null;
+  notebook: OneNoteNotebook | null; notebooks: OneNoteNotebook[];
   login: { userCode: string; expiresAt: number } | null };
 export type SetupInput = { schema: FormSchema; values: FormValues };
 
@@ -47,6 +51,8 @@ export type CaptureAPI = {
   connectOneNote(): Promise<OneNoteState>;
   pollOneNote(): Promise<OneNoteState>;
   disconnectOneNote(): Promise<OneNoteState>;
+  refreshOneNoteNotebooks(): Promise<OneNoteState>;
+  selectOneNoteNotebook(id: string): Promise<OneNoteState>;
   openMicrosoftLogin(): Promise<void>;
   onStateChange(listener: (state: CaptureState) => void): () => void;
 };

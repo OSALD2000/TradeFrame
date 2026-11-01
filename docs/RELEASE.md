@@ -31,7 +31,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.3.2`. The tag must match
+only, or when the owner pushes a version tag such as `v0.4.0`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -49,8 +49,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.3.2
-git push origin v0.3.2
+git tag v0.4.0
+git push origin v0.4.0
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.
@@ -95,8 +95,9 @@ application-ID setup field. This field accepts only a UUID, never a client secre
 
 The connection uses Microsoft's [device authorization flow](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code).
 The app requests delegated `Notes.ReadWrite` and `offline_access`, creates pages
-in the `TradeFrame` section of the default notebook, and searches for its own
-delivery title before retrying a page creation. See [connections](SYNC.md).
+in the `TradeFrame` section of the notebook selected after sign-in, and searches
+that section for its own delivery title before retrying a page creation. Notebook
+and section discovery use the same permission. See [connections](SYNC.md).
 
 ## Required acceptance before publishing
 
@@ -104,7 +105,8 @@ On each claimed OS and architecture, use synthetic data to verify extraction,
 launch with sandboxing enabled, capture permissions, source selection, repeated
 screenshots with different required timeframes, captions/removal, save/reopen after restart, form persistence,
 Obsidian and Dropbox together, a disconnected destination and retry, and OneNote
-sign-in/page creation/disconnect. Inspect desktop and narrow-window layouts.
+sign-in, notebook discovery/selection, page creation in that notebook, selection
+after restart, switching notebooks and disconnect. Inspect desktop and narrow-window layouts.
 Terminate a process during a prepared screenshot append, reopen the file and
 verify completion without duplicate captures; verify a live writer is left alone
 and an external edit stops recovery. Test a hard-link-capable journal filesystem.

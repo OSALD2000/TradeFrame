@@ -2,7 +2,8 @@ import { readFile, mkdir, writeFile, rename, rm } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type { SafeStorage } from 'electron';
-import type { OneNoteState } from './capture-types';
+import { validOneNoteId } from './capture-types';
+import type { OneNoteNotebook, OneNoteState } from './capture-types';
 import { readSetup, pngBytes } from './journal';
 import { journalTags } from './form-schema';
 
@@ -16,6 +17,8 @@ const escapeHtml = (text: unknown) => String(text).replace(/[&<>"']/g, (c) => ({
 export class OneNoteClient {
   private clientId = '';
   private customApplicationId = false;
+  private notebook: OneNoteNotebook | null = null;
+  private notebooks: OneNoteNotebook[] = [];
   private refreshToken = '';
   private accessToken = '';
   private expiresAt = 0;
@@ -58,6 +61,14 @@ export class OneNoteClient {
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') this.error = 'OneNote needs to be reconnected. Check that your system keyring is unlocked.';
       }
+      try {
+        const target = JSON.parse(await readFile(path.join(this.directory, 'onenote-notebook.json'), 'utf8'));
+        if (target.clientId !== this.clientId || !validOneNoteId(target.notebook?.id) || typeof target.notebook?.displayName !== 'string'
+          || target.notebook.displayName.length > 1000 || typeof target.notebook.isDefault !== 'boolean') throw new Error('Invalid notebook settings');
+        this.notebook = { id: target.notebook.id, displayName: target.notebook.displayName, isDefault: target.notebook.isDefault };
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') this.error = 'Could not load the selected notebook. Refresh notebooks and choose it again.';
+      }
     })();
     await this.loaded;
   }
@@ -76,6 +87,7 @@ export class OneNoteClient {
     await this.load();
     if (this.login && this.now() >= this.login.expiresAt) { this.login = null; this.error = 'Sign-in expired. Connect again to get a new code.'; }
     return { configured: !!this.clientId, applicationId: this.clientId, customApplicationId: this.customApplicationId, connected: !!(this.refreshToken || this.accessToken), durable: this.durable,
+      notebook: this.notebook ? { ...this.notebook } : null, notebooks: this.notebooks.map((item) => ({ ...item })),
       section: 'TradeFrame', error: this.error, login: this.login ? { userCode: this.login.userCode, expiresAt: this.login.expiresAt } : null };
   }
   async configure(clientId: unknown) {
@@ -98,6 +110,7 @@ export class OneNoteClient {
     await this.load();
     if (!this.clientId) throw new Error('The publisher must configure a Microsoft application ID before OneNote can connect');
     const generation = ++this.generation;
+    await this.clearNotebook();
     this.login = null;
     let result;
     try { result = await this.tokenRequest('devicecode', { scope }); }
@@ -163,22 +176,88 @@ export class OneNoteClient {
     await this.acceptToken(data);
     return this.accessToken;
   }
+  private async clearNotebook() {
+    await rm(path.join(this.directory, 'onenote-notebook.json'), { force: true });
+    this.notebook = null; this.notebooks = [];
+  }
   async disconnect() {
     await this.load();
     await rm(path.join(this.directory, 'onenote-token.bin'), { force: true });
+    await this.clearNotebook();
     this.generation++;
     this.login = null; this.refreshToken = ''; this.accessToken = ''; this.expiresAt = 0; this.durable = false; this.error = null;
     return this.getState();
   }
-  async deliver(file: string, section: string, jobId: string) {
-    if (section !== 'TradeFrame' || !clientIdPattern.test(jobId)) throw new Error('Invalid OneNote delivery');
+  private async collection(endpoint: string, headers: Record<string, string>, generation: number): Promise<Record<string, unknown>[]> {
+    const initial = new URL(graph + endpoint);
+    let next: string | undefined = initial.href;
+    const seen = new Set<string>();
+    const items: Record<string, unknown>[] = [];
+    while (next) {
+      const url = new URL(next);
+      if (url.origin !== initial.origin || decodeURIComponent(url.pathname) !== decodeURIComponent(initial.pathname)
+        || url.username || url.password || seen.has(url.href) || seen.size >= 100) throw new Error('Invalid OneNote pagination');
+      seen.add(url.href);
+      const response = await this.request(url.href, { headers, redirect: 'error', signal: AbortSignal.timeout(15_000) });
+      if (generation !== this.generation) throw new Error('OneNote was disconnected');
+      if (!response.ok) { if (response.status === 401) this.accessToken = ''; throw new Error('Could not read OneNote notebooks or sections'); }
+      const data = await response.json() as { value?: Record<string, unknown>[]; '@odata.nextLink'?: string };
+      if (!Array.isArray(data.value) || items.length + data.value.length > 1000 || data.value.some((item) => !item || !validOneNoteId(item.id)
+        || typeof item.displayName !== 'string' || item.displayName.length > 1000) || (data['@odata.nextLink'] !== undefined && typeof data['@odata.nextLink'] !== 'string')) throw new Error('Invalid OneNote collection');
+      if (generation !== this.generation) throw new Error('OneNote was disconnected');
+      items.push(...data.value); next = data['@odata.nextLink'];
+    }
+    return items;
+  }
+  async refreshNotebooks() {
+    await this.load();
+    const generation = this.generation;
+    try {
+      const accessToken = await this.token();
+      const rows = await this.collection('notebooks?$select=id,displayName,isDefault', { Authorization: `Bearer ${accessToken}` }, generation);
+      if (generation !== this.generation) return this.getState();
+      if (new Set(rows.map((row) => row.id)).size !== rows.length || rows.some((row) => row.isDefault !== undefined && typeof row.isDefault !== 'boolean')) throw new Error('Invalid notebook list');
+      this.notebooks = rows.map((row) => ({ id: row.id as string, displayName: row.displayName as string, isDefault: row.isDefault === true }));
+      this.error = this.notebook && !this.notebooks.some((item) => item.id === this.notebook!.id)
+        ? 'The selected notebook is unavailable. Choose another notebook; nothing will be sent to a fallback notebook.' : null;
+    } catch {
+      if (generation === this.generation) this.error = 'Could not load notebooks. Check your connection or sign-in, then Refresh notebooks.';
+    }
+    return this.getState();
+  }
+  async selectNotebook(id: unknown) {
+    await this.load();
+    const selected = this.notebooks.find((item) => item.id === id);
+    if (!validOneNoteId(id) || !selected || !(this.refreshToken || this.accessToken)) throw new Error('Choose an available notebook after signing in');
+    await this.atomicWrite(path.join(this.directory, 'onenote-notebook.json'), JSON.stringify({ clientId: this.clientId, notebook: selected }));
+    this.notebook = { ...selected }; this.error = null;
+    return this.getState();
+  }
+  private async sectionFor(notebookId: string, headers: Record<string, string>, generation: number): Promise<string> {
+    const endpoint = `notebooks/${encodeURIComponent(notebookId)}/sections`;
+    const rows = await this.collection(`${endpoint}?$select=id,displayName`, headers, generation);
+    const sections = rows.filter((row) => row.displayName === 'TradeFrame');
+    if (sections.length > 1) throw new Error('Multiple TradeFrame sections found');
+    if (sections.length) return sections[0].id as string;
+    const response = await this.request(graph + endpoint, { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ displayName: 'TradeFrame' }), redirect: 'error', signal: AbortSignal.timeout(15_000) });
+    if (generation !== this.generation) throw new Error('OneNote was disconnected');
+    if (!response.ok) throw new Error('Could not create the TradeFrame section in the selected notebook');
+    const section = await response.json() as { id?: string; displayName?: string };
+    if (generation !== this.generation) throw new Error('OneNote was disconnected');
+    if (!validOneNoteId(section.id) || section.displayName !== 'TradeFrame') throw new Error('Invalid OneNote section');
+    return section.id;
+  }
+  async deliver(file: string, section: string, jobId: string, notebookId?: string) {
+    if (section !== 'TradeFrame' || !clientIdPattern.test(jobId) || (notebookId !== undefined && !validOneNoteId(notebookId))) throw new Error('Invalid OneNote delivery');
     const loaded = await readSetup(file);
     const accessToken = await this.token();
     const generation = this.generation;
     const title = `TradeFrame · ${String(loaded.values.symbol ?? loaded.schema.name).slice(0, 80)} · ${jobId}`;
     const headers = { Authorization: `Bearer ${accessToken}`, 'client-request-id': jobId };
+    const pagesPath = notebookId ? `sections/${encodeURIComponent(await this.sectionFor(notebookId, headers, generation))}/pages` : 'pages';
     const query = new URLSearchParams({ '$filter': `title eq '${title.replace(/'/g, "''")}'`, '$select': 'id,title', '$top': '2' });
-    const existing = await this.request(`${graph}pages?${query}`, { headers, signal: AbortSignal.timeout(15_000), redirect: 'error' });
+    const existing = await this.request(`${graph}${pagesPath}?${query}`, { headers, signal: AbortSignal.timeout(15_000), redirect: 'error' });
     if (generation !== this.generation) throw new Error('OneNote was disconnected');
     if (!existing.ok) { if (existing.status === 401) this.accessToken = ''; throw new Error('Could not check OneNote before syncing'); }
     const pages = await existing.json() as { value?: { id: string; title: string }[] };
@@ -198,7 +277,7 @@ export class OneNoteClient {
     });
     // OneNote has a lower request limit than the local journal; keep the local save regardless.
     if (bytes > 70_000_000) throw new Error('This setup is too large for OneNote');
-    const response = await this.request(`${graph}pages?${new URLSearchParams({ sectionName: section })}`, {
+    const response = await this.request(`${graph}${pagesPath}${notebookId ? '' : `?${new URLSearchParams({ sectionName: section })}`}`, {
       method: 'POST', headers, body, signal: AbortSignal.timeout(60_000), redirect: 'error',
     });
     if (!response.ok) { if (response.status === 401) this.accessToken = ''; throw new Error('OneNote upload failed. Retry checks for an existing page first.'); }

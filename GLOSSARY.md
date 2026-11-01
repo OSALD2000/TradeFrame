@@ -75,3 +75,8 @@ No trade records that no position was opened.
 **R multiple**:
 The signed result expressed in units of the trade's initial risk. A missing
 result differs from an explicit zero.
+
+**OneNote destination**:
+The notebook chosen to receive setup pages, within its TradeFrame section.
+A notebook contains sections; a section contains pages. Selecting a notebook
+does not move pages already delivered elsewhere.

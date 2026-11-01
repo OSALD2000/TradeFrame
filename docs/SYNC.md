@@ -36,7 +36,10 @@ not remove any previously delivered files. No transfer is made during setup.
 ## OneNote
 
 Use **Connect OneNote**, enter the displayed code at Microsoft's sign-in page,
-and approve the delegated permission. The app checks the authorization status
+and approve the delegated permission. Then choose an existing notebook under
+**Connections → OneNote → OneNote notebook**. Names are unrestricted; select
+from the list rather than typing a name. If empty, create or open a notebook in
+OneNote with the same account, then use **Refresh notebooks**. The app checks the authorization status
 at Microsoft's interval, stops on expiration/denial, and handles throttling.
 No account password, access token, refresh token or private device code is sent
 to the renderer. **Disconnect** cancels pending OneNote deliveries and removes
@@ -53,12 +56,22 @@ restart. Only the public application ID is exposed to the UI, never tokens.
 Use **Application (client) ID** from **Entra ID → App registrations → TradeFrame →
 Overview**. A user/object ID or directory/tenant ID is a different identifier.
 A configured publisher application ID is required; [release setup](RELEASE.md)
-describes registration. A public Microsoft account with an initialized default
-OneNote notebook is needed for the personal-account flow. Organization policy
+describes registration. A personal Microsoft account needs an initialized
+OneNote notebook for the personal-account flow. Organization policy
 can restrict access. Only Microsoft's global cloud endpoints are implemented.
 
-Each save/append delivery becomes a new page in the default notebook's `TradeFrame`
-section. Fields, tags and all screenshots are included as escaped HTML and PNG
+The selected notebook ID/name persist across restart with the app identity.
+Disconnect, app-ID changes and a new sign-in clear the selection; select again
+after connecting. Changing notebooks cancels pending/failed OneNote jobs, while
+local files, other destinations and existing cloud pages stay. A new sign-in
+also cancels pending OneNote jobs before starting authentication. Each new job
+keeps its chosen notebook ID even across retries. If it becomes unavailable,
+delivery fails without falling back to another notebook.
+
+Each save/append delivery becomes a new page in the selected notebook's
+`TradeFrame` section, created during delivery if missing. New saves without a
+selection succeed locally with a warning; select a notebook and use Save copy
+to send that setup. Fields, tags and all screenshots are included as escaped HTML and PNG
 parts following the [OneNote multipart API](https://learn.microsoft.com/en-us/graph/onenote-create-page).
 The page title includes a unique delivery UUID. Retrying first searches for that
 title and reuses the page if it already exists, including after a lost response.
@@ -77,10 +90,17 @@ No tokens are stored in the form-definition SQLite database.
 ## Queue, retries and conflicts
 
 `connections.json` in Electron's user-data directory stores chosen folders and
-delivery jobs, including source paths and fixed error/status messages. It contains
+delivery jobs, including source paths, chosen notebook IDs and fixed error/status messages. It contains
 no note text, images or OAuth tokens. Jobs are persisted before delivery. Failed
 or pending jobs survive restart; use **Retry sync** in Connections. The source
 snapshot must still exist. New saves do not repeatedly retry older jobs.
+
+Connection settings are version 2. A version-1 file stays untouched on read;
+its original bytes are backed up once as `connections.json.v1.bak` on first
+mutation. Older app versions reject version 2, preventing them from ignoring
+notebook IDs. Existing jobs without an ID retain their legacy default-notebook
+destination unless canceled. Journal files and credential formats are unchanged.
+See [destination decision](adr/0005-pin-onenote-deliveries-to-selected-notebooks.md).
 
 Folder retries compare every existing target file with the source. Identical
 files are reused, missing files are copied exclusively, and any different or
@@ -107,7 +127,10 @@ the local copy succeeded but sync could not finish. Local files remain available
 Temporary-folder tests cover parallel destinations, restart/retry, missing roots,
 conflicts, symlink rejection and old-file preservation. Mocked Microsoft responses
 cover code polling, encrypted-token calls, refresh, escaped multipart content and
-duplicate detection after a lost response. These do not prove an actual Microsoft
-consent flow, a cloud upload, real Dropbox delivery or native folder dialogs.
+duplicate detection after a lost response, paginated notebook discovery, target
+selection/restart, unavailable notebooks and version-1 connection backups. The
+owner reported successful Microsoft connection on 1 November; a real page upload
+to a chosen notebook is still unverified. Automated tests do not prove a cloud
+upload, real Dropbox delivery or native folder dialogs.
 Those acceptance checks remain open until run with explicitly chosen accounts
 and synthetic setups on the target desktops.

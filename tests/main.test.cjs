@@ -16,7 +16,7 @@ const source = (id, name = 'Synthetic chart') => ({ id, name,
   thumbnail: { isEmpty: () => false, toDataURL: () => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=' },
 });
 
-async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] }), primaryInstance = true) {
+async function boot(capture = async () => [source('screen:0:0')], selectFolder = async () => ({ canceled: true, filePaths: [] }), primaryInstance = true, oneNoteOptions) {
   const fsSync = require('node:fs');
   const dataRoot = fsSync.mkdtempSync(path.join(require('node:os').tmpdir(), 'tradeframe-main-test-'));
   dataRoots.push(dataRoot);
@@ -74,6 +74,9 @@ async function boot(capture = async () => [source('screen:0:0')], selectFolder =
     setTimeout: (callback) => queueMicrotask(callback),
     require: (name) => name === 'electron' ? electron : name === './schema-store'
       ? { SchemaStore: class extends require('../dist-electron/schema-store.js').SchemaStore { constructor() { super(':memory:'); } } }
+      : name === './onenote' && oneNoteOptions ? { ...require('../dist-electron/onenote.js'), OneNoteClient: class extends require('../dist-electron/onenote.js').OneNoteClient {
+        constructor(directory, encryption, clientId) { super(directory, encryption, clientId, oneNoteOptions.request, oneNoteOptions.now); }
+      } }
       : require(name.startsWith('./') ? path.join(dirname, name) : name),
   });
   await new Promise(setImmediate);
@@ -214,7 +217,7 @@ test('image URLs serve only current in-memory PNGs and state updates do not tran
 test('OneNote operations and login browser are unavailable to the capture bar', async () => {
   const { windows, invoke } = await boot();
   await invoke('capture:open-bar');
-  for (const operation of ['state', 'connect', 'configure', 'poll', 'disconnect', 'browser']) {
+  for (const operation of ['state', 'connect', 'configure', 'poll', 'disconnect', 'browser', 'notebooks', 'notebook']) {
     await assert.rejects(invoke(`onenote:${operation}`, windows[1]), /Untrusted/);
   }
   await assert.rejects(invoke('onenote:browser'), /Start OneNote sign-in/);
@@ -233,6 +236,41 @@ test('OneNote application ID reset uses trusted IPC and cancels only pending One
   assert.equal(cleared.applicationId, '');
   assert.equal(cleared.configured, false);
   assert.equal(cleared.connected, false);
+});
+
+test('native saves require a chosen notebook and switching it cancels failed jobs instead of redirecting them', async (t) => {
+  const fs = require('node:fs/promises');
+  const root = await fs.realpath(await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-notebook-ipc-')));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  let now = 0; let fail = true; const destinations = [];
+  const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
+  const request = async (url, options) => {
+    if (url.endsWith('devicecode')) return reply({ device_code: 'private-code', user_code: 'TEST', expires_in: 60, interval: 1 });
+    if (url.endsWith('token')) return reply({ access_token: 'private-access', expires_in: 3600 });
+    const pathname = new URL(url).pathname;
+    if (pathname.endsWith('/notebooks')) return reply({ value: ['book-a', 'book-b'].map((id) => ({ id, displayName: id, isDefault: id === 'book-a' })) });
+    if (pathname.endsWith('/sections')) return reply({ value: [{ id: `sec-${pathname.split('/').at(-2)}`, displayName: 'TradeFrame' }] });
+    assert.ok(pathname.includes('/sections/sec-book-'));
+    if (options.method !== 'POST') return reply({ value: [] });
+    destinations.push(pathname); return reply({}, fail ? 503 : 201);
+  };
+  const { windows, invoke } = await boot(undefined, async () => ({ canceled: false, filePaths: [root] }), true, { request, now: () => now });
+  await invoke('onenote:configure', windows[0], '11111111-2222-3333-4444-555555555555');
+  await invoke('onenote:connect'); now = 1000; await invoke('onenote:poll');
+  await invoke('capture:open-bar'); await captureReady(invoke, windows);
+  assert.match((await invoke('journal:save', windows[0], setupInput())).warning, /Choose a OneNote notebook/);
+  assert.equal((await invoke('connections:get')).jobs.length, 0);
+  await invoke('onenote:notebooks');
+  await assert.rejects(invoke('onenote:notebook', windows[0], 'unknown'), /available notebook/);
+  await invoke('onenote:notebook', windows[0], 'book-b');
+  const failed = await invoke('journal:save', windows[0], setupInput());
+  assert.equal(failed.sync[0].status, 'failed'); assert.equal(failed.sync[0].notebookId, 'book-b');
+  await invoke('onenote:notebook', windows[0], 'book-a');
+  assert.equal((await invoke('connections:get')).jobs.length, 0);
+  fail = false;
+  const sent = await invoke('journal:save', windows[0], setupInput());
+  assert.equal(sent.sync[0].status, 'synced'); assert.equal(sent.sync[0].notebookId, 'book-a');
+  assert.deepEqual(destinations, ['/v1.0/me/onenote/sections/sec-book-b/pages', '/v1.0/me/onenote/sections/sec-book-a/pages']);
 });
 
 test('native save requires an explicitly chosen timeframe for every screenshot', async () => {
