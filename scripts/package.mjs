@@ -71,6 +71,8 @@ try {
     'capture-types',
     'journal',
     'form-schema',
+    'form-definition',
+    'setup-document',
     'schema-store',
     'connections',
     'onenote',

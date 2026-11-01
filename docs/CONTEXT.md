@@ -119,6 +119,13 @@ and an injected field factory; it imports no view components. Eight workflow
 characterizations pass before/after, all 130 tests pass, and 30 direct view/command
 comparisons agree. Native emitted files remain byte-identical during this step.
 
+Form definitions/value validation now live in `form-definition.ts`; versioned
+Markdown/screenshot conversion lives in `setup-document.ts`. `form-schema.ts`
+re-exports the established API, retaining all 20 runtime exports and existing
+types. The dependency goes from documents to definitions only. All 42 moved
+declarations retain their syntax and 35 before/after format/error comparisons
+agree, including legacy version 1. No persisted format is migrated.
+
 `electron/main.ts` owns windows, trusted IPC, native pickers, image serving and
 lifecycle and one process per local profile. Sandboxing/context isolation remain enabled; renderer Node access,
 new windows and off-app navigation remain blocked. `preload.ts` exposes only

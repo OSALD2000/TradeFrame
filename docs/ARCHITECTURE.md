@@ -10,19 +10,20 @@ The existing directories and file paths stay in place. An approved extraction
 may add files inside an existing directory; it does not introduce a new folder
 hierarchy. Packaging must include every new native module it needs.
 
-| Location                                                       | Responsibility                                                         | Boundary                                                                                                            |
-| -------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `src/`                                                         | React screens, form editing, capture subscriptions and user feedback   | Calls the named preload API; no direct filesystem, credentials or Graph access                                      |
-| `electron/preload.ts` and `electron/capture-types.ts`          | Renderer-facing commands, events and their contracts                   | Expose individual commands rather than arbitrary IPC or native capabilities                                         |
-| `electron/main.ts`                                             | Electron startup, windows, capture state, trusted IPC and composition  | Verifies senders, owns in-memory image access and coordinates services                                              |
-| `electron/form-schema.ts` and `electron/journal-layout.ts`     | Validation, document conversion and calendar identity                  | Pure rules are shared without importing Electron or account services                                                |
-| `electron/journal.ts` and `electron/append-store.ts`           | Markdown/PNG persistence, append preservation and recovery             | Filesystem operations validate inputs and preserve conflicting external data                                        |
-| `electron/schema-store.ts`                                     | Versioned form definitions in SQLite                                   | Setup values and screenshots do not enter this database                                                             |
-| `electron/connections.ts`                                      | Folder preferences, durable delivery jobs and folder copies            | Delivery failures do not undo a local save                                                                          |
-| `electron/onenote.ts` and `electron/onenote-content.ts`        | Microsoft authorization, Graph requests and validated cloud conversion | Tokens stay native; returned HTML is parsed as data, never rendered                                                 |
-| `electron/onenote-resource.ts` and `electron/onenote-error.ts` | Pure resource URL validation and the shared safe error type            | No HTTP, credentials, settings or account lifecycle; the existing public error export keeps the same class identity |
-| `scripts/`                                                     | Native distribution, platform branding and runtime verification        | Uses an explicit public-file allowlist                                                                              |
-| `tests/`                                                       | Behavioral regressions using synthetic data and temporary folders      | Does not require real journals, accounts or desktop capture                                                         |
+| Location                                                                         | Responsibility                                                                    | Boundary                                                                                                            |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `src/`                                                                           | React screens, form editing, capture subscriptions and user feedback              | Calls the named preload API; no direct filesystem, credentials or Graph access                                      |
+| `electron/preload.ts` and `electron/capture-types.ts`                            | Renderer-facing commands, events and their contracts                              | Expose individual commands rather than arbitrary IPC or native capabilities                                         |
+| `electron/main.ts`                                                               | Electron startup, windows, capture state, trusted IPC and composition             | Verifies senders, owns in-memory image access and coordinates services                                              |
+| `electron/form-definition.ts` and `electron/journal-layout.ts`                   | Form definition/value rules and calendar identity                                 | Pure rules are shared without importing Electron or account services                                                |
+| `electron/setup-document.ts` and the compatible `electron/form-schema.ts` facade | Versioned Markdown and screenshot references, with the established public exports | Document conversion depends on definitions; definitions do not depend on document conversion                        |
+| `electron/journal.ts` and `electron/append-store.ts`                             | Markdown/PNG persistence, append preservation and recovery                        | Filesystem operations validate inputs and preserve conflicting external data                                        |
+| `electron/schema-store.ts`                                                       | Versioned form definitions in SQLite                                              | Setup values and screenshots do not enter this database                                                             |
+| `electron/connections.ts`                                                        | Folder preferences, durable delivery jobs and folder copies                       | Delivery failures do not undo a local save                                                                          |
+| `electron/onenote.ts` and `electron/onenote-content.ts`                          | Microsoft authorization, Graph requests and validated cloud conversion            | Tokens stay native; returned HTML is parsed as data, never rendered                                                 |
+| `electron/onenote-resource.ts` and `electron/onenote-error.ts`                   | Pure resource URL validation and the shared safe error type                       | No HTTP, credentials, settings or account lifecycle; the existing public error export keeps the same class identity |
+| `scripts/`                                                                       | Native distribution, platform branding and runtime verification                   | Uses an explicit public-file allowlist                                                                              |
+| `tests/`                                                                         | Behavioral regressions using synthetic data and temporary folders                 | Does not require real journals, accounts or desktop capture                                                         |
 
 The UI and native code share validation rules and type definitions. This is a
 modular Electron application, not a claim that the current code implements a
@@ -128,6 +129,18 @@ This is lazy construction rather than a global Singleton class: tests can create
 independent store/client instances, and the classes do not enforce global access.
 
 ### Snapshot and versioned serialization
+
+The owner approved splitting `form-definition.ts` (types, defaults and value
+validation) from `setup-document.ts` (Markdown and screenshot references).
+`form-schema.ts` remains a compatibility facade with the same 20 runtime exports
+and the existing type exports. Shared low-level validation helpers are exported
+only from the definition module and are not added to the compatibility facade.
+There is no reverse dependency or module cycle.
+
+All 42 original declarations retain their syntax, apart from module export
+ownership. A direct comparison covers 35 validation, Markdown version 1–5 and
+error cases. The existing format, append/recovery and cloud tests pass; a facade
+contract test protects its export set and shared function identities.
 
 `electron/form-schema.ts` embeds the form definition, values
 and ordered screenshot references in the saved document. OneNote's

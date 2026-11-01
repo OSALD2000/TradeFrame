@@ -201,3 +201,34 @@ test('legacy version-one files are read without rewriting their original text', 
   assert.equal(deserializeSetup(serializeSetup(loaded)).values.note, 'Old note 🕯');
   assert.ok(markdown.startsWith('---\nschemaVersion: 1'));
 });
+
+test('the form facade retains public exports and shared definition/document identities', () => {
+  const facade = require('../dist-electron/form-schema.js');
+  const definition = require('../dist-electron/form-definition.js');
+  const document = require('../dist-electron/setup-document.js');
+  assert.deepEqual(Object.keys(facade).sort(), [
+    'DEFAULT_SCHEMA',
+    'FIELD_TYPES',
+    'JOURNAL_SCHEMA',
+    'MAX_SCREENSHOTS',
+    'TIMEFRAMES',
+    'TIMEFRAME_PATTERN',
+    'deserializeSetup',
+    'directionLabel',
+    'emptyValues',
+    'fieldVisible',
+    'journalTags',
+    'journalValues',
+    'screenshotAddition',
+    'screenshotFile',
+    'serializeSetup',
+    'validTimeframe',
+    'validateSchema',
+    'validateScreenshots',
+    'validateValues',
+    'valueTags',
+  ]);
+  for (const key of Object.keys(facade))
+    assert.equal(facade[key], Object.hasOwn(definition, key) ? definition[key] : document[key]);
+  for (const key of ['record', 'check', 'keys']) assert.equal(Object.hasOwn(facade, key), false);
+});
