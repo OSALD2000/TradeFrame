@@ -244,6 +244,27 @@ test('configured OneNote IDs remain editable and removable after failed sign-in'
   assert.match(markup, /user\/object ID or directory\/tenant ID/);
 });
 
+test('publisher application settings stay available as optional advanced controls without requiring an ID for sign-in', () => {
+  const markup = renderToStaticMarkup(
+    React.createElement(OneNoteApplicationSettings, {
+      state: {
+        configured: true,
+        applicationId: '11111111-2222-3333-4444-555555555555',
+        customApplicationId: false,
+        connected: false,
+        error: null,
+      },
+      disabled: false,
+      onConfigure: async () => {},
+    }),
+  );
+  assert.match(markup, /Microsoft application ID · advanced settings/);
+  assert.doesNotMatch(markup, /<details[^>]*open=/);
+  assert.match(markup, /no app registration or application ID entry is needed/);
+  assert.match(markup, /Save application ID/);
+  assert.doesNotMatch(markup, /Remove custom ID/);
+});
+
 test('each screenshot has an independent required timeframe control and multiline notes', () => {
   const markup = renderToStaticMarkup(
     React.createElement(ScreenshotFields, {

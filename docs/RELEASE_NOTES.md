@@ -1,3 +1,22 @@
+# TradeFrame 0.7.2 preview
+
+Packages now include the owner-approved public Microsoft application ID by
+default. Users can choose Connect OneNote, sign in with their own account, enter
+the temporary Microsoft code and choose a notebook. Registering an app or typing
+an application ID is no longer needed for these preview packages. Optional
+application settings remain accessible under advanced settings.
+
+Authentication and secure storage are unchanged. Existing custom IDs retain
+priority, preserving their encrypted sessions, notebook choices and queued jobs
+across an update. There is no automatic disconnect, sign-in or migration. A
+deliberate effective-ID change, revoked authorization or unavailable keyring can
+still require reconnection. Tests use synthetic profiles and credentials only.
+
+The new configuration copies only the public client ID; no Microsoft account
+email, password or user token is copied. This local preview does not claim Microsoft publisher verification,
+independent-account acceptance or legal/public-release clearance. The gates in
+[RELEASE](RELEASE.md) remain open.
+
 # TradeFrame 0.7.1 preview
 
 Draft replacement confirmations now match the dark app design when starting a

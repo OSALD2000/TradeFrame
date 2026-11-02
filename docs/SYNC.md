@@ -35,6 +35,10 @@ not remove any previously delivered files. No transfer is made during setup.
 
 ## OneNote
 
+Packaged builds from 0.7.2 include the owner-approved public TradeFrame app ID.
+Users do not need to register an application or enter that ID. The key shown
+during sign-in is a temporary Microsoft user code, not a client secret.
+
 Use **Connect OneNote**, enter the displayed code at Microsoft's sign-in page,
 and approve the delegated permission. Then choose an existing notebook under
 **Connections → OneNote → OneNote notebook**. Names are unrestricted; select
@@ -45,7 +49,7 @@ No account password, access token, refresh token or private device code is sent
 to the renderer. **Disconnect** cancels pending OneNote deliveries and removes
 the local credentials; it does not delete cloud pages or revoke consent at Microsoft.
 
-The Microsoft application settings remain available after configuration and after
+The optional advanced Microsoft application settings remain available after configuration and after
 failed sign-in. **Save application ID** replaces a custom ID; **Remove custom ID**
 removes it and disconnects the local OneNote session, including encrypted saved
 credentials and pending OneNote deliveries. Existing notes/pages and other folder
@@ -114,6 +118,13 @@ unlock a missing/locked keyring; unavailable providers still mean session-only
 sign-in, with a visible explanation. No fallback/plaintext credentials are saved.
 A new sign-in clears the old
 notebook selection to avoid reusing another account's target; choose it again.
+
+Adding the packaged publisher default does not replace an existing custom ID or
+reset its encrypted session, notebook or jobs. The owner confirms persistence
+across restarts and an earlier app update. New regression tests cover the
+publisher-enabled update without another device-code request. Microsoft can still
+expire/revoke authorization, and changing the effective registration or losing
+access to the OS keyring can require sign-in again.
 
 ## Open from OneNote
 

@@ -80,7 +80,15 @@ a trusted publisher identity. Do not claim a signed/notarized public release.
 
 ## OneNote publisher setup
 
-Register a dedicated TradeFrame app in Microsoft Entra **App registrations**.
+Version 0.7.2 packages default to the public `config.microsoftClientId` in
+`package.json`, approved by the owner from the existing working TradeFrame
+registration. This configuration copies only that public identifier, not the
+Microsoft account owner's email, password, tokens or notebook data. Existing
+Debian Maintainer contact metadata is separate and remains part of the provider
+information review. This prepares the local preview; it does not
+establish publisher verification or complete the legal/public-release gates below.
+
+For a different publisher, register a dedicated TradeFrame app in Microsoft Entra **App registrations**.
 Copy **Application (client) ID** from that app's Overview page; the ID below
 your profile name, the user/object ID and Directory (tenant) ID are not this value.
 See Microsoft's [app registration guide](https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app).
@@ -89,11 +97,22 @@ enable **Allow public client flows** in Authentication, and add the delegated
 Microsoft Graph `Notes.ReadWrite` permission. No client secret belongs in a
 desktop application. Consent may depend on the account's organization policy.
 
-Set the public application/client UUID as `TRADEFRAME_MICROSOFT_CLIENT_ID` when
-packaging, or as the repository Actions variable of the same name. The package
-embeds this public ID, so people downloading it can use **Connect OneNote** directly.
+An optional nonempty `TRADEFRAME_MICROSOFT_CLIENT_ID` overrides the default when
+packaging, including as the repository Actions variable of the same name. An
+empty/unset variable uses `package.json`'s public default, so ordinary builds on
+all four runners keep OneNote available without additional repository settings.
+The package embeds this public ID, so people downloading it can use **Connect OneNote** directly.
 For a developer build without a publisher ID, Connections exposes a local
 application-ID setup field. This field accepts only a UUID, never a client secret.
+
+Existing custom IDs take priority over the packaged default. Do not rewrite
+`onenote.json`, `onenote-token.bin`, `onenote-notebook.json` or `connections.json`
+as part of an update. The authentication implementation and credential format are
+unchanged. A normal version update must not call Configure, Disconnect or Begin
+automatically. Tests cover retained credentials/notebook/jobs when a publisher
+default is introduced and when the existing default is retained. Deliberately
+changing the effective app ID can still require fresh authorization; tokens from
+one registration must not be reassigned to another.
 
 The connection uses Microsoft's [device authorization flow](https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-device-code).
 The app requests delegated `Notes.ReadWrite` and `offline_access`, creates pages
@@ -129,6 +148,10 @@ money from it. The scope of that restriction is still undecided. This section is
 a sourced preparation checklist, not final legal terms or a legal clearance.
 Recheck time-sensitive sources immediately before publication; other countries,
 stores or a changed business model can add requirements.
+
+Implementation follow-up: the owner approved reusing the current working public
+client ID for 0.7.2 preview packages. That build configuration does not resolve
+the legal-document, account-eligibility or independent-account checks below.
 
 ### Current evidence and documents to prepare
 

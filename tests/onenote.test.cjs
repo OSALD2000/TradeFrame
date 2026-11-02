@@ -35,6 +35,31 @@ async function fixture(t) {
   return root;
 }
 
+test('a clean publisher build is ready for direct sign-in without a custom ID or startup authentication', async (t) => {
+  const root = await fixture(t);
+  let calls = 0;
+  const client = new OneNoteClient(root, encryption(), clientId, async (url, options) => {
+    calls++;
+    assert.ok(url.endsWith('devicecode'));
+    assert.equal(options.body.get('client_id'), clientId);
+    assert.equal(
+      options.body.get('scope'),
+      'https://graph.microsoft.com/Notes.ReadWrite offline_access',
+    );
+    assert.equal(options.body.has('client_secret'), false);
+    return json({ device_code: 'private-code', user_code: 'SIGN-IN', expires_in: 60, interval: 1 });
+  });
+  const state = await client.getState();
+  assert.equal(state.configured, true);
+  assert.equal(state.customApplicationId, false);
+  assert.equal(state.applicationId, clientId);
+  assert.equal(state.connected, false);
+  assert.equal(calls, 0);
+  await assert.rejects(fs.stat(path.join(root, 'onenote.json')), { code: 'ENOENT' });
+  assert.equal((await client.begin()).login.userCode, 'SIGN-IN');
+  assert.equal(calls, 1);
+});
+
 test('a rejected application ID can be corrected, removed and stays removed after restart', async (t) => {
   const root = await fixture(t);
   const replacement = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';

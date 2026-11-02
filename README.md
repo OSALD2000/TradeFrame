@@ -25,7 +25,10 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 
 This is an early preview. Build/tests pass; native capture, layout, installer
 launch, real cloud delivery and other operating systems still need acceptance.
-OneNote requires the publisher's registered Microsoft application ID. No public
+Packaged builds from 0.7.2 include TradeFrame's public Microsoft application ID:
+choose Connect OneNote, sign in and enter the temporary Microsoft code. Existing
+saved connections remain in the app profile; app-ID controls stay available as
+advanced settings. No public
 release or signed/notarized build is claimed. [Current evidence](docs/CONTEXT.md)
 
 ## Develop and package

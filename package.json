@@ -1,6 +1,6 @@
 {
   "name": "tradeframe",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "private": true,
   "description": "A local-first desktop trading journal for capturing charts and documenting setups.",
   "main": "dist-electron/main.js",
@@ -35,5 +35,8 @@
     "prettier": "3.9.6",
     "typescript": "5.9.3",
     "vite": "6.4.2"
+  },
+  "config": {
+    "microsoftClientId": "09c42f94-4515-4051-ab93-eebf431f547e"
   }
 }

@@ -25,7 +25,10 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 
 Dies ist eine fruehe Vorschau. Build und Tests bestehen; echte Aufnahme, Layout,
 Installerstart, Cloud-Uebertragung und weitere Betriebssysteme brauchen noch Abnahme.
-OneNote benoetigt die registrierte Microsoft-App-ID des Herausgebers. Keine
+Pakete ab 0.7.2 enthalten die oeffentliche Microsoft-App-ID von TradeFrame:
+Connect OneNote waehlen, anmelden und den temporaeren Microsoft-Code eingeben.
+Gespeicherte Verbindungen bleiben im App-Profil; App-ID-Einstellungen sind
+weiterhin unter den erweiterten Einstellungen erreichbar. Keine
 veroeffentlichte, signierte oder notarisierte Version wird behauptet.
 [Aktueller Nachweisstand](docs/CONTEXT.md)
 

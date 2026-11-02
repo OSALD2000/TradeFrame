@@ -87,6 +87,46 @@ test('notebooks load across pages and the chosen ID survives restart but clears 
   await assert.rejects(fs.stat(path.join(f.root, 'onenote-notebook.json')), { code: 'ENOENT' });
 });
 
+test('publisher-enabled updates preserve custom and default sessions notebooks and pending deliveries without new sign-in', async (t) => {
+  for (const custom of [false, true]) {
+    const f = await fixture(t, async () => json({ value: notebooks }));
+    await f.client.refreshNotebooks();
+    await f.client.selectNotebook(notebooks[1].id);
+    if (custom) await fs.writeFile(path.join(f.root, 'onenote.json'), JSON.stringify({ clientId }));
+    const queueFile = path.join(f.root, 'connections.json');
+    const queue = new ConnectionStore(queueFile);
+    queue.enqueue(path.join(f.root, 'synthetic.md'), 'TradeFrame', notebooks[1].id, false);
+    const files = [
+      'onenote-token.bin',
+      'onenote-notebook.json',
+      'connections.json',
+      ...(custom ? ['onenote.json'] : []),
+    ];
+    const original = await Promise.all(files.map((name) => fs.readFile(path.join(f.root, name))));
+    let deviceRequests = 0;
+    const publisher = custom ? 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' : clientId;
+    const network = (url, options) => {
+      if (url.endsWith('devicecode')) deviceRequests++;
+      return f.network(url, options);
+    };
+    const updated = new OneNoteClient(f.root, f.secure, publisher, network, f.now);
+    const state = await updated.getState();
+    assert.equal(state.applicationId, clientId);
+    assert.equal(state.customApplicationId, custom);
+    assert.equal(state.connected, true);
+    assert.equal(state.durable, true);
+    assert.deepEqual(state.notebook, notebooks[1]);
+    for (const [index, name] of files.entries())
+      assert.deepEqual(await fs.readFile(path.join(f.root, name)), original[index], name);
+    assert.deepEqual(new ConnectionStore(queueFile).get(), queue.get());
+    await updated.refreshNotebooks();
+    assert.equal(deviceRequests, 0);
+    const restarted = new OneNoteClient(f.root, f.secure, publisher, network, f.now);
+    assert.equal((await restarted.getState()).connected, true);
+    assert.deepEqual((await restarted.getState()).notebook, notebooks[1]);
+  }
+});
+
 test('untrusted pagination never receives a bearer token and malformed/duplicate notebook lists fail', async (t) => {
   let mode = 'external';
   let calls = 0;

@@ -1,5 +1,20 @@
 # TradeFrame context
 
+2 November 2026, publisher-enabled preview 0.7.2: the owner approved bundling the
+existing working public TradeFrame client ID from the specifically authorized
+local `onenote.json`. No token/notebook file was accessed. The public ID is build
+configuration in package.json, with an optional nonempty environment override.
+Blank CI variables use that default. Normal users select Connect OneNote and
+enter Microsoft's temporary code; app-ID controls stay available as advanced
+settings. The OneNote authentication/native implementation is unchanged.
+
+Existing custom configuration keeps priority, and no profile/credential/notebook
+migration runs. Synthetic regressions cover clean-profile sign-in readiness and
+preserved encrypted credentials, notebook choice and pending jobs across an
+update with or without a custom ID. The owner independently confirms that prior
+updates already retained their connection. Public Microsoft/legal readiness and
+independent-account acceptance remain open in [RELEASE](RELEASE.md).
+
 2 November 2026: the owner accepts the current app design except for system-styled
 discard confirmations. Version 0.7.1 replaces the setup/form replacement popups
 with the existing dark modal treatment. Keep editing is focused by default;

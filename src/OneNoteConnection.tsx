@@ -75,7 +75,13 @@ export function OneNoteConnection({
                 ? 'Waiting for Microsoft sign-in'
                 : 'Not connected'}
           </p>
-          <p>Choose the notebook for new saves below. Pages go into its TradeFrame section.</p>
+          <p>
+            {state?.connected
+              ? 'Choose the notebook for new saves below. Pages go into its TradeFrame section.'
+              : state?.configured
+                ? 'Sign in with your own Microsoft account and enter the temporary sign-in code. Then choose your notebook.'
+                : 'Open the Microsoft application settings below to enable sign-in.'}
+          </p>
         </div>
         <div className="connection-actions">
           {state?.connected || state?.login ? (
@@ -163,7 +169,14 @@ export function OneNoteApplicationSettings({
   }, [state.applicationId]);
   return (
     <details className="publisher-settings" open={!state.configured || !!state.error}>
-      <summary>Microsoft application ID · change or remove</summary>
+      <summary>Microsoft application ID · advanced settings</summary>
+      <p>
+        {state.customApplicationId
+          ? 'Your saved custom application ID takes priority. Keep it to preserve your existing connection.'
+          : state.configured
+            ? 'This build includes the TradeFrame application ID. Use Connect OneNote above and enter the temporary Microsoft sign-in code; no app registration or application ID entry is needed.'
+            : 'This developer build has no default application ID. Configure a public Application (client) ID below to enable sign-in.'}
+      </p>
       <p>
         Use the Application (client) ID from Entra ID → App registrations → your TradeFrame app →
         Overview. A user/object ID or directory/tenant ID will not work. Never enter a password or

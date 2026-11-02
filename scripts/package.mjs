@@ -109,7 +109,8 @@ try {
       2,
     ),
   );
-  const clientId = process.env.TRADEFRAME_MICROSOFT_CLIENT_ID ?? '';
+  const clientId =
+    process.env.TRADEFRAME_MICROSOFT_CLIENT_ID?.trim() || manifest.config?.microsoftClientId || '';
   assert(
     !clientId || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clientId),
     'Invalid public Microsoft application ID',
