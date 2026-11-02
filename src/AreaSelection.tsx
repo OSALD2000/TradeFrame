@@ -16,6 +16,7 @@ export function AreaSelection({
     surface,
     size,
     cursor,
+    keyboardActive,
     rectangle,
     error,
     cancel,
@@ -43,15 +44,9 @@ export function AreaSelection({
           Cancel
         </button>
       </div>
-      <div
-        className="area-stage"
-        style={
-          size.width
-            ? { width: `min(100%, ${size.width}px, calc(60vh * ${size.width / size.height}))` }
-            : undefined
-        }
-      >
+      <div className="area-stage">
         <img
+          hidden
           src={source.image}
           alt="Captured source for area selection"
           draggable={false}
@@ -63,18 +58,21 @@ export function AreaSelection({
             ref={surface}
             className="area-surface"
             viewBox={`0 0 ${size.width} ${size.height}`}
-            preserveAspectRatio="none"
+            preserveAspectRatio="xMidYMid meet"
             tabIndex={0}
             role="group"
             aria-label="Capture area"
             aria-describedby="area-keyboard"
             {...surfaceProps}
           >
+            <image href={source.image} x={0} y={0} width={size.width} height={size.height} />
             {rectangle && <rect className="area-rectangle" {...rectangle} />}
-            <path
-              className="area-cursor"
-              d={`M ${cursor.x * size.width - 8} ${cursor.y * size.height} h 16 M ${cursor.x * size.width} ${cursor.y * size.height - 8} v 16`}
-            />
+            {keyboardActive && (
+              <path
+                className="area-cursor"
+                d={`M ${cursor.x * size.width - 8} ${cursor.y * size.height} h 16 M ${cursor.x * size.width} ${cursor.y * size.height - 8} v 16`}
+              />
+            )}
           </svg>
         )}
       </div>

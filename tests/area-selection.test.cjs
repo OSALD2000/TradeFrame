@@ -10,7 +10,10 @@ const code = ts.transpileModule(fs.readFileSync('src/AreaSelection.tsx', 'utf8')
   compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
 }).outputText;
 
-function mount(onSelect = async () => {}) {
+function mount(
+  onSelect = async () => {},
+  viewport = { left: 10, top: 20, width: 200, height: 150 },
+) {
   let cursor = 0,
     tree,
     cancelled = 0,
@@ -25,7 +28,7 @@ function mount(onSelect = async () => {}) {
     close: () => closed++,
     focus: () => focus++,
     setPointerCapture: () => {},
-    getBoundingClientRect: () => ({ left: 10, top: 20, width: 200, height: 150 }),
+    getBoundingClientRect: () => viewport,
   };
   const hooks = {
     useRef: (initial) => {
@@ -203,5 +206,29 @@ test('keyboard selection uses two corners and failed submissions remain editable
   await new Promise(setImmediate);
   assert.equal(selected.length, 1);
   assert.deepEqual(selected[0], { x: 110, y: 85, width: 10, height: 10 });
+  view.close();
+});
+
+test('letterboxed images map to source pixels and padding clicks do not start a selection', async () => {
+  const selected = [];
+  const view = mount(async (value) => selected.push(JSON.parse(JSON.stringify(value))), {
+    left: 10,
+    top: 20,
+    width: 400,
+    height: 400,
+  });
+  view.find('svg').props.onPointerDown(view.event(60, 40));
+  view.find('svg').props.onPointerUp(view.event(160, 220));
+  assert.deepEqual(selected, []);
+  view.find('svg').props.onPointerDown(view.event(60, 120));
+  view.render();
+  view.find('svg').props.onPointerMove(view.event(160, 220));
+  view.render();
+  assert.ok(view.find('rect'));
+  view.find('svg').props.onPointerUp(view.event(160, 220));
+  view.render();
+  assert.equal(view.find('rect'), null, 'The selector is cleared before native export');
+  await new Promise(setImmediate);
+  assert.deepEqual(selected, [{ x: 50, y: 50, width: 100, height: 100 }]);
   view.close();
 });

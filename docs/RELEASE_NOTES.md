@@ -1,3 +1,29 @@
+# TradeFrame 0.7.4 capture repair preview
+
+The owner rejected the first capture implementation: Auto chart cut away content
+above a trendline, the area selector appeared in an output, and image quality
+was poor. The trendline defect is reproduced against 0.7.3: a 400x300 fixture
+with a chart at 25,35 (320x230) produced 25,70 (320x195). Detection now retains
+the outer chart extent across interior lines/drawing zones. A narrow-chart
+regression also reproduces the former selection of the surrounding side panel.
+
+Capture now requests physical display dimensions and preserves the highest
+available native image representation, removing the explicit 2560x1440/1x
+request. The journal is hidden while capturing so it cannot cover the chart.
+PNG cropping does not resample or use lossy compression. Actual detail still
+depends on the OS/portal source and requires a real exported-file check.
+
+Select area uses the full-screen journal temporarily, restoring its preceding
+state afterwards. Image and marks share proportional SVG coordinates; pointer
+mapping excludes letterbox padding, and marks clear on release before native
+export. Only the original cached PNG is cropped; renderer marks are never used
+as image input. The reported output marker did not recur on the owner's next
+attempt, and no affected PNG was available. Its root cause remains unverified.
+
+No dependency, persisted format or credential change. Native visual/capture/DPI
+and Windows/macOS acceptance remain open. This is a repair preview, not a claim
+that synthetic checks establish real desktop correctness.
+
 # TradeFrame 0.7.3 preview
 
 The floating bar now offers **Auto chart** and **Select area**. Auto chart uses

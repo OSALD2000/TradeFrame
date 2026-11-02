@@ -32,6 +32,7 @@ export function useAreaSelection(
   const [cursor, setCursor] = useState<Point>({ x: 0.25, y: 0.25 });
   const [rectangle, setRectangle] = useState<CropRectangle | null>(null);
   const [error, setError] = useState('');
+  const [keyboardActive, setKeyboardActive] = useState(false);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     const element = dialog.current!;
@@ -47,12 +48,16 @@ export function useAreaSelection(
 
   function point(event: PointerEvent<SVGSVGElement>): Point {
     const bounds = event.currentTarget.getBoundingClientRect();
+    const scale = Math.min(bounds.width / size.width, bounds.height / size.height);
+    const width = size.width * scale,
+      height = size.height * scale;
     return {
-      x: clamp((event.clientX - bounds.left) / bounds.width),
-      y: clamp((event.clientY - bounds.top) / bounds.height),
+      x: (event.clientX - bounds.left - (bounds.width - width) / 2) / width,
+      y: (event.clientY - bounds.top - (bounds.height - height) / 2) / height,
     };
   }
   function move(next: Point) {
+    next = { x: clamp(next.x), y: clamp(next.y) };
     setCursor(next);
     if (anchor.current)
       setRectangle(selectionRectangle(anchor.current, next, size.width, size.height));
@@ -66,7 +71,8 @@ export function useAreaSelection(
       return;
     }
     submitting.current = true;
-    setRectangle(selected);
+    setKeyboardActive(false);
+    setRectangle(null);
     setError('');
     try {
       await onSelect(selected);
@@ -79,6 +85,7 @@ export function useAreaSelection(
   }
   function keyboard(event: KeyboardEvent<SVGSVGElement>) {
     if (submitting.current || pointer.current !== null) return;
+    setKeyboardActive(true);
     const steps: Record<string, [number, number]> = {
       ArrowLeft: [-1, 0],
       ArrowRight: [1, 0],
@@ -110,11 +117,22 @@ export function useAreaSelection(
     onKeyDown: keyboard,
     onPointerDown(event: PointerEvent<SVGSVGElement>) {
       if (event.button !== 0 || !event.isPrimary || submitting.current) return;
+      const start = point(event);
+      if (
+        !Number.isFinite(start.x) ||
+        !Number.isFinite(start.y) ||
+        start.x < 0 ||
+        start.x > 1 ||
+        start.y < 0 ||
+        start.y > 1
+      )
+        return;
       event.preventDefault();
+      setKeyboardActive(false);
       event.currentTarget.focus();
       event.currentTarget.setPointerCapture(event.pointerId);
       pointer.current = event.pointerId;
-      anchor.current = point(event);
+      anchor.current = start;
       move(anchor.current);
       setRectangle(null);
     },
@@ -150,6 +168,7 @@ export function useAreaSelection(
     surface,
     size,
     cursor,
+    keyboardActive,
     rectangle,
     error,
     cancel,

@@ -37,6 +37,7 @@ function image(width, height, pixel) {
     bitmap,
     png,
     isEmpty: () => false,
+    getScaleFactors: () => [1],
     getSize: () => ({ width, height }),
     toBitmap: () => bitmap,
     toDataURL: () => url,

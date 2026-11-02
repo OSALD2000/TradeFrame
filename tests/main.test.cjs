@@ -30,6 +30,7 @@ const source = (id, name = 'Synthetic chart') => ({
   name,
   thumbnail: {
     isEmpty: () => false,
+    getScaleFactors: () => [1],
     toDataURL: () =>
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=',
   },
@@ -100,6 +101,12 @@ async function boot(
     hide() {
       this.visible = false;
     }
+    isFullScreen() {
+      return !!this.fullscreen;
+    }
+    setFullScreen(value) {
+      this.fullscreen = value;
+    }
     focus() {
       this.focused = true;
     }
@@ -122,11 +129,15 @@ async function boot(
     app,
     BrowserWindow,
     nativeImage,
+    screen: {
+      getAllDisplays: () =>
+        runtime.displays ?? [{ size: { width: 1920, height: 1080 }, scaleFactor: 1 }],
+    },
     protocol: {
       registerSchemesAsPrivileged: () => {},
       handle: (scheme, handler) => handlers.set(`protocol:${scheme}`, handler),
     },
-    desktopCapturer: { getSources: () => capture(windows) },
+    desktopCapturer: { getSources: (options) => capture(windows, options) },
     ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
     dialog: {
       showErrorBox: () => assert.fail('Unexpected startup error'),
@@ -270,9 +281,9 @@ test('a second launch focuses the existing journal and a secondary process creat
   assert.equal(secondary.handlers.size, 0);
 });
 
-test('capture keeps the journal visible and preserves the mapped bar position across screenshots', async () => {
+test('capture excludes the journal and preserves the mapped bar position across screenshots', async () => {
   const { windows, invoke, app } = await boot(async (windows) => {
-    assert.equal(windows[0].visible, true, 'The journal stays visible during source selection');
+    assert.equal(windows[0].visible, false, 'The journal cannot obscure the selected chart');
     assert.equal(windows[1].visible, true, 'The bar stays mapped to preserve its position');
     assert.equal(windows[1].opacity, 0, 'The bar is transparent before capture');
     assert.equal(windows[1].ignoreMouseEvents, true);
@@ -1286,4 +1297,84 @@ test('a detection failure keeps the original PNG and failed area cropping preser
     full.toBitmap = originalBitmap;
     full.crop = originalCrop;
   }
+});
+
+test('capture requests physical display resolution and preserves the highest available native image representation', async () => {
+  const full = syntheticImage(400, 300, (x, y) => [x % 256, y % 256, 70, 255]);
+  const reduced = syntheticImage(200, 150, () => [70, 70, 70, 255]);
+  let chosenScale;
+  const thumbnail = {
+    ...full,
+    getScaleFactors: () => [1, 2],
+    toDataURL: (options) => {
+      chosenScale = options.scaleFactor;
+      return (chosenScale === 2 ? full : reduced).toDataURL();
+    },
+  };
+  const { invoke, windows, handlers } = await boot(
+    async (windows, options) => {
+      assert.equal(windows[0].visible, false);
+      assert.deepEqual(JSON.parse(JSON.stringify(options.thumbnailSize)), {
+        width: 3840,
+        height: 2160,
+      });
+      return [{ ...source('screen:0:0'), thumbnail }];
+    },
+    undefined,
+    true,
+    undefined,
+    {
+      displays: [
+        { size: { width: 1920, height: 1080 }, scaleFactor: 2 },
+        { size: { width: 1280, height: 720 }, scaleFactor: 1 },
+      ],
+    },
+  );
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1], 'area');
+  assert.equal(chosenScale, 2);
+  const pending = (await invoke('capture:state')).areaSource;
+  const response = await handlers.get('protocol:tradeframe-image')({
+    method: 'GET',
+    url: pending.image,
+  });
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), full.png);
+  await invoke('capture:area', windows[0], pending.image, { x: 0, y: 0, width: 400, height: 300 });
+  const shot = (await invoke('capture:state')).screenshots[0];
+  const exported = await handlers.get('protocol:tradeframe-image')({
+    method: 'GET',
+    url: shot.image,
+  });
+  assert.deepEqual(Buffer.from(await exported.arrayBuffer()), full.png);
+});
+
+test('area capture restores the preceding full-screen state on commit and cancellation', async () => {
+  const full = syntheticImage(60, 40, () => [19, 23, 34, 255]);
+  const { invoke, windows } = await boot(async () => [
+    { ...source('screen:0:0'), thumbnail: full },
+  ]);
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1], 'area');
+  assert.equal(windows[0].fullscreen, true);
+  const pending = (await invoke('capture:state')).areaSource;
+  await invoke('capture:area', windows[0], pending.image, { x: 0, y: 0, width: 10, height: 10 });
+  assert.equal(windows[0].fullscreen, false);
+  windows[0].fullscreen = true;
+  await invoke('capture:screenshot', windows[1], 'area');
+  await invoke('capture:discard');
+  assert.equal(windows[0].fullscreen, true);
+});
+
+test('cancelling area capture before an asynchronous full-screen entry still exits full-screen', async () => {
+  const full = syntheticImage(60, 40, () => [19, 23, 34, 255]);
+  const { invoke, windows } = await boot(async () => [
+    { ...source('screen:0:0'), thumbnail: full },
+  ]);
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1], 'area');
+  await invoke('capture:discard');
+  windows[0].fullscreen = true;
+  windows[0].emit('enter-full-screen');
+  assert.equal(windows[0].fullscreen, false);
+  windows[0].emit('leave-full-screen');
 });

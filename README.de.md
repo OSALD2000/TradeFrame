@@ -68,7 +68,7 @@ Ladevorgaengen und geoeffneten Bereichen. Reduzierte Bewegung wird beruecksichti
 eine Quelle auswaehlen. Auto chart sucht eine grosse, farblich abgegrenzte
 Hintergrundflaeche und uebernimmt den Ausschnitt direkt. Bei unklarer Erkennung
 bleibt das Bild vollstaendig mit einem Hinweis. Fuer einen praezisen Ausschnitt
-mit Select area ein Rechteck auf der Aufnahme ziehen: Loslassen uebernimmt,
+mit Select area ein Rechteck auf der bildschirmfuellenden Aufnahme ziehen: Loslassen uebernimmt,
 Escape bricht ab. Es gibt keine zusaetzliche Bestaetigung. Die Verarbeitung bleibt
 lokal; bereits gespeicherte Bilder werden nicht neu zugeschnitten. Unter jedem Bild **Timeframe (required)** auswaehlen,
 zum Beispiel `1m`, `2m` oder `1h`. Jedes Bild braucht vor dem Speichern einen

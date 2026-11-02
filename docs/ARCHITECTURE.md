@@ -17,11 +17,16 @@ connector change or image-processing dependency is introduced.
 - `electron/main.ts` owns native PNG decoding/cropping and image-cache lifetime.
   Automatic detection runs only for new Auto chart captures. Area requests accept
   only the current source's opaque image token and a validated integer rectangle.
-  Full source bytes are released after selection or cancellation.
+  Full source bytes are released after selection or cancellation. Capture requests
+  physical display dimensions and the highest image representation; the journal
+  is hidden during capture. Full-screen area selection restores its previous
+  native window state after commit/cancel.
 - `src/useAreaSelection.ts` owns pointer/keyboard geometry and selection state;
   `src/AreaSelection.tsx` renders the app-styled surface through the existing
   Custom Hook controller/view pattern. Release submits immediately; there is no acceptance preview.
-  The renderer reads no filesystem or raw bitmap and receives no native API.
+  Source and marks share one proportionally scaled SVG; pointer geometry accounts
+  for letterboxing. The renderer reads no filesystem or raw bitmap and receives
+  no native API.
 - Crop status is transient capture metadata. File formats, connectors, sign-in,
   saved images and persisted credentials remain unchanged. Existing public
   commands keep their behavior; capture adds an optional mode and a named area command.

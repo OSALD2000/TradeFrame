@@ -66,7 +66,7 @@ Animations respect the system reduced-motion preference. Form selection/editing 
 Click **Capture your first chart** (or **Capture chart**), then choose **Auto chart** or **Select area** on the floating bar. Choose a source
 if prompted. Auto chart looks for a large, distinct background region regardless
 of its color, and adds the result directly. Unclear images stay whole with a note.
-For a precise cutout, Select area opens the captured image: drag and release to
+For a precise cutout, Select area opens the captured image full-screen: drag and release to
 add only that rectangle, or Escape to cancel. There is no extra confirmation.
 Processing stays local; existing saved images are never recropped. Each capture adds a view. Choose its **Timeframe (required)**, such
 as `1m`, `2m` or `1h`; add optional multiline notes for this view. Every image needs

@@ -16,26 +16,17 @@ export function validateCrop(value: unknown, width: number, height: number): Cro
   return { x, y, width: w, height: h };
 }
 
-function longestRun(counts: Uint32Array, total: number): [number, number] | null {
-  const runs: [number, number][] = [];
-  let start = -1,
+// Interior lines and drawing zones must not split the outer chart bounds.
+function projectionBounds(counts: Uint32Array, total: number): [number, number] | null {
+  const minimum = Math.max(8, total * 0.2);
+  let first = -1,
     last = -1;
   for (let i = 0; i < counts.length; i++) {
-    if (counts[i] < total * 0.5) continue;
-    if (start < 0 || i - last > 12) {
-      if (start >= 0) runs.push([start, last]);
-      start = i;
-    }
+    if (counts[i] < minimum) continue;
+    if (first < 0) first = i;
     last = i;
   }
-  if (start >= 0) runs.push([start, last]);
-  runs.sort((a, b) => b[1] - b[0] - (a[1] - a[0]));
-  if (
-    !runs.length ||
-    (runs[1] && runs[1][1] - runs[1][0] + 1 >= (runs[0][1] - runs[0][0] + 1) * 0.2)
-  )
-    return null;
-  return runs[0];
+  return first < 0 ? null : [first, last];
 }
 
 // Compare all four native channels symmetrically: RGBA/BGRA ordering does not affect distances.
@@ -86,8 +77,8 @@ export function findChartBounds(
         }
       }
     }
-    const row = longestRun(rows, width),
-      column = longestRun(columns, height);
+    const row = projectionBounds(rows, width),
+      column = projectionBounds(columns, height);
     if (!row || !column) continue;
     const rectangle = {
       x: column[0],
@@ -96,9 +87,14 @@ export function findChartBounds(
       height: row[1] - row[0] + 1,
     };
     const area = rectangle.width * rectangle.height;
-    if (area < width * height * 0.25) continue;
-    // shortcut: color cannot distinguish identical chart/tool backgrounds; keep uncertain images whole.
-    if (area === width * height) continue;
+    if (area < width * height * 0.25 || rectangle.width < 32 || rectangle.height < 32) continue;
+    const touchedEdges =
+      Number(rectangle.x === 0) +
+      Number(rectangle.y === 0) +
+      Number(rectangle.x + rectangle.width === width) +
+      Number(rectangle.y + rectangle.height === height);
+    // shortcut: identical chart/tool backgrounds have no reliable color boundary; use area selection.
+    if (touchedEdges >= 3) continue;
     let inside = 0;
     for (let y = rectangle.y; y < rectangle.y + rectangle.height; y++) {
       for (let x = rectangle.x; x < rectangle.x + rectangle.width; x++) {

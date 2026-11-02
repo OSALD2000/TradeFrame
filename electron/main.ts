@@ -9,6 +9,7 @@ import {
   safeStorage,
   shell,
   protocol,
+  screen,
 } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
@@ -44,6 +45,8 @@ const uiFile = path.join(__dirname, '../dist/index.html');
 const preload = path.join(__dirname, 'preload.js');
 const icon = path.join(__dirname, '../dist/tradeframe-icon.png');
 let journal: BrowserWindow | null = null;
+let areaFullscreen: boolean | null = null;
+let areaFullscreenRestore: boolean | null = null;
 let answerUnload: ((confirmed: boolean) => void) | null = null;
 let bar: BrowserWindow | null = null;
 let schemas: SchemaStore | null = null;
@@ -171,6 +174,16 @@ function assertSender(event: IpcMainInvokeEvent, expected?: BrowserWindow | null
 }
 
 function publish() {
+  if (state.areaSource && journal && areaFullscreen === null) {
+    areaFullscreen = journal.isFullScreen();
+    areaFullscreenRestore = null;
+    journal.setFullScreen(true);
+  } else if (!state.areaSource && areaFullscreen !== null) {
+    const previous = areaFullscreen;
+    areaFullscreen = null;
+    areaFullscreenRestore = previous;
+    journal?.setFullScreen(previous);
+  }
   if (bar && !state.busy) {
     bar.setOpacity(state.areaSource ? 0 : 1);
     bar.setIgnoreMouseEvents(!!state.areaSource);
@@ -246,21 +259,32 @@ async function takeScreenshot(mode: CaptureMode) {
   state = { ...state, busy: true, sources: [], error: null };
   publish();
   try {
+    owner?.hide();
     // Keep the surface mapped so Wayland preserves its user-chosen position.
     bar?.setIgnoreMouseEvents(true);
     bar?.setOpacity(0);
     // Allow the compositor to make the bar transparent before collecting images.
     await new Promise((resolve) => setTimeout(resolve, 300));
-    // shortcut: cap snapshots at 2560x1440; revisit native-resolution capture before release.
+    const displays = screen.getAllDisplays();
     const sources = await desktopCapturer.getSources({
       types: ['screen', 'window'],
-      thumbnailSize: { width: 2560, height: 1440 },
+      thumbnailSize: {
+        width: Math.max(
+          1,
+          ...displays.map((display) => Math.ceil(display.size.width * display.scaleFactor)),
+        ),
+        height: Math.max(
+          1,
+          ...displays.map((display) => Math.ceil(display.size.height * display.scaleFactor)),
+        ),
+      },
     });
     if (journal !== owner) return;
     state.sources = sources
       .filter((source) => !/^window:.*:1$/.test(source.id) && !source.thumbnail.isEmpty())
       .map((source) => {
-        const image = source.thumbnail.toDataURL({ scaleFactor: 1 });
+        const scaleFactor = Math.max(...source.thumbnail.getScaleFactors());
+        const image = source.thumbnail.toDataURL({ scaleFactor });
         const result = mode === 'chart' ? cropChart(image) : { image, crop: undefined };
         return {
           id: source.id,
@@ -739,6 +763,13 @@ function createWindow() {
     webPreferences: { preload, nodeIntegration: false, contextIsolation: true, sandbox: true },
   });
   journal = window;
+  // macOS full-screen transitions are asynchronous; cancellation can precede entry.
+  window.on('enter-full-screen', () => {
+    if (!state.areaSource && areaFullscreenRestore === false) window.setFullScreen(false);
+  });
+  window.on('leave-full-screen', () => {
+    areaFullscreenRestore = null;
+  });
   protectWindow(window);
   let requested: 'close' | 'reload' | null = null;
   let closing = false;
@@ -787,6 +818,8 @@ function createWindow() {
     app.removeListener('before-quit', beforeQuit);
     answerUnload = null;
     journal = null;
+    areaFullscreen = null;
+    areaFullscreenRestore = null;
     bar?.close();
     state = {
       barOpen: false,

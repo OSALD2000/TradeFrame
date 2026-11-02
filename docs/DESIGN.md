@@ -1,5 +1,24 @@
 # TradeFrame visual direction
 
+## Capture repair, 0.7.4
+
+The owner rejects 0.7.3 capture behavior and reports clipped chart content,
+a selection marker in output and poor image quality. Retain the approved dark
+surfaces, primary Auto chart/secondary Select area and existing controller/view
+pattern. This is a correction of the capture flow, not a new visual language.
+
+| Decision                                             | Source / role                                                                                                        | Implementation                                                                                                      |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Full-screen selection instead of a small modal image | Owner requests a usable free area selector                                                                           | Temporarily full-screen journal, compact instructions, flexible image viewport, previous full-screen state restored |
+| One coordinate system for image and marks            | [SVG proportional scaling](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/preserveAspectRatio) | Source image and selection in the same viewBox; letterbox-aware pointer mapping                                     |
+| No pointer marker left after release                 | Owner reports a marker in output                                                                                     | Clear marks before export; show a drawn crosshair only for keyboard navigation; export original cached PNG only     |
+| Preserve readable chart detail                       | Owner reports poor quality                                                                                           | Request physical resolution and highest native image representation; no crop resampling                             |
+
+Actual rendered desktop/DPI/focus and exported-file acceptance remain open. A
+previous report of a baked-in marker has not been reproduced on a fresh owner
+capture; it must not be described as fixed without an affected sample or native
+reproduction.
+
 ## Capture mode refinement, 2 November 2026
 
 The owner requests two local capture paths: automatic chart isolation without

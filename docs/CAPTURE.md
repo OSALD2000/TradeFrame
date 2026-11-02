@@ -2,20 +2,22 @@
 
 ## Implemented flow
 
-1. Click **Capture chart** in the desktop journal. The main window stays visible and a
+1. Click **Capture chart** in the desktop journal. A
    compact, draggable **TradeFrame Capture** bar opens.
 2. Choose **Auto chart** or **Select area** on the bar. TradeFrame makes the capture bar transparent
    and ignores mouse input there, waits briefly for the compositor, then requests
    screen/window snapshots from Electron. The native bar remains mapped so it
    retains its dragged position rather than being placed again by Wayland.
-   The journal stays visible, including while the operating system's source picker is open.
+   The journal is hidden before capture so it cannot cover the chart, and returns
+   after capture or cancellation.
 3. On PipeWire, the operating system may prompt for a screen/window. If only one
    image is returned, Auto chart detects/crops it locally and adds it directly.
-   Select area instead opens a still-image selection surface in TradeFrame:
+   Select area instead opens a full-screen still-image selection surface in TradeFrame:
    drag a rectangle and release to add just those pixels, or Escape/Cancel to
    abandon it. There is no further preview/confirmation. Arrow keys move the
    selection cursor; Enter marks the first corner and Enter again adds the area.
-   Shift moves the cursor faster. When multiple sources
+   Shift moves the cursor faster. The preceding full-screen state is restored on
+   commit or cancellation. When multiple sources
    are returned, choose a snapshot in the journal. After each capture attempt,
    the bar reappears and stays open for another screenshot, including after
    cancellation or failure.
@@ -38,17 +40,20 @@ shortcut, annotation tool or saved crop profile.
 ## Local chart isolation
 
 Automatic detection samples common colors in the central 80% of the image, then
-projects their matching pixels onto rows and columns. It compares all four native
+projects their matching pixels onto rows and columns. It takes the outer extent
+of those projections, rather than selecting a run separated by a trendline. It compares all four native
 channels symmetrically, without assuming RGBA/BGRA order. A 6-level per-channel
-tolerance handles small variations, rows/columns need 50% matching pixels, and
-short gaps up to 12 pixels between matches are bridged. A candidate must cover
+tolerance handles small variations; rows/columns need at least 20% matching
+pixels, with a minimum of eight. This allows a narrower chart alongside a large
+panel. A candidate must cover
 at least 25% of the image and have at least 60% matching background inside its
-bounds. Substantial separated runs or similarly ranked competing regions are
-rejected; there is no claim of semantic chart recognition.
+bounds. Regions touching three or four source edges and similarly ranked
+competing regions are rejected; there is no claim of semantic chart recognition.
 
 This supports distinct white, dark and colored chart backgrounds, independently
 of text OCR. Identical panel/chart backgrounds, wide colored drawing zones,
-multiple panes, gradients and very small charts can defeat the heuristic.
+gradients and very small charts can defeat the heuristic. Multiple panes with
+the same background are kept together rather than cutting off one pane.
 No result, a full-image result or detection failure retains the original image
 and shows a full-image note in the source picker/setup. Use Select area when
 precise bounds are needed. Automatic bounds can still be inaccurate; check the
@@ -57,9 +62,11 @@ normal setup image before saving. No additional approval preview is imposed.
 Select area always uses the original new capture and never runs automatic
 cropping on the selected rectangle. A tiny detail or the whole source is valid;
 the main process rejects noninteger/out-of-bounds/empty rectangles and stale
-source tokens. Dragging outside the displayed image clamps to its edges. A
+source tokens. Dragging outside the displayed image clamps to its edges. Pointer starts in letterbox padding are ignored. A
 click, pointer cancellation or lost pointer capture does not add an image.
-Selection runs on a still image inside the app, not on a live desktop overlay.
+Selection runs on a still image inside the full-screen app, not on a live desktop
+overlay. The source and marks share one SVG coordinate system with proportional
+scaling. Pointer mapping accounts for letterboxing, and marks clear before export.
 The capture bar stays transparent and ignores mouse input during area selection,
 then recovers on commit or cancellation so it cannot cover the selection surface.
 
@@ -75,12 +82,21 @@ Native APIs: [nativeImage](https://www.electronjs.org/docs/latest/api/native-ima
 ## Capture and platform limits
 
 The prototype uses `desktopCapturer.getSources()` thumbnails as snapshots,
-requesting 2560x1440. Returned sizes depend on the platform; native-resolution
-capture is not guaranteed. Empty images and TradeFrame's own window sources are
+requesting the largest physical display dimensions reported by Electron
+(display size times scale factor), rather than capping the request at 2560x1440.
+It serializes the highest available native image representation before decoding
+at pixel scale 1 for cropping. PNG cropping is lossless and introduces no resize
+or JPEG compression. The OS/portal still controls the returned source size;
+a large request cannot restore details absent from that source. The automatic
+detector skips images above 16 million pixels; area selection preserves them
+subject to the existing PNG/cache size limits. Empty images and TradeFrame's own window sources are
 excluded. A compositor delay reduces the chance of recording the capture bar,
 but native tests must verify the actual screenshot contents. A full-screen
-snapshot can include the visible journal. Choose the chart window or move the
-journal out of the captured area when it should not appear in the image.
+snapshot can still include other visible applications; choose the intended chart
+window when offered. The journal is hidden during the request and the bar stays
+transparent. A selection marker reported in 0.7.3 PNGs was absent on the owner's
+next attempt; no affected original PNG was available. Its cause is unresolved;
+this repair does not claim that a portal-origin artifact has been eliminated.
 
 The bar requests always-on-top behavior. On Wayland, window placement and
 stacking are controlled by the compositor; Electron cannot guarantee them.
@@ -115,8 +131,8 @@ The app and agent do not edit desktop configuration automatically.
 Use a synthetic chart/test window without personal or employer data.
 
 - Launch with `npm start`; open the bar and verify it is usable above the chart.
-- Confirm the journal stays visible when opening the bar, taking a screenshot,
-  and selecting a source in the operating system's picker.
+- Confirm the journal is hidden while taking a screenshot/selecting a source,
+  and returns after success or cancellation. It must not cover the chart.
 - Drag it, click Journal, reopen it, and use × to return without capturing.
 - Drag the bar away from the center, take repeated screenshots, and cancel or
   deny a capture. Confirm it returns to the same spot and remains clickable.
@@ -125,8 +141,8 @@ Use a synthetic chart/test window without personal or employer data.
   **Close capture bar** button and then from the bar's **×**. Both controls
   must preserve the preview. Activating the app must not close the bar.
 - Take a screen and a window snapshot. Confirm the capture bar is absent and
-  the preview is legible. A visible journal may appear in a screen snapshot;
-  verify that choosing the chart window excludes it. Note any resolution limit.
+  the preview is legible. Verify that the journal is absent from the source,
+  and compare exported PNG dimensions/detail with the physical source resolution.
 - If several sources appear, select one; repeat and cancel selection. The
   earlier preview must survive cancellation.
 - Add another screenshot and deny/cancel OS access. The journal must return; an earlier preview

@@ -50,10 +50,14 @@ Architecture and current verification evidence: [CONTEXT](CONTEXT.md).
 File behavior: [JOURNAL](JOURNAL.md). Integration behavior: [SYNC](SYNC.md).
 Build and publisher instructions: [RELEASE](RELEASE.md).
 
-0.7.3 adds local light/dark chart-region heuristics and direct still-image area
+0.7.3 added local light/dark chart-region heuristics and direct still-image area
 selection. Automated geometry and capture-boundary tests are implemented;
 actual crop accuracy, dark/light chart layouts, DPI, pointer/keyboard behavior
-and safe fallback on all target desktops still require acceptance.
+and safe fallback on all target desktops still require acceptance. The owner
+rejected 0.7.3; 0.7.4 corrects reproduced trendline/sidebar cropping and removes
+the explicit resolution cap. Full-screen proportional area selection and exported
+quality need owner acceptance. The previously reported output marker did not
+recur on the next capture; its cause remains unresolved.
 
 ## Required before claiming the goal complete
 

@@ -1,5 +1,31 @@
 # TradeFrame context
 
+2 November 2026, 0.7.4 capture repair preview: the owner reports 0.7.3 Auto chart
+cuts off the part above a trendline, an area-selection marker in output, and poor
+quality. Synthetic regression against 0.7.3 reproduces the trendline cut and
+selection of a large sidebar instead of a narrow chart. Color projections now
+retain their outer extent rather than selecting a run. Narrower local color
+support, edge-region exclusion and the existing area/density checks avoid that
+sidebar case while keeping regions across internal drawing zones together.
+
+Native capture requests physical display resolution and the highest available
+image representation. The journal is temporarily hidden for source capture.
+Area selection temporarily makes the journal full-screen and restores its
+previous state; a shared SVG handles source/marks with letterbox-aware pointer
+mapping. Marks clear before submitting the rectangle; export still uses only
+original cached PNG bytes. No dependency, folder, file-format or auth change.
+The owner could not reproduce the marker on the next attempt and supplied no
+original affected file. This artifact remains unresolved; real image detail,
+full-screen behavior, native focus and platform acceptance remain open.
+
+Verification: formatting, both TypeScript projects, production build and all
+183 tests pass. New coverage includes a line near the chart top, broad drawing
+zones, the narrow-chart/sidebar case, physical resolution requests, highest-scale
+PNG-byte preservation, letterbox/padding geometry, cleared markers and native
+full-screen restoration including asynchronous entry after cancellation.
+This uses synthetic data and mocked native APIs; no real exported marker image
+or actual native capture was available.
+
 2 November 2026, chart-capture preview 0.7.3: the owner requested local automatic
 chart isolation for light and dark images, no additional preview/confirmation,
 and a separate free area selection for small cutouts. `electron/chart-crop.ts`
@@ -101,7 +127,7 @@ redacted failures, Linux provider initialization/restart and picker prerequisite
 
 - Floating capture bar, native source snapshots, source selection, up to 20
   ordered screenshots per setup, required per-image timeframes, optional multiline notes, capture timestamps and removal.
-  The journal stays visible; the mapped bar becomes transparent during capture.
+  The journal is hidden while capturing; the mapped bar becomes transparent.
 - Native image bytes stay in memory behind opaque `tradeframe-image:` URLs.
   IPC updates carry image URLs rather than retransmitting PNG data. Removing a
   screenshot or closing/resetting the journal releases its cached bytes.
