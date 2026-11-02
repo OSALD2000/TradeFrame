@@ -77,7 +77,9 @@ not calculate or display performance metrics.
 The in-window File/Edit/View/Window bar is hidden by default on Linux/Windows.
 Press Alt to reveal it temporarily; editing shortcuts remain available. macOS
 retains its normal operating-system menu. The app's native save/close dialogs
-keep their existing behavior.
+preserve their existing save/close choices. Draft replacement and close/reload
+confirmations match the app design; Keep editing or Escape cancels them without
+discarding the draft. File/folder selection remains an operating-system dialog.
 
 ## Compatibility
 

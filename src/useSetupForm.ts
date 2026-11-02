@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type {
   SetupDraftAPI,
   CaptureState,
   SetupInput,
   SaveResult,
+  UnloadAction,
 } from '../electron/capture-types';
 import {
   JOURNAL_SCHEMA,
@@ -45,6 +46,40 @@ export function useSetupForm(
   const [error, setError] = useState('');
   const [browsingOneNote, setBrowsingOneNote] = useState(false);
   const [lastSaved, setLastSaved] = useState<SaveResult | null>(null);
+  const [confirmation, setConfirmation] = useState<{
+    message: string;
+    action?: UnloadAction;
+  } | null>(null);
+  const pendingConfirmation = useRef<((confirmed: boolean) => void) | null>(null);
+  function answerConfirmation(confirmed: boolean) {
+    const resolve = pendingConfirmation.current;
+    pendingConfirmation.current = null;
+    setConfirmation(null);
+    resolve?.(confirmed);
+  }
+  useEffect(() => () => pendingConfirmation.current?.(false), []);
+  function requestConfirmation(message: string, action?: UnloadAction): Promise<boolean> {
+    if (pendingConfirmation.current) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      pendingConfirmation.current = resolve;
+      setConfirmation({ message, action });
+    });
+  }
+  useEffect(() => {
+    if (!api?.onUnloadRequested) return;
+    return api.onUnloadRequested((action) => {
+      void requestConfirmation(
+        'Your current fields and screenshots will be closed. Save a copy first if you need to keep them. Saved files are unchanged.',
+        action,
+      )
+        .then((confirmed) => api.answerUnload(confirmed))
+        .catch(() => {
+          setError(
+            'Could not close or reload. Your draft is still available; keep editing and retry.',
+          );
+        });
+    });
+  }, [api]);
   const hasValues = Object.values(values).some(
     (value) =>
       value !== '' && value !== null && value !== false && (!Array.isArray(value) || value.length),
@@ -80,19 +115,17 @@ export function useSetupForm(
     };
   }, [api]);
 
-  function replaceDraft(includeScreenshots = false) {
-    return (
-      !(hasValues || (includeScreenshots && hasPreview)) ||
-      window.confirm(
-        includeScreenshots
-          ? 'Replace the current field values and screenshots? Saved files will stay unchanged.'
-          : 'Replace your current field values? Your screenshots will stay.',
-      )
+  async function replaceDraft(includeScreenshots = false) {
+    if (!(hasValues || (includeScreenshots && hasPreview))) return true;
+    return requestConfirmation(
+      includeScreenshots
+        ? 'Replace the current field values and screenshots? Saved files will stay unchanged.'
+        : 'Replace your current field values? Your screenshots will stay.',
     );
   }
 
   async function open() {
-    if (!api || !replaceDraft(true)) return;
+    if (!api || !(await replaceDraft(true))) return;
     setError('');
     setSaving(true);
     try {
@@ -181,12 +214,12 @@ export function useSetupForm(
     }
   }
 
-  const browseOneNote = () => {
-    if (api && replaceDraft(true)) setBrowsingOneNote(true);
+  const browseOneNote = async () => {
+    if (api && (await replaceDraft(true))) setBrowsingOneNote(true);
   };
 
   const newSetup = async () => {
-    if (!api || !replaceDraft(true)) return;
+    if (!api || !(await replaceDraft(true))) return;
     try {
       await api.newSetup();
       setValues(emptyValues(schema));
@@ -198,9 +231,9 @@ export function useSetupForm(
     }
   };
 
-  const selectSchema = (event: ChangeEvent<HTMLSelectElement>) => {
+  const selectSchema = async (event: ChangeEvent<HTMLSelectElement>) => {
     const next = available.find((item) => `${item.id}@${item.revision}` === event.target.value)!;
-    if (replaceDraft()) {
+    if (await replaceDraft()) {
       setSchema(next);
       setValues(emptyValues(next));
       setMessage('');
@@ -210,8 +243,8 @@ export function useSetupForm(
 
   const editSchema = () => setEditing(schema);
 
-  const newSchema = () => {
-    if (replaceDraft())
+  const newSchema = async () => {
+    if (await replaceDraft())
       setEditing({
         formatVersion: 1,
         id: `form_${crypto.randomUUID()}`,
@@ -284,6 +317,8 @@ export function useSetupForm(
     error,
     browsingOneNote,
     lastSaved,
+    confirmation,
+    answerConfirmation,
     open,
     save,
     available,

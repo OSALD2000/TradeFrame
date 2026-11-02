@@ -1,5 +1,33 @@
 # TradeFrame visual direction
 
+## Draft confirmation refinement, 2 November 2026
+
+The owner accepts the current app design and reports Linux-styled Yes/No popups
+when discarding changes. The affected `window.confirm` calls now share a styled
+HTML dialog for New setup, local/OneNote opening, form switching and New form.
+The owner also requested the same treatment for closing and reloading a draft.
+The controller still owns whether replacement is needed and executes it only
+after an explicit positive answer. Cancel, Escape and unmount preserve the draft.
+
+Reference lock: retain the approved black surfaces, fine borders, panel shadow,
+typography and short dialog/backdrop motion from the existing OneNote browser.
+Use the existing danger color only for the replacement action; default focus is
+Keep editing. No new library, visual direction or dropdown replacement is needed.
+The bundled Refero focus/form craft and
+[HTML dialog guidance](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog)
+inform modal keyboard behavior. A
+[React portal](https://react.dev/reference/react-dom/createPortal) keeps the dialog
+outside hidden workspace routes; closing it restores focus to its origin.
+Existing reduced-motion rules cover its element and backdrop.
+
+Close/reload remains blocked by Electron's unload guard while this dialog is
+pending. Only a validated answer from the journal can authorize one retry of
+the requested operation. Keep editing and Escape leave the window open.
+File/folder pickers and startup failures that cannot render the app retain their
+system appearance. Desktop/narrow rendering, real focus restoration and OS
+screen-reader behavior still require manual acceptance; mocked checks do not
+establish those results.
+
 ## Current polish target, 1 November 2026
 
 The owner's latest request is a more professional implementation with richer

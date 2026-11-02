@@ -1,5 +1,18 @@
 # TradeFrame context
 
+2 November 2026: the owner accepts the current app design except for system-styled
+discard confirmations. Version 0.7.1 replaces the setup/form replacement popups
+with the existing dark modal treatment. Keep editing is focused by default;
+Escape/cancel preserves the draft, and replacement waits for explicit consent.
+The owner additionally requested app-styled close/reload warnings. These use the
+same modal through a named trusted-journal bridge while Electron retains its
+unload guard. Approval is consumed once; cancellation keeps the app open. OS
+file pickers and startup errors remain native. Automated
+checks cover the pending answer, duplicate requests, unmount cancellation,
+modal lifecycle, focus restoration calls and native unload/quit authorization.
+Actual popup rendering remains a manual check. No saved format, account or folder
+change is involved.
+
 TradeFrame is a local-first Electron/React/TypeScript trading journal. Target
 platforms are Linux, Windows and macOS; real native acceptance is still open.
 The owner requested downloadable builds, Obsidian/Dropbox/OneNote connections,

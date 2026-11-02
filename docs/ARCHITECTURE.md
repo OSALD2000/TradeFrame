@@ -332,3 +332,13 @@ not to these explicitly authorized feature additions.
 `SetupGuide` and `FilingRules` stay inside the existing src directory; Statistics
 is a static route. The setup form remains mounted across all routes to preserve
 its draft. Statistics does not calculate metrics or read saved journals.
+
+Draft replacement confirmations reuse the controller/presentation split:
+`useSetupForm` owns one pending answer and the existing replacement rules;
+`ConfirmDialog` renders a modal through a React portal so hidden routes cannot
+hide it. All five callers await the answer. Cancellation, duplicate requests and
+controller unmount fail closed. A named preload subscription delivers native
+close/reload requests to the same controller. Electron blocks the original
+unload; a journal-only boolean answer authorizes one retry, including app quit.
+Duplicate or unsolicited answers cannot bypass the guard. This extends only
+the existing IPC facade; saved formats and connector behavior are unchanged.

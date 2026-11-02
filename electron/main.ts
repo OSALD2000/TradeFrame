@@ -42,6 +42,7 @@ const uiFile = path.join(__dirname, '../dist/index.html');
 const preload = path.join(__dirname, 'preload.js');
 const icon = path.join(__dirname, '../dist/tradeframe-icon.png');
 let journal: BrowserWindow | null = null;
+let answerUnload: ((confirmed: boolean) => void) | null = null;
 let bar: BrowserWindow | null = null;
 let schemas: SchemaStore | null = null;
 function schemaStore() {
@@ -242,6 +243,12 @@ async function takeScreenshot() {
 }
 
 function registerCapture() {
+  ipcMain.handle('journal:answer-unload', (event, confirmed: unknown) => {
+    assertSender(event, journal);
+    if (typeof confirmed !== 'boolean' || !answerUnload)
+      throw new Error('Invalid unload confirmation');
+    answerUnload(confirmed);
+  });
   ipcMain.handle('filing:get', (event) => {
     assertSender(event, journal);
     return filingStore().get();
@@ -656,20 +663,52 @@ function createWindow() {
   });
   journal = window;
   protectWindow(window);
+  let requested: 'close' | 'reload' | null = null;
+  let closing = false;
+  let approved = false;
+  let quitting = false;
+  const beforeQuit = () => {
+    quitting = true;
+  };
+  app.on('before-quit', beforeQuit);
+  window.on('close', () => {
+    closing = true;
+  });
+  answerUnload = (confirmed) => {
+    if (!requested) throw new Error('No pending unload confirmation');
+    const action = requested;
+    requested = null;
+    closing = false;
+    if (!confirmed) {
+      quitting = false;
+      return;
+    }
+    approved = true;
+    if (quitting) app.quit();
+    else if (action === 'close') window.close();
+    else window.webContents.reload();
+  };
+  window.webContents.on('did-finish-load', () => {
+    requested = null;
+    approved = false;
+    closing = false;
+  });
   window.webContents.on('will-prevent-unload', (event) => {
-    const choice = dialog.showMessageBoxSync(window, {
-      type: 'question',
-      buttons: ['Discard draft', 'Keep editing'],
-      defaultId: 1,
-      cancelId: 1,
-      title: 'Keep your setup?',
-      message: 'Your current fields and screenshots will be closed.',
-      detail: 'Save a copy before closing if you need to keep them. Saved files are unchanged.',
-    });
-    if (choice === 0) event.preventDefault();
+    if (approved) {
+      approved = false;
+      closing = false;
+      event.preventDefault();
+      return;
+    }
+    if (requested) return;
+    requested = closing || quitting ? 'close' : 'reload';
+    closing = false;
+    window.webContents.send('journal:unload-requested', requested);
   });
   window.once('ready-to-show', () => window.show());
   window.on('closed', () => {
+    app.removeListener('before-quit', beforeQuit);
+    answerUnload = null;
     journal = null;
     bar?.close();
     state = {

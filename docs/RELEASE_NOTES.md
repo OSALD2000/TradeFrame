@@ -1,3 +1,17 @@
+# TradeFrame 0.7.1 preview
+
+Draft replacement confirmations now match the dark app design when starting a
+new setup, opening a local/OneNote setup, switching forms or creating a form.
+Keep editing has default focus. Escape/cancel preserves current values and
+screenshots, and no replacement runs before an explicit positive answer.
+The dialog uses the existing modal styling and reduced-motion policy.
+Closing or reloading a draft uses the same app-styled warning; the window stays
+open until an explicit discard answer authorizes that operation.
+
+No data, authentication or connection format changes are included. File/folder
+pickers and startup failures remain native system dialogs.
+Real desktop visual/keyboard acceptance is still pending.
+
 # TradeFrame 0.7.0 preview preparation
 
 Local journal, Obsidian and Dropbox now have independent folder/name rules in

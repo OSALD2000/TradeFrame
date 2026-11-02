@@ -1,10 +1,20 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { CaptureAPI, CaptureState } from './capture-types';
+import type { CaptureAPI, CaptureState, UnloadAction } from './capture-types';
 
 const capture: CaptureAPI = {
   getFilingRules: () => ipcRenderer.invoke('filing:get'),
   saveFilingRule: (kind, rule) => ipcRenderer.invoke('filing:set', kind, rule),
   openSetupHelp: (topic) => ipcRenderer.invoke('guide:open', topic),
+  answerUnload: (confirmed) => ipcRenderer.invoke('journal:answer-unload', confirmed),
+  onUnloadRequested: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, action: UnloadAction) => {
+      if (action === 'close' || action === 'reload') listener(action);
+    };
+    ipcRenderer.on('journal:unload-requested', handler);
+    return () => {
+      ipcRenderer.removeListener('journal:unload-requested', handler);
+    };
+  },
   getState: () => ipcRenderer.invoke('capture:state'),
   openBar: () => ipcRenderer.invoke('capture:open-bar'),
   takeScreenshot: () => ipcRenderer.invoke('capture:screenshot'),

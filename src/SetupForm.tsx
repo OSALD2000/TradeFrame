@@ -3,6 +3,7 @@ import type { SetupFormAPI } from '../electron/capture-types';
 import { FieldInput } from './FieldInput';
 import { SchemaEditor, newField } from './SchemaEditor';
 import { OneNoteBrowser } from './OneNoteBrowser';
+import { ConfirmDialog } from './ConfirmDialog';
 import { DeliveryStatus } from './DeliveryStatus';
 import { SaveDestinations } from './SaveDestinations';
 import { useSetupForm } from './useSetupForm';
@@ -34,6 +35,8 @@ export function SetupForm({
     error,
     browsingOneNote,
     lastSaved,
+    confirmation,
+    answerConfirmation,
     open,
     save,
     available,
@@ -55,6 +58,7 @@ export function SetupForm({
   );
   return (
     <>
+      {confirmation && <ConfirmDialog {...confirmation} onAnswer={answerConfirmation} />}
       <section
         id="open"
         className="open-options"

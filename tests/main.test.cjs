@@ -83,7 +83,8 @@ async function boot(
       this.webContents.setWindowOpenHandler = (handler) => {
         this.open = handler;
       };
-      this.webContents.send = () => {};
+      this.sent = [];
+      this.webContents.send = (...args) => this.sent.push(args);
       windows.push(this);
     }
     loadFile(file, options) {
@@ -111,6 +112,7 @@ async function boot(
       return !!this.destroyed;
     }
     close() {
+      this.emit('close');
       this.destroyed = true;
       this.emit('closed');
     }
@@ -127,7 +129,9 @@ async function boot(
     dialog: {
       showErrorBox: () => assert.fail('Unexpected startup error'),
       showOpenDialog: selectFolder,
-      showMessageBoxSync: () => 1,
+      showMessageBoxSync: () => {
+        throw new Error('A system confirmation must not open');
+      },
     },
     Menu: {
       buildFromTemplate: (template) => template,
@@ -684,6 +688,16 @@ test('preload exposes named commands and strips event objects from subscriptions
   assert.deepEqual(received, [[state]]);
   assert.equal(unsubscribe(), undefined);
   assert.equal(ipcRenderer.listenerCount('capture:changed'), 0);
+  const unloads = [];
+  const stopUnload = api.onUnloadRequested((...args) => unloads.push(args));
+  ipcRenderer.emit('journal:unload-requested', { sender: 'privileged event' }, 'close');
+  ipcRenderer.emit('journal:unload-requested', {}, 'reload');
+  ipcRenderer.emit('journal:unload-requested', {}, 'unknown');
+  assert.deepEqual(unloads, [['close'], ['reload']]);
+  assert.equal(stopUnload(), undefined);
+  assert.equal(ipcRenderer.listenerCount('journal:unload-requested'), 0);
+  api.answerUnload(false);
+  assert.deepEqual(calls.at(-1), ['journal:answer-unload', false]);
 });
 
 test('saving requires a journal screenshot and cancellation preserves it while blocking parallel capture', async () => {
@@ -1029,6 +1043,59 @@ test('setup help opens only named official pages from the journal window', async
   await invoke('capture:open-bar');
   await assert.rejects(invoke('guide:open', windows[1], 'entra'));
   assert.equal(app.openedHelp.length, 2);
+});
+
+test('native close and reload remain blocked until the trusted journal answers the pending confirmation', async () => {
+  const { app, windows, invoke } = await boot();
+  const window = windows[0];
+  let allowed = 0,
+    closes = 0,
+    reloads = 0;
+  const attempt = () =>
+    window.webContents.emit('will-prevent-unload', {
+      preventDefault: () => allowed++,
+    });
+  await assert.rejects(invoke('journal:answer-unload', window, true), /No pending/);
+  window.emit('close');
+  attempt();
+  attempt();
+  assert.equal(allowed, 0);
+  assert.equal(window.sent.filter(([name]) => name === 'journal:unload-requested').length, 1);
+  assert.equal(window.sent.at(-1)[1], 'close');
+  await assert.rejects(invoke('journal:answer-unload', window, 'yes'), /Invalid/);
+  await invoke('capture:open-bar');
+  await assert.rejects(invoke('journal:answer-unload', windows[1], true));
+  await invoke('journal:answer-unload', window, false);
+  assert.equal(window.destroyed, undefined);
+  window.close = () => {
+    closes++;
+    window.emit('close');
+    attempt();
+  };
+  window.webContents.reload = () => {
+    reloads++;
+    attempt();
+  };
+  window.emit('close');
+  attempt();
+  await invoke('journal:answer-unload', window, true);
+  assert.equal(closes, 1);
+  assert.equal(allowed, 1);
+  await assert.rejects(invoke('journal:answer-unload', window, true), /No pending/);
+  attempt();
+  assert.equal(allowed, 1, 'Approval is consumed exactly once');
+  assert.equal(window.sent.at(-1)[1], 'reload');
+  await invoke('journal:answer-unload', window, true);
+  assert.equal(reloads, 1);
+  assert.equal(allowed, 2);
+  app.emit('before-quit');
+  attempt();
+  await invoke('journal:answer-unload', window, false);
+  assert.equal(app.quitCalled, undefined);
+  app.emit('before-quit');
+  attempt();
+  await invoke('journal:answer-unload', window, true);
+  assert.equal(app.quitCalled, true);
 });
 
 test('native filing preferences validate changes and new saves retain all destination rules', async (t) => {

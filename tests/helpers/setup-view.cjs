@@ -53,7 +53,13 @@ function setupView(api, options = {}, sources = {}) {
       return (cells[index] ??= { current: initial });
     },
   };
-  const window = { confirm: () => confirmed, addEventListener() {}, removeEventListener() {} };
+  const window = {
+    confirm: () => {
+      throw new Error('A system confirmation must not open');
+    },
+    addEventListener() {},
+    removeEventListener() {},
+  };
   function load(file) {
     if (modules.has(file)) return modules.get(file);
     const exports = {};
@@ -131,6 +137,17 @@ function setupView(api, options = {}, sources = {}) {
     }
   }
   render();
+  function beginClick(label) {
+    const result = find(
+      (n) => n.type === 'button' && text(n.props.children).replace(/\s+/g, ' ').trim() === label,
+    ).props.onClick();
+    render();
+    return result;
+  }
+  function answer(value) {
+    find((n) => n.type.name === 'ConfirmDialog').props.onAnswer(value);
+    render();
+  }
   return {
     props,
     opened,
@@ -141,10 +158,12 @@ function setupView(api, options = {}, sources = {}) {
     confirm(value) {
       confirmed = value;
     },
+    beginClick,
+    answer,
     async click(label) {
-      await find(
-        (n) => n.type === 'button' && text(n.props.children).replace(/\s+/g, ' ').trim() === label,
-      ).props.onClick();
+      const result = beginClick(label);
+      if (nodes().some((n) => n.type.name === 'ConfirmDialog')) answer(confirmed);
+      await result;
       await flush();
     },
     field(id, value) {

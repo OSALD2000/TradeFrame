@@ -928,7 +928,8 @@ button {
 .onenote-notebook .preview-note {
   flex-basis: 100%;
 }
-.onenote-browser {
+.onenote-browser,
+.confirm-dialog {
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -943,8 +944,39 @@ button {
     inset 0 1px 0 #ffffff08;
   overscroll-behavior: contain;
 }
-.onenote-browser::backdrop {
+.onenote-browser::backdrop,
+.confirm-dialog::backdrop {
   background: #000c;
+}
+.confirm-dialog {
+  width: min(520px, calc(100vw - 32px));
+}
+.confirm-dialog h2 {
+  margin: 18px 0 12px;
+  font-size: 24px;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+}
+.confirm-dialog p {
+  margin: 0;
+  color: var(--secondary);
+  line-height: 1.7;
+}
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 28px;
+}
+.discard-button {
+  color: var(--danger);
+  background: var(--elevated);
+  border: 1px solid var(--danger);
+  padding: 11px 16px;
+}
+.discard-button:hover {
+  background: #efaaa612;
 }
 .onenote-pages {
   list-style: none;
@@ -1232,11 +1264,13 @@ select {
 .form-customization[open] .form-controls {
   animation: panel-enter var(--motion-panel) var(--motion-ease);
 }
-.onenote-browser[open] {
+.onenote-browser[open],
+.confirm-dialog[open] {
   animation: dialog-enter var(--motion-dialog) var(--motion-ease);
   transform-origin: center;
 }
-.onenote-browser[open]::backdrop {
+.onenote-browser[open]::backdrop,
+.confirm-dialog[open]::backdrop {
   animation: backdrop-enter var(--motion-panel) ease-out;
 }
 .loading-status,

@@ -123,6 +123,59 @@ test('local setup opening restores fields and screenshots together and preserves
   assert.equal(view.opened.length, 1);
 });
 
+test('a pending replacement waits for an explicit answer and cancels duplicate requests and unmounts', async (t) => {
+  const { view, calls } = await fixture(t);
+  const first = view.beginClick('Start a new setup');
+  assert.equal(calls.length, 0);
+  assert.equal(view.value('note'), answers.note);
+  assert.match(view.find((n) => n.type.name === 'ConfirmDialog').props.message, /screenshots/);
+  await view.beginClick('Start a new setup');
+  assert.equal(calls.length, 0);
+  view.answer(false);
+  await first;
+  await view.flush();
+  assert.equal(view.value('note'), answers.note);
+  const cancelledOnUnmount = view.beginClick('Start a new setup');
+  view.close();
+  await cancelledOnUnmount;
+  assert.equal(calls.length, 0);
+});
+
+test('close and reload prompts preserve drafts on cancellation and unsubscribe on unmount', async (t) => {
+  let request,
+    removed = false;
+  const replies = [];
+  const { view } = await fixture(
+    t,
+    {
+      onUnloadRequested: (listener) => {
+        request = listener;
+        return () => {
+          removed = true;
+        };
+      },
+      answerUnload: async (confirmed) => replies.push(confirmed),
+    },
+    { view: 'connections' },
+  );
+  request('close');
+  view.render();
+  assert.equal(view.find((n) => n.type.name === 'ConfirmDialog').props.action, 'close');
+  assert.equal(replies.length, 0);
+  view.answer(false);
+  await view.flush();
+  assert.deepEqual(replies, [false]);
+  assert.equal(view.value('note'), answers.note);
+  request('reload');
+  view.render();
+  assert.equal(view.find((n) => n.type.name === 'ConfirmDialog').props.action, 'reload');
+  view.answer(true);
+  await view.flush();
+  assert.deepEqual(replies, [false, true]);
+  view.close();
+  assert.ok(removed);
+});
+
 test('OneNote selection requires screenshots before replacing fields or reporting an opened draft', async (t) => {
   const { view, api } = await fixture(t);
   await view.click('Browse OneNote setups…');
