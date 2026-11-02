@@ -4,6 +4,28 @@ This document describes the code that exists. A proposal is not an implemented
 pattern. The owner approves responsibility splits and new patterns before they
 are introduced. The accepted runtime behavior is the reference for cleanup.
 
+## Local chart isolation and area selection
+
+The owner approved automatic local chart detection without an extra preview,
+and a separate free area selection. This reuses the existing functional-module,
+native composition/IPC facade and React view patterns; no class hierarchy,
+connector change or image-processing dependency is introduced.
+
+- `electron/chart-crop.ts` owns color projections and crop-bound validation;
+  it imports only the rectangle type and can run without Electron or React.
+  Four-channel color distances are invariant to native channel ordering.
+- `electron/main.ts` owns native PNG decoding/cropping and image-cache lifetime.
+  Automatic detection runs only for new Auto chart captures. Area requests accept
+  only the current source's opaque image token and a validated integer rectangle.
+  Full source bytes are released after selection or cancellation.
+- `src/useAreaSelection.ts` owns pointer/keyboard geometry and selection state;
+  `src/AreaSelection.tsx` renders the app-styled surface through the existing
+  Custom Hook controller/view pattern. Release submits immediately; there is no acceptance preview.
+  The renderer reads no filesystem or raw bitmap and receives no native API.
+- Crop status is transient capture metadata. File formats, connectors, sign-in,
+  saved images and persisted credentials remain unchanged. Existing public
+  commands keep their behavior; capture adds an optional mode and a named area command.
+
 ## Boundaries and folder ownership
 
 The existing directories and file paths stay in place. An approved extraction

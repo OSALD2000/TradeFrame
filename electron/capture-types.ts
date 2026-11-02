@@ -44,19 +44,28 @@ export type OpenedSetup = SetupInput & { capture: CaptureState };
 export type SaveResult =
   { status: 'cancelled' } | { status: 'saved'; path: string; sync: SyncJob[]; warning?: string };
 
-export type CaptureSource = { id: string; name: string; image: string };
+export type CaptureMode = 'chart' | 'area';
+export type CropRectangle = { x: number; y: number; width: number; height: number };
+export type CaptureSource = {
+  id: string;
+  name: string;
+  image: string;
+  crop?: 'chart' | 'full' | 'area';
+};
 export type Screenshot = {
   id: string;
   image: string;
   caption: string;
   capturedAt: string;
   timeframe: string;
+  crop?: 'chart' | 'full' | 'area';
 };
 
 export type CaptureState = {
   barOpen: boolean;
   busy: boolean;
   sources: CaptureSource[];
+  areaSource: CaptureSource | null;
   screenshots: Screenshot[];
   savedPath: string | null;
   requiresTimeframeCopy: boolean;
@@ -71,8 +80,9 @@ export type CaptureAPI = {
   onUnloadRequested(listener: (action: UnloadAction) => void): () => void;
   getState(): Promise<CaptureState>;
   openBar(): Promise<void>;
-  takeScreenshot(): Promise<void>;
+  takeScreenshot(mode?: CaptureMode): Promise<void>;
   chooseSource(id: string): Promise<void>;
+  selectArea(image: string, rectangle: CropRectangle): Promise<void>;
   discard(): Promise<void>;
   removeScreenshot(id: string): Promise<void>;
   captionScreenshot(id: string, caption: string): Promise<void>;

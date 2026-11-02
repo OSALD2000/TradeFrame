@@ -5,6 +5,7 @@ const { EventEmitter } = require('node:events');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const vm = require('node:vm');
+const { image: syntheticImage, nativeImage } = require('./helpers/capture-image.cjs');
 const dataRoots = [];
 process.once('exit', () => {
   for (const root of dataRoots) require('node:fs').rmSync(root, { recursive: true, force: true });
@@ -120,6 +121,7 @@ async function boot(
   const electron = {
     app,
     BrowserWindow,
+    nativeImage,
     protocol: {
       registerSchemesAsPrivileged: () => {},
       handle: (scheme, handler) => handlers.set(`protocol:${scheme}`, handler),
@@ -1144,4 +1146,144 @@ test('native filing preferences validate changes and new saves retain all destin
   const saved = deserializeSetup(await fs.readFile(result.path, 'utf8'));
   assert.equal(saved.schemaVersion, 6);
   assert.deepEqual(saved.filing.obsidian, rule);
+});
+
+test('automatic chart capture saves only cropped PNG pixels without an approval step', async (t) => {
+  const { mkdtemp, rm } = require('node:fs/promises');
+  const folder = await mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-cropped-'));
+  t.after(() => rm(folder, { recursive: true, force: true }));
+  const full = syntheticImage(400, 300, (x, y) =>
+    x >= 25 && x < 345 && y >= 35 && y < 265 ? [19, 23, 34, 255] : [40, 40, 40, 255],
+  );
+  const expected = full.crop({ x: 25, y: 35, width: 320, height: 230 }).png;
+  const { invoke, windows, handlers } = await boot(
+    async () => [{ ...source('screen:0:0'), thumbnail: full }],
+    async () => ({ canceled: false, filePaths: [folder] }),
+  );
+  await invoke('capture:open-bar');
+  await captureReady(invoke, windows);
+  const state = await invoke('capture:state');
+  assert.equal(state.areaSource, null);
+  assert.equal(state.sources.length, 0);
+  assert.equal(state.screenshots.length, 1);
+  assert.equal(state.screenshots[0].crop, 'chart');
+  const response = await handlers.get('protocol:tradeframe-image')({
+    method: 'GET',
+    url: state.screenshots[0].image,
+  });
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), expected);
+  const saved = await invoke('journal:save', windows[0], setupInput());
+  const loaded = await require('../dist-electron/journal.js').readSetup(saved.path);
+  assert.deepEqual(
+    require('../dist-electron/journal.js').pngBytes(loaded.screenshots[0].image),
+    expected,
+  );
+});
+
+test('area selection validates the source and rectangle, preserves cancellation and never auto-crops small selections', async () => {
+  const full = syntheticImage(400, 300, (x, y) => [x % 256, y % 256, 30, 255]);
+  const { invoke, windows, handlers } = await boot(async () => [
+    { ...source('screen:0:0'), thumbnail: full },
+  ]);
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1], 'chart');
+  const previous = (await invoke('capture:state')).screenshots[0];
+  await invoke('capture:screenshot', windows[1], 'area');
+  let state = await invoke('capture:state');
+  const pending = state.areaSource;
+  assert.equal(windows[1].opacity, 0);
+  assert.equal(windows[1].ignoreMouseEvents, true);
+  assert.equal(state.screenshots.length, 1);
+  await assert.rejects(invoke('capture:screenshot', windows[1], 'invalid'), /Invalid capture mode/);
+  await assert.rejects(invoke('capture:screenshot', windows[1], 'area'), /Finish or cancel/);
+  const rectangle = { x: 15, y: 12, width: 9, height: 6 };
+  await assert.rejects(invoke('capture:area', windows[1], pending.image, rectangle), /Untrusted/);
+  await assert.rejects(
+    invoke('capture:area', windows[0], 'tradeframe-image://capture/stale', rectangle),
+    /no longer/,
+  );
+  await assert.rejects(
+    invoke('capture:area', windows[0], pending.image, { x: 399, y: 12, width: 9, height: 6 }),
+    /Invalid capture area/,
+  );
+  await assert.rejects(invoke('journal:save', windows[0], setupInput()), /Choose a screenshot/);
+  assert.equal((await invoke('capture:state')).areaSource, pending);
+  await invoke('capture:discard');
+  assert.equal(windows[1].opacity, 1);
+  assert.equal(windows[1].ignoreMouseEvents, false);
+  assert.equal((await invoke('capture:state')).screenshots[0], previous);
+  assert.equal(
+    (await handlers.get('protocol:tradeframe-image')({ method: 'GET', url: pending.image })).status,
+    404,
+  );
+  await invoke('capture:screenshot', windows[1], 'area');
+  state = await invoke('capture:state');
+  const current = state.areaSource;
+  await invoke('capture:area', windows[0], current.image, rectangle);
+  state = await invoke('capture:state');
+  assert.equal(state.areaSource, null);
+  assert.equal(state.screenshots.length, 2);
+  assert.equal(state.screenshots[0], previous);
+  assert.equal(state.screenshots[1].crop, 'area');
+  const response = await handlers.get('protocol:tradeframe-image')({
+    method: 'GET',
+    url: state.screenshots[1].image,
+  });
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), full.crop(rectangle).png);
+  await assert.rejects(invoke('capture:area', windows[0], current.image, rectangle), /no longer/);
+});
+
+test('multiple source area capture chooses the original image before selecting a rectangle', async () => {
+  const full = syntheticImage(60, 40, () => [100, 100, 100, 255]);
+  const { invoke, windows } = await boot(async () =>
+    ['screen:0:0', 'window:2:0'].map((id) => ({ ...source(id), thumbnail: full })),
+  );
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1], 'area');
+  assert.equal((await invoke('capture:state')).sources.length, 2);
+  await invoke('capture:choose', windows[0], 'window:2:0');
+  const state = await invoke('capture:state');
+  assert.equal(state.areaSource.id, 'window:2:0');
+  assert.equal(state.sources.length, 0);
+  assert.equal(state.screenshots.length, 0);
+  await invoke('journal:new');
+  assert.equal((await invoke('capture:state')).areaSource, null);
+});
+
+test('a detection failure keeps the original PNG and failed area cropping preserves pending and earlier images', async () => {
+  const full = syntheticImage(60, 40, () => [19, 23, 34, 255]);
+  const originalBitmap = full.toBitmap,
+    originalCrop = full.crop;
+  full.toBitmap = () => {
+    throw new Error('Synthetic bitmap failure');
+  };
+  const { invoke, windows, handlers } = await boot(async () => [
+    { ...source('screen:0:0'), thumbnail: full },
+  ]);
+  try {
+    await invoke('capture:open-bar');
+    await invoke('capture:screenshot', windows[1], 'chart');
+    const prior = (await invoke('capture:state')).screenshots[0];
+    assert.equal(prior.crop, 'full');
+    const response = await handlers.get('protocol:tradeframe-image')({
+      method: 'GET',
+      url: prior.image,
+    });
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), full.png);
+    await invoke('capture:screenshot', windows[1], 'area');
+    const pending = (await invoke('capture:state')).areaSource;
+    full.crop = () => {
+      throw new Error('Synthetic crop failure');
+    };
+    await assert.rejects(
+      invoke('capture:area', windows[0], pending.image, { x: 0, y: 0, width: 1, height: 1 }),
+      /Synthetic crop failure/,
+    );
+    const state = await invoke('capture:state');
+    assert.equal(state.areaSource, pending);
+    assert.equal(state.screenshots[0], prior);
+  } finally {
+    full.toBitmap = originalBitmap;
+    full.crop = originalCrop;
+  }
 });

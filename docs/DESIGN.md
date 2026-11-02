@@ -1,5 +1,24 @@
 # TradeFrame visual direction
 
+## Capture mode refinement, 2 November 2026
+
+The owner requests two local capture paths: automatic chart isolation without
+an extra preview/confirmation, and a free area selector for small cutouts.
+Retain the approved guided-dark/Linear reference lock and the bundled Refero
+focus/image craft. No new visual language or dependency is needed.
+
+| Decision                                  | Source and role                                                                                   | Implementation                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Primary Auto chart, secondary Select area | Existing lime primary-action role; owner request                                                  | Two explicit actions on the 680x128 floating bar                          |
+| App-styled still-image selector           | Existing modal surfaces; actual captured image is the media                                       | Neutral panel, fine border, real image, high-contrast selection rectangle |
+| Release commits; no acceptance step       | Owner's explicit no-preview request                                                               | Pointer up submits directly; Escape/Cancel preserves previous screenshots |
+| Keyboard and stable focus                 | Refero craft; existing confirmation modal                                                         | Arrow keys, two Enter presses, modal focus containment and restoration    |
+| Pointer remains captured during a drag    | [MDN pointer capture](https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture) | Clamp outside coordinates; cancellation/lost capture never commits        |
+
+No crop animation delays the selection. Existing reduced-motion and button
+policies apply. Actual desktop/narrow layout, image-to-selection alignment,
+keyboard focus and DPI remain owner acceptance; mocked events do not prove them.
+
 ## Draft confirmation refinement, 2 November 2026
 
 The owner accepts the current app design and reports Linux-styled Yes/No popups

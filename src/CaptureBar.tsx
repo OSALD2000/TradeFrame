@@ -10,10 +10,29 @@ export function CaptureBar() {
         </div>
         <button
           className="capture-button"
-          disabled={!api || state.busy || state.screenshots.length >= 20}
-          onClick={() => api && run(api.takeScreenshot)}
+          disabled={
+            !api ||
+            state.busy ||
+            !!state.areaSource ||
+            !!state.sources.length ||
+            state.screenshots.length >= 20
+          }
+          onClick={() => api && run(() => api.takeScreenshot('chart'))}
         >
-          <span aria-hidden="true">＋</span> Screenshot
+          Auto chart
+        </button>
+        <button
+          className="bar-return"
+          disabled={
+            !api ||
+            state.busy ||
+            !!state.areaSource ||
+            !!state.sources.length ||
+            state.screenshots.length >= 20
+          }
+          onClick={() => api && run(() => api.takeScreenshot('area'))}
+        >
+          Select area
         </button>
         <button
           className="bar-return"

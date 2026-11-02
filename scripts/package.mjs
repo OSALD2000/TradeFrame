@@ -69,6 +69,7 @@ try {
     'main',
     'preload',
     'capture-types',
+    'chart-crop',
     'journal',
     'form-schema',
     'form-definition',

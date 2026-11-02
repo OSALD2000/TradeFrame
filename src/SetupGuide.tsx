@@ -62,9 +62,11 @@ export function SetupGuide({ api }: { api: SetupGuideAPI | undefined }) {
           <li>
             <strong>Capture your chart</strong>
             <p>
-              In Create setup, open the floating capture bar and click Screenshot. Choose the
-              intended window if asked. Each screenshot needs its own timeframe, such as 1m or 2m;
-              notes are optional.
+              In Create setup, open the floating bar and choose Auto chart for local light/dark
+              chart detection, or Select area to drag a precise cutout. Release to add the area;
+              Escape cancels. Choose the intended source if asked. Auto chart adds directly; an
+              unclear image stays whole with a note. Each screenshot needs its own timeframe, such
+              as 1m or 2m; notes are optional.
             </p>
           </li>
           <li>

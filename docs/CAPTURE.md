@@ -4,13 +4,18 @@
 
 1. Click **Capture chart** in the desktop journal. The main window stays visible and a
    compact, draggable **TradeFrame Capture** bar opens.
-2. Click **Screenshot** on the bar. TradeFrame makes the capture bar transparent
+2. Choose **Auto chart** or **Select area** on the bar. TradeFrame makes the capture bar transparent
    and ignores mouse input there, waits briefly for the compositor, then requests
    screen/window snapshots from Electron. The native bar remains mapped so it
    retains its dragged position rather than being placed again by Wayland.
    The journal stays visible, including while the operating system's source picker is open.
 3. On PipeWire, the operating system may prompt for a screen/window. If only one
-   image is returned, it is added to the current setup directly. When multiple sources
+   image is returned, Auto chart detects/crops it locally and adds it directly.
+   Select area instead opens a still-image selection surface in TradeFrame:
+   drag a rectangle and release to add just those pixels, or Escape/Cancel to
+   abandon it. There is no further preview/confirmation. Arrow keys move the
+   selection cursor; Enter marks the first corner and Enter again adds the area.
+   Shift moves the cursor faster. When multiple sources
    are returned, choose a snapshot in the journal. After each capture attempt,
    the bar reappears and stays open for another screenshot, including after
    cancellation or failure.
@@ -28,7 +33,44 @@ Saving may deliver the selected setup to explicitly connected destinations;
 snapshots are collected at capture time and discarded after selection. Closing
 the journal clears unsaved screenshots after a discard confirmation. To save images and setup
 details locally, use [the journal save flow](JOURNAL.md). There is no global
-shortcut, annotation, or crop tool yet.
+shortcut, annotation tool or saved crop profile.
+
+## Local chart isolation
+
+Automatic detection samples common colors in the central 80% of the image, then
+projects their matching pixels onto rows and columns. It compares all four native
+channels symmetrically, without assuming RGBA/BGRA order. A 6-level per-channel
+tolerance handles small variations, rows/columns need 50% matching pixels, and
+short gaps up to 12 pixels between matches are bridged. A candidate must cover
+at least 25% of the image and have at least 60% matching background inside its
+bounds. Substantial separated runs or similarly ranked competing regions are
+rejected; there is no claim of semantic chart recognition.
+
+This supports distinct white, dark and colored chart backgrounds, independently
+of text OCR. Identical panel/chart backgrounds, wide colored drawing zones,
+multiple panes, gradients and very small charts can defeat the heuristic.
+No result, a full-image result or detection failure retains the original image
+and shows a full-image note in the source picker/setup. Use Select area when
+precise bounds are needed. Automatic bounds can still be inaccurate; check the
+normal setup image before saving. No additional approval preview is imposed.
+
+Select area always uses the original new capture and never runs automatic
+cropping on the selected rectangle. A tiny detail or the whole source is valid;
+the main process rejects noninteger/out-of-bounds/empty rectangles and stale
+source tokens. Dragging outside the displayed image clamps to its edges. A
+click, pointer cancellation or lost pointer capture does not add an image.
+Selection runs on a still image inside the app, not on a live desktop overlay.
+The capture bar stays transparent and ignores mouse input during area selection,
+then recovers on commit or cancellation so it cannot cover the selection surface.
+
+The native process re-decodes a 1x PNG before cropping so image, bitmap and
+rectangle bounds share pixel coordinates across DPI scales. The renderer sees
+only the existing opaque image URL, never filesystem or raw bitmap access.
+Only the cropped PNG enters the existing save/append/delivery path. No new
+file format, external process, network service or OCR dependency is involved;
+existing saved/imported images and OneNote credentials are untouched.
+
+Native APIs: [nativeImage](https://www.electronjs.org/docs/latest/api/native-image).
 
 ## Capture and platform limits
 
@@ -95,13 +137,22 @@ Use a synthetic chart/test window without personal or employer data.
   old text/images and Markdown backup remain, including after restart.
 - Inspect the journal at desktop and minimum window sizes and the bar at its
   fixed size. Verify keyboard focus and actionable errors.
+- Capture synthetic light/dark/colored charts with asymmetric toolbars and grid
+  lines. Verify exported PNG dimensions and content, including price/time axes.
+  Try large drawing zones, identical backgrounds and multiple panes; fallback
+  must keep the whole image with a note when no bounds are accepted.
+- Select a tiny area, drag in all four directions and beyond image edges, and
+  test Escape/Cancel, pointer cancellation and keyboard selection. Verify that
+  release adds exactly the selected pixels without another confirmation. Repeat
+  on scaled displays and narrow windows, then save/open/append and check images
+  at connected folder/OneNote targets using a synthetic account/setup.
 
 Automated checks cover lifecycle, trust boundaries, selection, discard,
 cancellation/failure recovery, parallel capture prevention, and pending capture
 cleanup. Real capture, layout, permissions, and stacking remain to be tested on
 Sway/Wayland, Windows, and macOS. Do not mark those checks complete from mocks.
 
-0.6.0 guided-dark controls use a 560x128 floating window with larger text and
+0.7.3 guided-dark controls use a 680x128 floating window with larger text and
 44px buttons. The transparent-during-capture behavior and position preservation
 remain in place. Verify text/button fit and screen placement on the target
 desktop; the automated lifecycle tests do not establish native geometry.

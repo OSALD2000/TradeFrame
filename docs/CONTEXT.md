@@ -1,5 +1,27 @@
 # TradeFrame context
 
+2 November 2026, chart-capture preview 0.7.3: the owner requested local automatic
+chart isolation for light and dark images, no additional preview/confirmation,
+and a separate free area selection for small cutouts. `electron/chart-crop.ts`
+contains pure color-region detection and rectangle validation. Native capture
+normalizes one PNG pixel scale, crops new captures before caching, and exposes a
+journal-only area command for the current in-memory source. There is no new
+folder, dependency, remote image service or persistent format/profile.
+Auto chart keeps uncertain images whole and labels that fallback. Select area
+uses a controller Hook and modal still-image view; release commits directly, Escape
+cancels, and keyboard two-corner selection is supported. The capture bar is now
+680x128. Existing save/delivery paths receive the cropped PNG; imported and
+previously saved images are not recropped. Authentication/session storage is
+unchanged. Native capture accuracy, actual rendering/focus, DPI and platform
+acceptance remain unverified; see [CAPTURE](CAPTURE.md).
+
+Verification: `npm run check` passes formatting, both TypeScript projects, the
+production build and all 176 tests. New synthetic cases cover light/dark/colored
+backgrounds, native channel permutations, ambiguous/drawing-zone fallback,
+scaled/reverse/clipped pointer geometry, keyboard selection, cancellation,
+stale/untrusted/invalid requests, PNG save round trips and native crop failures.
+No real account, journal, desktop capture or installed app was accessed for these checks.
+
 2 November 2026, publisher-enabled preview 0.7.2: the owner approved bundling the
 existing working public TradeFrame client ID from the specifically authorized
 local `onenote.json`. No token/notebook file was accessed. The public ID is build

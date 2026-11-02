@@ -4,6 +4,7 @@ import { SetupForm } from './SetupForm';
 import { Connections } from './Connections';
 import { ScreenshotFields } from './ScreenshotFields';
 import { SetupGuide } from './SetupGuide';
+import { AreaSelection } from './AreaSelection';
 import { validTimeframe } from '../electron/form-schema';
 import { version } from '../package.json';
 
@@ -60,12 +61,24 @@ export function App() {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [view]);
   useEffect(() => {
-    if (state.sources.length || state.screenshots.length > previousShots.current)
+    if (
+      state.sources.length ||
+      state.areaSource ||
+      state.screenshots.length > previousShots.current
+    )
       navigate('journal');
     previousShots.current = state.screenshots.length;
-  }, [state.sources.length, state.screenshots.length]);
+  }, [state.sources.length, state.areaSource, state.screenshots.length]);
   return (
     <div className="workspace">
+      {state.areaSource && api && (
+        <AreaSelection
+          key={state.areaSource.image}
+          source={state.areaSource}
+          onSelect={(rectangle) => api.selectArea(state.areaSource!.image, rectangle)}
+          onCancel={() => void run(api.discard)}
+        />
+      )}
       <a className="skip-link" href="#workspace-content">
         Skip to workspace
       </a>
@@ -201,7 +214,7 @@ export function App() {
                   <div className="preview-heading">
                     <div>
                       <h2 id="source-title">Choose your capture</h2>
-                      <p>These are snapshots from the moment you clicked Screenshot.</p>
+                      <p>Choose the source captured when you clicked Auto chart or Select area.</p>
                     </div>
                     <button className="secondary-button" onClick={() => api && run(api.discard)}>
                       Cancel selection
@@ -216,6 +229,9 @@ export function App() {
                       >
                         <img src={source.image} alt="" />
                         <span>{source.name}</span>
+                        {source.crop === 'full' && (
+                          <span>Full image · No clear chart boundary</span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -251,6 +267,12 @@ export function App() {
                           src={shot.image}
                           alt={`Chart screenshot ${index + 1}${shot.caption ? `: ${shot.caption}` : ''}`}
                         />
+                        {shot.crop === 'full' && (
+                          <p className="area-help">
+                            No clear chart boundary found; the full image was kept. Use Select area
+                            for a precise cutout.
+                          </p>
+                        )}
                         <ScreenshotFields
                           screenshot={shot}
                           busy={state.busy}
@@ -312,7 +334,7 @@ export function App() {
                   <p className="capture-status" id="capture-status">
                     {api
                       ? state.barOpen
-                        ? 'Click Screenshot on the floating bar, then choose the chart window if prompted.'
+                        ? 'Choose Auto chart or Select area on the floating bar, then choose the source if prompted.'
                         : 'The floating bar lets you take screenshots without leaving your chart.'
                       : 'Open the desktop app to capture and save setups. This browser view is a preview only.'}
                   </p>
@@ -336,7 +358,7 @@ export function App() {
               <SetupForm
                 api={api}
                 busy={state.busy}
-                choosing={state.sources.length > 0}
+                choosing={state.sources.length > 0 || !!state.areaSource}
                 hasPreview={state.screenshots.length > 0}
                 savedPath={state.savedPath}
                 timeframesReady={state.screenshots.every((shot) => validTimeframe(shot.timeframe))}

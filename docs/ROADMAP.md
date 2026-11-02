@@ -50,6 +50,11 @@ Architecture and current verification evidence: [CONTEXT](CONTEXT.md).
 File behavior: [JOURNAL](JOURNAL.md). Integration behavior: [SYNC](SYNC.md).
 Build and publisher instructions: [RELEASE](RELEASE.md).
 
+0.7.3 adds local light/dark chart-region heuristics and direct still-image area
+selection. Automated geometry and capture-boundary tests are implemented;
+actual crop accuracy, dark/light chart layouts, DPI, pointer/keyboard behavior
+and safe fallback on all target desktops still require acceptance.
+
 ## Required before claiming the goal complete
 
 - Verify the final package and checksum, clean extraction, absence of private
@@ -85,7 +90,7 @@ work, not completed features merely because mocked tests pass.
 ## Later, only when justified
 
 Saved-setup browsing/search, outcome/R review, two-way merges, direct Dropbox API
-OAuth, crop/annotations, statistics and broker/AI features. The requested folder
+OAuth, annotations, remembered crop profiles, statistics and broker/AI features. The requested folder
 connection uses Dropbox's desktop client; no direct Dropbox account API is claimed.
 No global shortcut is registered: the existing personal Super+Ctrl+j binding stays
 owned by the desktop script. TradeFrame is usable through its mouse capture bar.

@@ -2128,3 +2128,66 @@ textarea:user-invalid {
     scroll-behavior: auto !important;
   }
 }
+
+.area-dialog {
+  width: min(1200px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  margin: auto;
+  padding: 24px;
+  overflow: auto;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 24px 80px #0009;
+}
+.area-dialog::backdrop {
+  background: #000b;
+}
+.area-stage {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin: 16px auto;
+  line-height: 0;
+}
+.area-stage img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  user-select: none;
+}
+.area-surface {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+.area-surface:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 4px;
+}
+.area-rectangle {
+  filter: drop-shadow(0 1px 1px #000);
+  fill: #ffffff18;
+  stroke: white;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.area-cursor {
+  fill: none;
+  stroke: white;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 1px 1px #000);
+  pointer-events: none;
+}
+.area-help {
+  color: var(--secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-top: 10px;
+}

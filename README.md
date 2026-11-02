@@ -7,7 +7,7 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 
 ## Current preview
 
-- Floating capture bar and native screen/window selection.
+- Floating capture bar with local light/dark chart detection and free area selection.
 - Up to 20 screenshots, each with a required timeframe, optional multiline notes and capture timestamp in one setup Markdown.
 - Save/reopen, append follow-up screenshots to the same file with a Markdown
   backup and prepared crash recovery, or save a separate copy to change earlier fields/images.
@@ -63,8 +63,12 @@ text, 44px controls and subtle feedback for clicks, loading and opening panels.
 Animations respect the system reduced-motion preference. Form selection/editing is under
 **Customize the form (optional)**, leaving the first capture in focus.
 
-Click **Capture your first chart** (or **Capture chart**), then **Screenshot** on the floating bar. Choose a source
-if prompted. Each capture adds a view. Choose its **Timeframe (required)**, such
+Click **Capture your first chart** (or **Capture chart**), then choose **Auto chart** or **Select area** on the floating bar. Choose a source
+if prompted. Auto chart looks for a large, distinct background region regardless
+of its color, and adds the result directly. Unclear images stay whole with a note.
+For a precise cutout, Select area opens the captured image: drag and release to
+add only that rectangle, or Escape to cancel. There is no extra confirmation.
+Processing stays local; existing saved images are never recropped. Each capture adds a view. Choose its **Timeframe (required)**, such
 as `1m`, `2m` or `1h`; add optional multiline notes for this view. Every image needs
 its own timeframe before saving. The older Trading setup form retains its separate setup-level Timeframe field.
 Remove individual draft images or use **Start a new setup** to clear the current setup.

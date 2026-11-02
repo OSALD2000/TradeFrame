@@ -28,6 +28,8 @@ const script = [
   `const { SchemaStore } = require(path.join(${JSON.stringify(application)}, 'dist-electron', 'schema-store.js'));`,
   "const store = new SchemaStore(':memory:'); assert.ok(store.list().some(form => form.id === 'journal')); store.close();",
   `assert.equal(typeof require(path.join(${JSON.stringify(application)}, 'dist-electron', 'journal.js')).writeSetup, 'function');`,
+  `const { findChartBounds, validateCrop } = require(path.join(${JSON.stringify(application)}, 'dist-electron', 'chart-crop.js'));`,
+  "assert.equal(typeof findChartBounds, 'function'); assert.deepEqual(validateCrop({x: 0, y: 0, width: 1, height: 1}, 1, 1), {x: 0, y: 0, width: 1, height: 1});",
   `assert.equal(typeof require(path.join(${JSON.stringify(application)}, 'dist-electron', 'onenote.js')).OneNoteClient.prototype.openSetup, 'function');`,
   `const configuration = require(path.join(${JSON.stringify(application)}, 'dist-electron', 'integrations.json'));`,
   `assert.equal(configuration.microsoftClientId, ${JSON.stringify(process.env.TRADEFRAME_MICROSOFT_CLIENT_ID?.trim() || manifest.config?.microsoftClientId || '')});`,

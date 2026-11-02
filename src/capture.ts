@@ -12,6 +12,7 @@ export function useCapture() {
     barOpen: false,
     busy: false,
     sources: [],
+    areaSource: null,
     screenshots: [],
     savedPath: null,
     requiresTimeframeCopy: false,

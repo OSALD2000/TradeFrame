@@ -5,6 +5,7 @@ import {
   dialog,
   ipcMain,
   Menu,
+  nativeImage,
   safeStorage,
   shell,
   protocol,
@@ -15,7 +16,8 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import type { CaptureState, CaptureSource } from './capture-types';
+import type { CaptureState, CaptureSource, CaptureMode } from './capture-types';
+import { findChartBounds, validateCrop } from './chart-crop';
 import { MAX_SCREENSHOTS, validTimeframe } from './form-schema';
 import { validateSetup, writeSetup, readSetup, appendScreenshots, pngBytes } from './journal';
 import { SchemaStore } from './schema-store';
@@ -84,6 +86,7 @@ let state: CaptureState = {
   barOpen: false,
   busy: false,
   sources: [],
+  areaSource: null,
   screenshots: [],
   savedPath: null,
   requiresTimeframeCopy: false,
@@ -91,6 +94,7 @@ let state: CaptureState = {
 };
 let savedFingerprint = '';
 let capturedAt = '';
+let captureMode: CaptureMode = 'chart';
 const images = new Map<string, Buffer>();
 
 function cacheImage(image: string) {
@@ -116,8 +120,35 @@ function appendScreenshot(source: CaptureSource) {
     caption: '',
     timeframe: '',
     capturedAt,
+    crop: source.crop,
   });
   state.sources = [];
+  state.areaSource = null;
+}
+
+function selectSource(source: CaptureSource) {
+  if (captureMode === 'area') {
+    state.areaSource = source;
+    state.sources = [];
+  } else appendScreenshot(source);
+}
+
+function cropChart(image: string): { image: string; crop: 'chart' | 'full' } {
+  try {
+    // Re-decode the 1x PNG so bitmap bounds and crop coordinates share one pixel scale.
+    const original = nativeImage.createFromDataURL(image);
+    const { width, height } = original.getSize(1);
+    const rectangle = findChartBounds(original.toBitmap({ scaleFactor: 1 }), width, height);
+    if (rectangle) {
+      const cropped = original.crop(rectangle);
+      const size = cropped.getSize(1);
+      if (!cropped.isEmpty() && size.width === rectangle.width && size.height === rectangle.height)
+        return { image: cropped.toDataURL({ scaleFactor: 1 }), crop: 'chart' };
+    }
+  } catch {
+    // Detection is optional; failure must not lose the captured image or previous screenshots.
+  }
+  return { image, crop: 'full' };
 }
 
 function protectWindow(window: BrowserWindow) {
@@ -140,7 +171,15 @@ function assertSender(event: IpcMainInvokeEvent, expected?: BrowserWindow | null
 }
 
 function publish() {
-  const used = new Set([...state.screenshots, ...state.sources].map((shot) => shot.image));
+  if (bar && !state.busy) {
+    bar.setOpacity(state.areaSource ? 0 : 1);
+    bar.setIgnoreMouseEvents(!!state.areaSource);
+  }
+  const used = new Set(
+    [...state.screenshots, ...state.sources, ...(state.areaSource ? [state.areaSource] : [])].map(
+      (shot) => shot.image,
+    ),
+  );
   for (const url of images.keys()) if (!used.has(url)) images.delete(url);
   for (const window of [journal, bar]) {
     if (window && !window.isDestroyed()) window.webContents.send('capture:changed', state);
@@ -160,7 +199,7 @@ async function openBar() {
     const window = new BrowserWindow({
       title: 'TradeFrame Capture',
       icon,
-      width: 560,
+      width: 680,
       height: 128,
       resizable: false,
       maximizable: false,
@@ -192,14 +231,17 @@ async function openBar() {
   publish();
 }
 
-async function takeScreenshot() {
+async function takeScreenshot(mode: CaptureMode) {
   if (state.busy) return;
+  if (state.sources.length || state.areaSource)
+    throw new Error('Finish or cancel the current capture selection first');
   if (state.screenshots.length >= MAX_SCREENSHOTS) {
     state.error = 'This setup has 20 screenshots. Remove one before capturing another.';
     publish();
     return;
   }
   const owner = journal;
+  captureMode = mode;
   capturedAt = new Date().toISOString();
   state = { ...state, busy: true, sources: [], error: null };
   publish();
@@ -217,13 +259,18 @@ async function takeScreenshot() {
     if (journal !== owner) return;
     state.sources = sources
       .filter((source) => !/^window:.*:1$/.test(source.id) && !source.thumbnail.isEmpty())
-      .map((source) => ({
-        id: source.id,
-        name: source.name,
-        image: cacheImage(source.thumbnail.toDataURL()),
-      }));
+      .map((source) => {
+        const image = source.thumbnail.toDataURL({ scaleFactor: 1 });
+        const result = mode === 'chart' ? cropChart(image) : { image, crop: undefined };
+        return {
+          id: source.id,
+          name: source.name,
+          crop: result.crop,
+          image: cacheImage(result.image),
+        };
+      });
     if (state.sources.length === 1) {
-      appendScreenshot(state.sources[0]);
+      selectSource(state.sources[0]);
     } else if (state.sources.length === 0) {
       state.error = 'No screenshot was captured. Try again and allow screen access when prompted.';
     }
@@ -236,8 +283,6 @@ async function takeScreenshot() {
       state.busy = false;
       publish();
       journal?.show();
-      bar?.setOpacity(1);
-      bar?.setIgnoreMouseEvents(false);
     }
   }
 }
@@ -278,6 +323,7 @@ function registerCapture() {
     state = {
       ...state,
       sources: [],
+      areaSource: null,
       screenshots: [],
       savedPath: null,
       requiresTimeframeCopy: false,
@@ -327,6 +373,7 @@ function registerCapture() {
           state = {
             ...state,
             sources: [],
+            areaSource: null,
             screenshots,
             savedPath: null,
             requiresTimeframeCopy: screenshots.some((shot) => !shot.timeframe),
@@ -472,6 +519,7 @@ function registerCapture() {
       state = {
         ...state,
         sources: [],
+        areaSource: null,
         screenshots,
         savedPath: selection.filePaths[0],
         requiresTimeframeCopy: loaded.screenshots.some((shot) => !shot.timeframe),
@@ -490,7 +538,13 @@ function registerCapture() {
     ipcMain.handle(`journal:${operation}`, async (event, input: unknown): Promise<SaveResult> => {
       assertSender(event, journal);
       const owner = journal;
-      if (!owner || state.busy || !state.screenshots.length || state.sources.length) {
+      if (
+        !owner ||
+        state.busy ||
+        !state.screenshots.length ||
+        state.sources.length ||
+        state.areaSource
+      ) {
         throw new Error('Choose a screenshot before saving');
       }
       if (!state.screenshots.every((shot) => validTimeframe(shot.timeframe)))
@@ -585,17 +639,40 @@ function registerCapture() {
     assertSender(event, journal);
     return openBar();
   });
-  ipcMain.handle('capture:screenshot', (event) => {
+  ipcMain.handle('capture:screenshot', (event, mode: unknown = 'chart') => {
     assertSender(event, bar);
     if (event.sender !== bar?.webContents) throw new Error('Open the capture bar first');
-    return takeScreenshot();
+    if (mode !== 'chart' && mode !== 'area') throw new Error('Invalid capture mode');
+    return takeScreenshot(mode);
   });
   ipcMain.handle('capture:choose', (event, id: unknown) => {
     assertSender(event, journal);
     if (state.busy || typeof id !== 'string') throw new Error('Invalid capture selection');
     const source = state.sources.find((item) => item.id === id);
     if (!source) throw new Error('This capture is no longer available. Take another screenshot.');
-    appendScreenshot(source);
+    selectSource(source);
+    state.error = null;
+    publish();
+  });
+  ipcMain.handle('capture:area', (event, image: unknown, rectangle: unknown) => {
+    assertSender(event, journal);
+    const source = state.areaSource;
+    if (state.busy || !source || image !== source.image)
+      throw new Error('This capture is no longer available');
+    const original = nativeImage.createFromBuffer(images.get(source.image)!);
+    const { width, height } = original.getSize(1);
+    const bounds = validateCrop(rectangle, width, height);
+    const cropped = original.crop(bounds);
+    const size = cropped.getSize(1);
+    if (cropped.isEmpty() || size.width !== bounds.width || size.height !== bounds.height)
+      throw new Error('The capture area could not be copied. Try again.');
+    const url = cacheImage(cropped.toDataURL({ scaleFactor: 1 }));
+    try {
+      appendScreenshot({ ...source, image: url, crop: 'area' });
+    } catch (error) {
+      images.delete(url);
+      throw error;
+    }
     state.error = null;
     publish();
   });
@@ -603,7 +680,7 @@ function registerCapture() {
     assertSender(event, journal);
     if (state.busy) return;
     // Cancelling selection preserves all screenshots already added to the setup.
-    state = { ...state, sources: [], error: null };
+    state = { ...state, sources: [], areaSource: null, error: null };
     publish();
   });
   ipcMain.handle('capture:remove', (event, id: unknown) => {
@@ -715,6 +792,7 @@ function createWindow() {
       barOpen: false,
       busy: false,
       sources: [],
+      areaSource: null,
       screenshots: [],
       savedPath: null,
       requiresTimeframeCopy: false,

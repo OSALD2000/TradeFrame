@@ -1,3 +1,24 @@
+# TradeFrame 0.7.3 preview
+
+The floating bar now offers **Auto chart** and **Select area**. Auto chart uses
+local background-color projections to find a large chart region in light or dark
+images and adds it directly, without a new preview or confirmation step. It is a
+heuristic: ambiguous regions, substantial separated areas and failed detection
+keep the original image, with a full-image notice. Identical chart/tool backgrounds,
+complex drawings and multi-chart layouts can require Select area.
+
+Select area displays the captured source for drawing a rectangle; releasing the
+pointer adds that cutout immediately, including small details. Escape/Cancel and
+pointer cancellation preserve previous screenshots. Arrow keys and Enter provide
+a keyboard alternative. The native boundary validates the current source and
+integer pixel bounds; the selected PNG is used by the existing save/send paths.
+The selection works on a still capture inside TradeFrame, not a live desktop overlay.
+
+No OCR service, remote image processing, new dependency, stored crop profile or
+file-format change is introduced. Saved/imported images and OneNote session
+storage are unchanged. Real desktop selection, crop accuracy, DPI and platform
+capture acceptance remain pending; synthetic tests do not establish those results.
+
 # TradeFrame 0.7.2 preview
 
 Packages now include the owner-approved public Microsoft application ID by

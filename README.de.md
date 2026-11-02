@@ -7,7 +7,7 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 
 ## Aktuelle Vorschau
 
-- Schwebende Aufnahmeleiste und native Bildschirm-/Fensterauswahl.
+- Schwebende Aufnahmeleiste mit lokaler Erkennung heller/dunkler Charts und freier Bereichsauswahl.
 - Bis zu 20 Screenshots mit jeweils verpflichtendem Timeframe, optionalem mehrzeiligem Bildtext und Aufnahmezeit in einer Setup-Markdown-Datei.
 - Speichern/Oeffnen, weitere Bilder an dieselbe Datei anhaengen mit Markdown-Sicherung,
   mit vorbereiteter Wiederherstellung nach Prozessabbruch, oder eine eigene Kopie fuer Aenderungen an bisherigen Feldern/Bildern speichern.
@@ -64,8 +64,13 @@ groessere Schrift, 44-Pixel-Bedienelemente und dezente Animationen bei Klicks,
 Ladevorgaengen und geoeffneten Bereichen. Reduzierte Bewegung wird beruecksichtigt. Formularwahl und Bearbeitung liegen unter
 **Customize the form (optional)**, damit der Einstieg uebersichtlich bleibt.
 
-**Capture your first chart** (oder **Capture chart**) und dann **Screenshot** in der Leiste anklicken. Bei Bedarf
-eine Quelle auswaehlen. Unter jedem Bild **Timeframe (required)** auswaehlen,
+**Capture your first chart** (oder **Capture chart**) und dann **Auto chart** oder **Select area** in der Leiste anklicken. Bei Bedarf
+eine Quelle auswaehlen. Auto chart sucht eine grosse, farblich abgegrenzte
+Hintergrundflaeche und uebernimmt den Ausschnitt direkt. Bei unklarer Erkennung
+bleibt das Bild vollstaendig mit einem Hinweis. Fuer einen praezisen Ausschnitt
+mit Select area ein Rechteck auf der Aufnahme ziehen: Loslassen uebernimmt,
+Escape bricht ab. Es gibt keine zusaetzliche Bestaetigung. Die Verarbeitung bleibt
+lokal; bereits gespeicherte Bilder werden nicht neu zugeschnitten. Unter jedem Bild **Timeframe (required)** auswaehlen,
 zum Beispiel `1m`, `2m` oder `1h`. Jedes Bild braucht vor dem Speichern einen
 eigenen Timeframe; mehrzeiliger Text je Bild ist optional. Das alte Formular
 Trading setup behaelt sein zusaetzliches Setup-Timeframe-Feld. Einzelne Entwurfsbilder lassen sich entfernen;
