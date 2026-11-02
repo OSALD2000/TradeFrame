@@ -4,6 +4,30 @@ This document describes the code that exists. A proposal is not an implemented
 pattern. The owner approves responsibility splits and new patterns before they
 are introduced. The accepted runtime behavior is the reference for cleanup.
 
+## Explicit save destinations
+
+The owner requires every target, including the local journal, to be independently
+optional. `useSetupForm` owns four session-scoped choices; SaveDestinations renders
+controlled accessible checkboxes using the existing form/controller pattern.
+The IPC facade carries these flags separately from schema/values. The pure
+validator in `capture-types.ts` rejects unknown/nonboolean/empty choices; omitted
+choices default to local-only. Nothing is added to saved form/document formats.
+
+Native composition writes to the journal only when selected; otherwise the
+existing Markdown/PNG writer uses a private `saved-setups` working root. Exact
+validated copies from `journal.copySetup` stage storage changes without modifying
+an unselected public source. `snapshotFolderName` in journal-layout centralizes
+the existing legacy folder identity for both these copies and the folder adapter.
+The existing copySnapshot function also handles a direct journal root for
+promotion, preserving journal IDs, pinned filing rules and safe collisions.
+
+The existing Simple Factory and connector adapters are unchanged. ConnectionStore
+enqueue accepts independent folder flags; only new selected jobs are retried.
+Existing queue/config versions, authorized older jobs, account settings and
+credential encryption remain unchanged. Native filesystem checks reject a
+redirected working root. Working copies/backups are retained; automatic cleanup
+and persistent global delivery preferences are outside this change.
+
 ## Local chart isolation and area selection
 
 The owner approved automatic local chart detection without an extra preview,

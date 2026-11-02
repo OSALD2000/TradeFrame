@@ -2192,3 +2192,34 @@ textarea:user-invalid {
   line-height: 1.5;
   margin-top: 10px;
 }
+
+.setup-form .save-destination-summary {
+  display: block;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.save-destination-summary legend {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.setup-form .destination-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.destination-choice input[type='checkbox'] {
+  margin: 3px 0 0;
+  flex-shrink: 0;
+  accent-color: var(--text);
+}
+.destination-choice:has(input:disabled) {
+  cursor: default;
+}
+
+.setup-form .destination-choice strong {
+  color: var(--text);
+}

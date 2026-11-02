@@ -77,8 +77,13 @@ Trading setup behaelt sein zusaetzliches Setup-Timeframe-Feld. Einzelne Entwurfs
 **Start a new setup** leert nach Rueckfrage das aktuelle Setup. Die Leiste bleibt bis
 zum Schliessen im Journal oder ueber **×** offen.
 
-**Setup details** ausfuellen und **Save setup** anklicken. Beim ersten Speichern
-einen Journalordner waehlen; er wird danach gemerkt. Den gemeinsamen Elternordner
+**Setup details** ausfuellen, mindestens ein **Save destination** ankreuzen und
+**Save setup** anklicken. Local journal, Obsidian, Dropbox und OneNote sind einzeln
+abwaehlbar; anfangs ist nur Local journal angekreuzt. Speichern/Anhaengen liefert
+nur an die angekreuzten Ziele. Nur beim ersten Speichern ins lokale Journal
+erscheint dessen Ordnerauswahl; der Ordner wird danach gemerkt. Ohne dieses Ziel
+bleibt eine private Arbeitskopie fuer Wiederholungen und weitere Screenshots auf
+diesem Geraet, ohne Pflicht zur Journalordner-Auswahl. Den gemeinsamen Elternordner
 von `backtesting` und `live` waehlen, beispielsweise `Trading/journaling`.
 Trading journal legt nach dem **Marktdatum** ab, etwa:
 

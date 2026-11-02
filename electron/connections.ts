@@ -106,14 +106,15 @@ export class ConnectionStore {
     source: string,
     oneNoteSection?: string,
     notebookId?: string,
-    includeFolders = true,
+    includeFolders: boolean | { obsidian: boolean; dropbox: boolean } = true,
   ): SyncJob[] {
     if (!validPath(source)) throw new Error('Invalid saved setup');
     if (notebookId !== undefined && (!oneNoteSection || !validOneNoteId(notebookId)))
       throw new Error('Invalid OneNote notebook');
     const next = this.get();
     const jobs: SyncJob[] = (['obsidian', 'dropbox'] as const).flatMap((kind) =>
-      includeFolders && next.folders[kind]
+      (typeof includeFolders === 'boolean' ? includeFolders : includeFolders[kind]) &&
+      next.folders[kind]
         ? [
             {
               id: randomUUID(),

@@ -10,8 +10,15 @@ export function DeliveryStatus({ result }: { result: SaveResult }) {
       role="status"
       data-attention={failed || !!result.warning}
     >
-      <strong>Saved locally{failed ? ' · delivery needs attention' : ''}</strong>
-      <p className="saved-path">{result.path}</p>
+      <strong>
+        {result.localJournal === false ? 'Destination results' : 'Saved locally'}
+        {failed || result.warning ? ' · delivery needs attention' : ''}
+      </strong>
+      {result.localJournal !== false ? (
+        <p className="saved-path">{result.path}</p>
+      ) : (
+        <p>Local journal was not selected. A private recovery copy is kept on this device.</p>
+      )}
       {result.sync.length > 0 && (
         <ul>
           {result.sync.map((job) => (

@@ -480,20 +480,37 @@ test('native saves require a chosen notebook and switching it cancels failed job
   await invoke('capture:open-bar');
   await captureReady(invoke, windows);
   assert.match(
-    (await invoke('journal:save', windows[0], setupInput())).warning,
-    /Choose a OneNote notebook/,
+    (
+      await invoke('journal:save', windows[0], setupInput(), {
+        journal: true,
+        obsidian: false,
+        dropbox: false,
+        onenote: true,
+      })
+    ).warning,
+    /choose a notebook/,
   );
   assert.equal((await invoke('connections:get')).jobs.length, 0);
   await invoke('onenote:notebooks');
   await assert.rejects(invoke('onenote:notebook', windows[0], 'unknown'), /available notebook/);
   await invoke('onenote:notebook', windows[0], 'book-b');
-  const failed = await invoke('journal:save', windows[0], setupInput());
+  const failed = await invoke('journal:save', windows[0], setupInput(), {
+    journal: true,
+    obsidian: false,
+    dropbox: false,
+    onenote: true,
+  });
   assert.equal(failed.sync[0].status, 'failed');
   assert.equal(failed.sync[0].notebookId, 'book-b');
   await invoke('onenote:notebook', windows[0], 'book-a');
   assert.equal((await invoke('connections:get')).jobs.length, 0);
   fail = false;
-  const sent = await invoke('journal:save', windows[0], setupInput());
+  const sent = await invoke('journal:save', windows[0], setupInput(), {
+    journal: true,
+    obsidian: false,
+    dropbox: false,
+    onenote: true,
+  });
   assert.equal(sent.sync[0].status, 'synced');
   assert.equal(sent.sync[0].notebookId, 'book-a');
   assert.deepEqual(destinations, [
@@ -685,7 +702,7 @@ test('preload exposes named commands and strips event objects from subscriptions
   assert.deepEqual(calls[0], ['capture:choose', 'screen:0:0']);
   assert.equal(api.invoke, undefined);
   api.saveSetup({ symbol: 'Synthetic' });
-  assert.deepEqual(calls[1], ['journal:save', { symbol: 'Synthetic' }]);
+  assert.deepEqual(calls[1], ['journal:save', { symbol: 'Synthetic' }, undefined]);
   api.getSchemas();
   api.saveSchema(DEFAULT_SCHEMA);
   api.openSetup();
@@ -714,12 +731,16 @@ test('preload exposes named commands and strips event objects from subscriptions
 });
 
 test('saving requires a journal screenshot and cancellation preserves it while blocking parallel capture', async () => {
-  let resolve;
+  let resolve, prompted;
+  const shown = new Promise((done) => {
+    prompted = done;
+  });
   const { windows, invoke } = await boot(
     undefined,
     () =>
       new Promise((done) => {
         resolve = done;
+        prompted();
       }),
   );
   const input = setupInput();
@@ -732,6 +753,7 @@ test('saving requires a journal screenshot and cancellation preserves it while b
   assert.equal((await invoke('capture:state')).busy, true);
   await assert.rejects(invoke('journal:save', windows[0], input), /Choose a screenshot/);
   await invoke('capture:discard');
+  await shown;
   resolve({ canceled: true, filePaths: [] });
   assert.equal((await pending).status, 'cancelled');
   assert.equal((await invoke('capture:state')).screenshots.length, 1);
@@ -943,19 +965,34 @@ test('folder connections are journal-only and save sends all screenshots to both
   await invoke('connections:folder', windows[0], 'obsidian');
   await invoke('connections:folder', windows[0], 'dropbox');
   for (let i = 0; i < 2; i++) await captureReady(invoke, windows);
-  const saved = await invoke('journal:save', windows[0], setupInput());
+  const saved = await invoke('journal:save', windows[0], setupInput(), {
+    journal: true,
+    obsidian: true,
+    dropbox: true,
+    onenote: false,
+  });
   assert.equal(saved.sync.length, 2);
   assert.ok(saved.sync.every((job) => job.status === 'synced'));
   assert.equal((await invoke('connections:get')).folders.journal, folders[2]);
   await captureReady(invoke, windows);
-  const appended = await invoke('journal:append', windows[0], setupInput());
+  const appended = await invoke('journal:append', windows[0], setupInput(), {
+    journal: true,
+    obsidian: true,
+    dropbox: true,
+    onenote: false,
+  });
   assert.equal(appended.path, saved.path);
   assert.equal(
     (await require('../dist-electron/journal.js').readSetup(saved.path)).screenshots.length,
     3,
   );
   assert.ok(appended.sync.every((job) => job.status === 'synced'));
-  await invoke('journal:save', windows[0], setupInput());
+  await invoke('journal:save', windows[0], setupInput(), {
+    journal: true,
+    obsidian: true,
+    dropbox: true,
+    onenote: false,
+  });
   assert.equal(selections, 3, 'Saving again uses the remembered journal folder');
   for (const folder of folders.slice(0, 2))
     assert.equal((await fs.readdir(path.join(folder, 'TradeFrame'))).length, 2);
@@ -1007,7 +1044,12 @@ test('saved setups can be sent after connecting and cloud opens restore a separa
   await invoke('connections:folder', windows[0], 'obsidian');
   await invoke('capture:open-bar');
   await captureReady(invoke, windows);
-  const saved = await invoke('journal:save', windows[0], setupInput());
+  const saved = await invoke('journal:save', windows[0], setupInput(), {
+    journal: true,
+    obsidian: true,
+    dropbox: false,
+    onenote: false,
+  });
   const original = await fs.readFile(saved.path);
   assert.equal(saved.sync.length, 1);
   assert.equal(saved.sync[0].kind, 'obsidian');
@@ -1377,4 +1419,396 @@ test('cancelling area capture before an asynchronous full-screen entry still exi
   windows[0].emit('enter-full-screen');
   assert.equal(windows[0].fullscreen, false);
   windows[0].emit('leave-full-screen');
+});
+
+const chosenDestinations = (...kinds) =>
+  Object.fromEntries(
+    ['journal', 'obsidian', 'dropbox', 'onenote'].map((kind) => [kind, kinds.includes(kind)]),
+  );
+async function destinationFixture(t, note = false, journalFolder = true) {
+  const fs = require('node:fs/promises');
+  const root = await fs.realpath(
+    await fs.mkdtemp(path.join(require('node:os').tmpdir(), 'tradeframe-choice-')),
+  );
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const folders = Object.fromEntries(
+    ['obsidian', 'dropbox', 'journal'].map((kind) => [kind, path.join(root, kind)]),
+  );
+  for (const folder of Object.values(folders)) await fs.mkdir(folder);
+  const choices = [folders.obsidian, folders.dropbox, ...(journalFolder ? [folders.journal] : [])];
+  let dialogs = 0,
+    now = 0,
+    posts = 0;
+  const reply = (data) =>
+    new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } });
+  const request = async (url, options) => {
+    if (url.endsWith('devicecode'))
+      return reply({ device_code: 'synthetic', user_code: 'TEST', expires_in: 60, interval: 1 });
+    if (url.endsWith('token')) return reply({ access_token: 'synthetic', expires_in: 3600 });
+    if (url.includes('/notebooks?'))
+      return reply({ value: [{ id: 'book', displayName: 'Synthetic', isDefault: true }] });
+    if (url.includes('/sections?'))
+      return reply({ value: [{ id: 'section', displayName: 'TradeFrame' }] });
+    if (options.method === 'POST') {
+      posts++;
+      return reply({ id: 'page' });
+    }
+    return reply({ value: [] });
+  };
+  const runtime = await boot(
+    undefined,
+    async () => {
+      assert.ok(dialogs < choices.length, 'No unexpected journal picker');
+      return { canceled: false, filePaths: [choices[dialogs++]] };
+    },
+    true,
+    note ? { request, now: () => now } : undefined,
+  );
+  for (const kind of ['obsidian', 'dropbox', ...(journalFolder ? ['journal'] : [])])
+    await runtime.invoke('connections:folder', runtime.windows[0], kind);
+  if (note) {
+    await runtime.invoke(
+      'onenote:configure',
+      runtime.windows[0],
+      '11111111-2222-3333-4444-555555555555',
+    );
+    await runtime.invoke('onenote:connect');
+    now = 1000;
+    await runtime.invoke('onenote:poll');
+    await runtime.invoke('onenote:notebooks');
+    await runtime.invoke('onenote:notebook', runtime.windows[0], 'book');
+  }
+  await runtime.invoke('capture:open-bar');
+  await captureReady(runtime.invoke, runtime.windows);
+  return {
+    ...runtime,
+    profile: await fs.realpath(runtime.app.getPath()),
+    root,
+    folders,
+    dialogs: () => dialogs,
+    posts: () => posts,
+  };
+}
+
+test('every nonempty destination combination creates only explicitly selected delivery jobs', async (t) => {
+  const f = await destinationFixture(t, true);
+  const kinds = ['journal', 'obsidian', 'dropbox', 'onenote'];
+  for (let mask = 1; mask < 16; mask++) {
+    const selected = Object.fromEntries(kinds.map((kind, i) => [kind, !!(mask & (1 << i))]));
+    const result = await f.invoke('journal:save', f.windows[0], setupInput(), selected);
+    assert.equal(result.localJournal, selected.journal);
+    assert.deepEqual(
+      result.sync.map((job) => job.kind),
+      kinds.slice(1).filter((kind) => selected[kind]),
+    );
+    assert.ok(result.sync.every((job) => job.status === 'synced'));
+    assert.equal(result.path.startsWith(f.folders.journal + path.sep), selected.journal);
+    if (!selected.journal)
+      assert.ok(result.path.startsWith(path.join(f.profile, 'saved-setups') + path.sep));
+  }
+  assert.equal(f.posts(), 8);
+});
+
+test('empty or malformed destination selections are rejected before writing or scheduling anything', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  for (const selected of [
+    chosenDestinations(),
+    {},
+    [],
+    null,
+    { ...chosenDestinations('journal'), extra: true },
+    { ...chosenDestinations('journal'), onenote: 'yes' },
+  ])
+    await assert.rejects(
+      f.invoke('journal:save', f.windows[0], setupInput(), selected),
+      /destinations|at least one/,
+    );
+  assert.equal((await f.invoke('capture:state')).savedPath, null);
+  assert.deepEqual((await f.invoke('connections:get')).jobs, []);
+  assert.deepEqual(await fs.readdir(f.folders.journal), []);
+});
+
+test('local-only default ignores connected folders and an unusable unselected OneNote configuration', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  await fs.writeFile(path.join(f.app.getPath(), 'onenote.json'), 'invalid json');
+  const result = await f.invoke('journal:save', f.windows[0], setupInput());
+  assert.equal(result.localJournal, true);
+  assert.equal(result.warning, undefined);
+  assert.deepEqual(result.sync, []);
+  for (const folder of [f.folders.obsidian, f.folders.dropbox])
+    assert.deepEqual(await fs.readdir(folder), []);
+});
+
+test('Obsidian-only save skips the journal picker and retains a private source for safe follow-ups', async (t) => {
+  const f = await destinationFixture(t, false, false);
+  const fs = require('node:fs/promises');
+  const result = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('obsidian'),
+  );
+  assert.equal(result.localJournal, false);
+  assert.equal(f.dialogs(), 2);
+  assert.equal((await f.invoke('connections:get')).folders.journal, null);
+  assert.equal(result.sync[0].kind, 'obsidian');
+  assert.equal(result.sync[0].status, 'synced');
+  assert.deepEqual(await fs.readdir(f.folders.journal), []);
+  if (process.platform !== 'win32')
+    assert.equal((await fs.stat(path.join(f.app.getPath(), 'saved-setups'))).mode & 0o777, 0o700);
+  const { readSetup } = require('../dist-electron/journal.js');
+  assert.equal((await readSetup(result.path)).screenshots.length, 1);
+});
+
+test('deselecting local journal while appending preserves the original note and validates edits before branching', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  const first = await f.invoke('journal:save', f.windows[0], setupInput());
+  const before = await fs.readFile(first.path);
+  await captureReady(f.invoke, f.windows);
+  await assert.rejects(
+    f.invoke(
+      'journal:append',
+      f.windows[0],
+      setupInput({ note: 'changed' }),
+      chosenDestinations('obsidian'),
+    ),
+    /Could not append/,
+  );
+  assert.deepEqual(await fs.readFile(first.path), before);
+  assert.deepEqual(await fs.readdir(path.join(f.app.getPath(), 'saved-setups')), []);
+  const appended = await f.invoke(
+    'journal:append',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('obsidian'),
+  );
+  assert.equal(appended.localJournal, false);
+  assert.notEqual(appended.path, first.path);
+  assert.deepEqual(await fs.readFile(first.path), before);
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(appended.path)).screenshots.length,
+    2,
+  );
+  assert.deepEqual(
+    appended.sync.map((job) => job.kind),
+    ['obsidian'],
+  );
+});
+
+test('selecting local journal after a private save creates a local copy without changing the private source or unselected targets', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  const first = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('obsidian'),
+  );
+  const before = await fs.readFile(first.path);
+  await captureReady(f.invoke, f.windows);
+  const result = await f.invoke(
+    'journal:append',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('journal'),
+  );
+  assert.equal(result.localJournal, true);
+  assert.ok(result.path.startsWith(f.folders.journal + path.sep));
+  assert.deepEqual(await fs.readFile(first.path), before);
+  assert.deepEqual(result.sync, []);
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(result.path)).screenshots.length,
+    2,
+  );
+});
+
+test('private recovery storage rejects symlink redirection without writing to the link target', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  await fs.symlink(
+    f.folders.journal,
+    path.join(f.app.getPath(), 'saved-setups'),
+    process.platform === 'win32' ? 'junction' : 'dir',
+  );
+  await assert.rejects(
+    f.invoke('journal:save', f.windows[0], setupInput(), chosenDestinations('obsidian')),
+    /Could not save/,
+  );
+  assert.deepEqual(await fs.readdir(f.folders.journal), []);
+  assert.equal((await f.invoke('capture:state')).savedPath, null);
+});
+
+test('a new local-only save does not retry or cancel older pending deliveries to unchecked targets', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  await fs.rename(f.folders.obsidian, f.folders.obsidian + '-moved');
+  const failed = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('journal', 'obsidian'),
+  );
+  assert.equal(failed.sync[0].status, 'failed');
+  const local = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('journal'),
+  );
+  assert.deepEqual(local.sync, []);
+  const older = (await f.invoke('connections:get')).jobs.find(
+    (job) => job.id === failed.sync[0].id,
+  );
+  assert.equal(older.status, 'failed');
+  assert.equal(older.source, failed.path);
+});
+
+test('private branching keeps the existing Obsidian note identity and can resume the same local note later', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  const original = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('journal', 'obsidian'),
+  );
+  const originalBytes = await fs.readFile(original.path);
+  const parent = path.basename(path.dirname(original.path));
+  const remote = path.join(f.folders.obsidian, 'TradeFrame', parent, 'setup.md');
+  await captureReady(f.invoke, f.windows);
+  const privateCopy = await f.invoke(
+    'journal:append',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('obsidian'),
+  );
+  assert.deepEqual(await fs.readFile(original.path), originalBytes);
+  assert.deepEqual(await fs.readdir(path.join(f.folders.obsidian, 'TradeFrame')), [parent]);
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(remote)).screenshots.length,
+    2,
+  );
+  await captureReady(f.invoke, f.windows);
+  const restored = await f.invoke(
+    'journal:append',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('journal', 'obsidian'),
+  );
+  assert.equal(restored.path, original.path);
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(remote)).screenshots.length,
+    3,
+  );
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(original.path)).screenshots.length,
+    3,
+  );
+  assert.notEqual(privateCopy.path, original.path);
+});
+
+test('OneNote-only saving works without any configured local journal or folder prompt', async (t) => {
+  const f = await destinationFixture(t, true, false);
+  const result = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    setupInput(),
+    chosenDestinations('onenote'),
+  );
+  assert.equal(result.localJournal, false);
+  assert.equal(f.dialogs(), 2);
+  assert.deepEqual(
+    result.sync.map((job) => job.kind),
+    ['onenote'],
+  );
+  assert.equal(result.sync[0].status, 'synced');
+  assert.equal((await f.invoke('connections:get')).folders.journal, null);
+  assert.equal(f.posts(), 1);
+});
+
+const calendarSetupInput = () => ({
+  schema: require('../dist-electron/form-schema.js').JOURNAL_SCHEMA,
+  values: {
+    mode: 'backtest',
+    date: '2025-01-07',
+    time_ny: '09:34',
+    session: 'NY AM',
+    symbol: 'TEST',
+    direction: 'short',
+    model: 'Example',
+    d_bias: '',
+    result: 'win',
+    r: 2,
+    note: 'Synthetic',
+  },
+});
+
+test('promoting a private calendar setup preserves an unrelated same-name local note', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  const input = calendarSetupInput();
+  const existing = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    input,
+    chosenDestinations('journal'),
+  );
+  const originalBytes = await fs.readFile(existing.path);
+  await f.invoke('journal:save', f.windows[0], input, chosenDestinations('obsidian'));
+  await captureReady(f.invoke, f.windows);
+  const promoted = await f.invoke(
+    'journal:append',
+    f.windows[0],
+    input,
+    chosenDestinations('journal'),
+  );
+  assert.notEqual(promoted.path, existing.path);
+  assert.match(promoted.path, /\(2\)\.md$/);
+  assert.deepEqual(await fs.readFile(existing.path), originalBytes);
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(promoted.path)).screenshots.length,
+    2,
+  );
+});
+
+test('calendar filing choices and note identity survive deselecting and reselecting the local journal', async (t) => {
+  const f = await destinationFixture(t);
+  const fs = require('node:fs/promises');
+  const rules = await f.invoke('filing:get');
+  const rule = { ...rules.journal, root: 'Old', folders: ['date'], name: ['date', 'instrument'] };
+  await f.invoke('filing:set', f.windows[0], 'journal', rule);
+  const input = calendarSetupInput();
+  const original = await f.invoke(
+    'journal:save',
+    f.windows[0],
+    input,
+    chosenDestinations('journal', 'obsidian'),
+  );
+  const originalBytes = await fs.readFile(original.path);
+  await f.invoke('filing:set', f.windows[0], 'journal', { ...rule, root: 'New' });
+  await captureReady(f.invoke, f.windows);
+  await f.invoke('journal:append', f.windows[0], input, chosenDestinations('obsidian'));
+  assert.deepEqual(await fs.readFile(original.path), originalBytes);
+  await captureReady(f.invoke, f.windows);
+  const promoted = await f.invoke(
+    'journal:append',
+    f.windows[0],
+    input,
+    chosenDestinations('journal', 'obsidian'),
+  );
+  assert.equal(promoted.path, original.path);
+  assert.equal(
+    (await require('../dist-electron/journal.js').readSetup(promoted.path)).screenshots.length,
+    3,
+  );
+  assert.equal(
+    await fs.stat(path.join(f.folders.journal, 'New')).then(
+      () => true,
+      () => false,
+    ),
+    false,
+  );
 });

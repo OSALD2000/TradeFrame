@@ -1,3 +1,27 @@
+# TradeFrame 0.7.5 destination selection preview
+
+Every destination now has its own checkbox: Local journal, Obsidian, Dropbox and
+OneNote. Any one can be used alone. At least one must be selected; only Local
+journal is checked initially. Choices stay for the app session. Connecting a
+target does not automatically send setups to it. Save/Append create and retry
+only the newly selected delivery jobs; unselected OneNote is not queried.
+
+Local journal off skips its folder picker. A private Markdown/PNG source remains
+under app data for retries and follow-up screenshots; copies/backups are retained
+without automatic cleanup. Results disclose this working copy without claiming
+a journal save or exposing its internal path. Existing local notes are preserved
+when appending without that destination. Selecting it again safely resumes/copies
+the note, preserving legacy identities, journal IDs, pinned rules and collisions.
+
+Deselection does not disconnect, remove files or cancel previously authorized
+jobs. Retry sync and Send saved setup to OneNote remain separate explicit actions.
+A journal folder already inside a vault/Dropbox remains visible to those apps.
+Authentication, queue/config/document formats, capture and image processing are
+unchanged. No dependencies or source folders were added.
+
+Real rendered checkbox/keyboard workflows and external targets still need owner
+acceptance. Previous capture-marker/quality gates remain open.
+
 # TradeFrame 0.7.4 capture repair preview
 
 The owner rejected the first capture implementation: Auto chart cut away content

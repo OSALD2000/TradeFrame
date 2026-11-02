@@ -137,7 +137,9 @@ test('destination review distinguishes an optional connection, a selected notebo
       oneNote: { connected: true, durable: false, notebook },
     }),
   );
-  assert.match(markup, /Required local copy/);
+  assert.doesNotMatch(markup, /Required local copy/);
+  assert.equal((markup.match(/type="checkbox"/g) ?? []).length, 4);
+  assert.equal((markup.match(/checked=""/g) ?? []).length, 1);
   assert.match(markup, /Notebook selected/);
   assert.match(markup, /&lt;Selected book&gt; \/ TradeFrame/);
   assert.match(markup, /Sign-in lasts this session only/);
@@ -324,4 +326,40 @@ test('form editor exposes keys tags ordering options and dependencies without ex
     assert.ok(markup.includes(label));
   assert.ok(markup.includes('&lt;script&gt;'));
   assert.ok(!markup.includes('<script>'));
+});
+
+test('each destination can be the sole checked target and none is mandatory', () => {
+  const kinds = ['journal', 'obsidian', 'dropbox', 'onenote'];
+  const connections = { folders: { journal: '/journal', obsidian: '/vault', dropbox: '/dropbox' } };
+  const oneNote = {
+    connected: true,
+    durable: true,
+    notebook: { id: 'book', displayName: 'Synthetic' },
+  };
+  for (const kind of kinds) {
+    const selected = Object.fromEntries(kinds.map((key) => [key, key === kind]));
+    const markup = renderToStaticMarkup(
+      React.createElement(DestinationSummary, { connections, oneNote, selected, onChange() {} }),
+    );
+    assert.equal((markup.match(/type="checkbox"/g) || []).length, 4);
+    assert.equal((markup.match(/checked=""/g) || []).length, 1);
+    assert.doesNotMatch(markup, /required=|Required local copy/);
+    assert.doesNotMatch(markup, /disabled=""/);
+  }
+});
+
+test('cloud-only feedback does not claim a local journal save or expose the internal working path', () => {
+  const markup = renderToStaticMarkup(
+    React.createElement(DeliveryStatus, {
+      result: {
+        status: 'saved',
+        path: '/synthetic/private/setup.md',
+        localJournal: false,
+        sync: [],
+      },
+    }),
+  );
+  assert.match(markup, /Local journal was not selected/);
+  assert.match(markup, /private recovery copy/);
+  assert.doesNotMatch(markup, /Saved locally|\/synthetic\/private/);
 });

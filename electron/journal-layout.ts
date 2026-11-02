@@ -1,8 +1,16 @@
+import { createHash } from 'node:crypto';
 import { mkdir, lstat, realpath, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { directionLabel, journalValues } from './form-schema';
 import { filingPath, safeFilingSegment } from './filing-rules';
 import type { SetupDocument } from './form-schema';
+
+export function snapshotFolderName(source: string): string {
+  const parent = path.basename(path.dirname(source));
+  return /^setup-[A-Za-z0-9_.-]{1,120}$/.test(parent)
+    ? parent
+    : `setup-import-${createHash('sha256').update(source).digest('hex').slice(0, 20)}`;
+}
 
 export function calendarPath(document: SetupDocument): string[] | null {
   if (!document.journalId) return null;

@@ -31,7 +31,7 @@ export function SetupGuide({ api }: { api: SetupGuideAPI | undefined }) {
     <section className="setup-guide" aria-label="First-use and OneNote guide">
       <div className="guide-intro">
         <span className="preview-badge">Start here</span>
-        <h2>A local journal first. Connections when you need them.</h2>
+        <h2>Choose where your setups go.</h2>
         <p>
           You can capture and save without any account. Obsidian, Dropbox and OneNote are optional
           destinations.
@@ -73,8 +73,10 @@ export function SetupGuide({ api }: { api: SetupGuideAPI | undefined }) {
             <strong>Describe and save</strong>
             <p>
               Enter the market date, instrument, direction, model and result. Market date is the
-              trading day you are documenting, including backtests. Review the destinations and Save
-              setup. The result shows local saving separately from each transfer.
+              trading day you are documenting, including backtests. Check at least one save
+              destination, then Save setup. Local journal is optional too; without it, a private
+              recovery copy remains on this device for retries. The result shows local saving
+              separately from each transfer.
             </p>
           </li>
           <li>

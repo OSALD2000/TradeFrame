@@ -1,10 +1,43 @@
 # Connections and delivery
 
-TradeFrame keeps the local journal as the source. Every explicit save creates
+TradeFrame keeps a local Markdown/PNG source, either the selected journal or a private working copy. Every explicit save creates
 a Markdown/PNG setup copy; later screenshots can append to the same file. Connections deliver that state to any
 combination of Obsidian, Dropbox and OneNote. External edits are not imported,
 overwritten or deleted. Append screenshots preserves existing text/images and extends matching folder
 copies with the same suffix. Save a separate copy creates a new independent note.
+
+## Choose destinations per save
+
+Save destinations has four independent checkboxes: Local journal, Obsidian,
+Dropbox and OneNote. At least one is required; any can be the only destination.
+Only Local journal is checked initially. Choices stay in the current app session,
+including across New setup, but are not stored as connection settings. Connecting
+a folder/account does not opt it into delivery; check it before Save/Append.
+
+The native bridge validates all four flags. It creates and retries jobs only for
+the selected external targets. Unchecked OneNote is not queried during saving;
+an unavailable OneNote status does not block the other checkboxes. Unavailable
+unchecked targets cannot be enabled until connected, while checked unavailable
+targets can always be unchecked. No selection leaves the draft unchanged.
+
+With Local journal off, no journal-folder picker appears. A private source under
+TradeFrame's user data `saved-setups` retains the same Markdown/PNG format for
+retries/follow-ups. It is retained with backups; there is no automatic cleanup.
+The result identifies this as an internal recovery copy, not a saved journal
+note. This mode does not mean that no data is stored on the device.
+
+Appending with Local journal unchecked preserves the original public note by
+branching a verified private copy. Legacy folder identity and journal UUID/filing
+snapshots are preserved, so selected folder copies continue in the same note.
+Selecting Local journal again safely copies/extends that note into its configured
+journal root. Unrelated same-name notes and external edits remain protected.
+
+Deselection does not disconnect, delete files, or cancel older queued jobs.
+A save does not retry those older jobs; Connections → Retry sync remains an
+explicit request to retry previously authorized deliveries. Send saved setup to
+OneNote is also a separate explicit action, independent of the save checkboxes.
+A journal folder already inside a vault/Dropbox tree remains visible to those
+apps even when the separate TradeFrame delivery is unchecked.
 
 ## Folder connections
 
@@ -28,7 +61,8 @@ visible to Obsidian; connecting the same vault as another destination would
 create an additional copy under TradeFrame. Choose the parent of backtesting/live
 as the local journal root.
 
-The app remembers the local journal folder. The first save asks for it if unset.
+The app remembers the local journal folder. The first save with Local journal
+checked asks for it if unset.
 Changing/resetting it does not move old files. Connecting a destination affects
 future saves. A disconnected target's pending deliveries are canceled; it does
 not remove any previously delivered files. No transfer is made during setup.
@@ -73,8 +107,8 @@ keeps its chosen notebook ID even across retries. If it becomes unavailable,
 delivery fails without falling back to another notebook.
 
 Each save/append delivery becomes a new page in the selected notebook's
-`TradeFrame` section, created during delivery if missing. New saves without a
-selection succeed locally with a warning; select a notebook and use
+`TradeFrame` section, created during delivery if missing. A selected OneNote target without a notebook keeps the journal/working copy
+with a warning; select a notebook and use
 **Send saved setup to OneNote** to send that saved version. Fields, tags and all screenshots are included as escaped HTML and PNG
 parts following the [OneNote multipart API](https://learn.microsoft.com/en-us/graph/onenote-create-page).
 The page title includes a unique delivery UUID. Retrying first searches for that
@@ -130,7 +164,7 @@ access to the OS keyring can require sign-in again.
 
 **Open setup → Browse OneNote setups…** lists TradeFrame pages from the selected notebook's
 TradeFrame section. Listing does not create a section. Choose a page to restore
-an in-memory draft, then save a new local copy. Existing local files and the
+an in-memory draft, then choose destinations and save a copy. Existing local files and the
 cloud page stay unchanged; the draft cannot append to an unchosen local file.
 
 Opening returns fields and the complete screenshot state in one trusted response;

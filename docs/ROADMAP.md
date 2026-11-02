@@ -59,6 +59,12 @@ the explicit resolution cap. Full-screen proportional area selection and exporte
 quality need owner acceptance. The previously reported output marker did not
 recur on the next capture; its cause remains unresolved.
 
+0.7.5 adds explicit per-save destination choices, including no public journal.
+Only checked external jobs are queued; private working copies preserve retry and
+follow-up data. Automated combinations/preservation checks pass, while actual
+checkbox layout, real only-OneNote/only-Obsidian use and restart/retry acceptance
+remain open. Capture quality/marker acceptance remains open independently.
+
 ## Required before claiming the goal complete
 
 - Verify the final package and checksum, clean extraction, absence of private

@@ -74,8 +74,12 @@ its own timeframe before saving. The older Trading setup form retains its separa
 Remove individual draft images or use **Start a new setup** to clear the current setup.
 The bar stays open until closed from the journal or with **×**.
 
-Enter **Setup details** and **Save setup**. The first save asks for a journal
-folder; later saves remember it. Choose the parent of `backtesting` and `live`.
+Enter **Setup details**, check at least one **Save destination**, then **Save setup**.
+Local journal, Obsidian, Dropbox and OneNote are individually optional; only Local
+journal is checked initially. Only checked targets receive this save or append.
+The first save to Local journal asks for its folder; later saves remember it.
+With that target off, a private working copy remains on this device for retries
+and follow-ups, without a journal-folder prompt. Choose the parent of `backtesting` and `live`.
 The selected Trading journal form saves by **market date**, for example:
 
 ```text

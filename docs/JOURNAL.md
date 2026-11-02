@@ -18,8 +18,12 @@ remain in Markdown and screenshots remain PNG files. See the
    Choose a required timeframe for each image, such as `1m`, `2m` or `1h`.
    Each image has optional multiline notes (up to 20,000 characters).
    The original Trading setup form retains its separate setup-level Timeframe.
-3. Click **Save setup** and choose a journal folder with the native picker
-   if none is configured. Connections remembers the folder for subsequent saves.
+3. Check at least one **Save destination**, then click **Save setup**. Local journal,
+   Obsidian, Dropbox and OneNote are all optional individually; only Local journal
+   is checked initially. A journal-folder picker appears only when that destination
+   is checked and no journal root is configured. Connections remembers that root.
+   With the journal unchecked, an internal working copy remains in the app data
+   for retries and later screenshots; only the checked destinations receive files/pages.
 4. Trading journal saves to `<root>/backtesting|live/YYYY/MM/DD/` using the market
    date, not the capture day. A note name contains date, optional HHmm New York
    time, instrument, direction and model, for example
@@ -30,6 +34,13 @@ remain in Markdown and screenshots remain PNG files. See the
    Earlier/custom forms still create separate `setup-<UTC timestamp>-<suffix>`
    directories with `setup.md` and the original fixed image names.
    Every save creates a separate note; no existing note or image is overwritten.
+
+The same destination choices apply to **Append screenshots**. Deselecting the
+journal before appending leaves that public note unchanged and branches an exact
+verified working copy. Selecting the journal again safely extends/copies the
+same note there, preserving file identities and pinned filing rules. Internal
+copies use owner-only files/directories where supported and are retained without
+automatic cleanup. See [delivery choices and retention](SYNC.md#choose-destinations-per-save).
 
 **Open setup → Choose a local setup…** restores an explicitly chosen TradeFrame Markdown file, its
 schema snapshot, typed values and all sibling chart PNGs. **Save a separate copy** creates a

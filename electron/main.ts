@@ -15,17 +15,25 @@ import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { realpath } from 'node:fs/promises';
+import { realpath, mkdir, lstat, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import type { CaptureState, CaptureSource, CaptureMode } from './capture-types';
 import { findChartBounds, validateCrop } from './chart-crop';
 import { MAX_SCREENSHOTS, validTimeframe } from './form-schema';
-import { validateSetup, writeSetup, readSetup, appendScreenshots, pngBytes } from './journal';
+import {
+  validateSetup,
+  writeSetup,
+  readSetup,
+  appendScreenshots,
+  pngBytes,
+  copySetup,
+} from './journal';
 import { SchemaStore } from './schema-store';
-import { ConnectionStore, folderKind } from './connections';
+import { ConnectionStore, folderKind, copySnapshot } from './connections';
 import { FilingStore } from './filing-store';
 import { OneNoteClient, OneNoteError } from './onenote';
-import type { SaveResult } from './capture-types';
+import { validateSaveDestinations } from './capture-types';
+import type { SaveResult, OneNoteState } from './capture-types';
 
 // Chromium does not automatically select a system keyring for Sway.
 if (
@@ -152,6 +160,30 @@ function cropChart(image: string): { image: string; crop: 'chart' | 'full' } {
     // Detection is optional; failure must not lose the captured image or previous screenshots.
   }
   return { image, crop: 'full' };
+}
+
+async function recoveryRoot(create = false) {
+  const root = path.join(await realpath(app.getPath('userData')), 'saved-setups');
+  if (create) {
+    try {
+      await mkdir(root, { mode: 0o700 });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+    }
+    const info = await lstat(root);
+    if (!info.isDirectory() || info.isSymbolicLink() || (await realpath(root)) !== root)
+      throw new Error('Invalid recovery folder');
+  }
+  return root;
+}
+function insideFolder(file: string, root: string) {
+  const relative = path.relative(root, file);
+  return (
+    relative !== '' &&
+    relative !== '..' &&
+    !relative.startsWith('..' + path.sep) &&
+    !path.isAbsolute(relative)
+  );
 }
 
 function protectWindow(window: BrowserWindow) {
@@ -423,7 +455,12 @@ function registerCapture() {
             jobs.map((job) => job.id),
             deliverOneNote,
           );
-          return { status: 'saved', path: state.savedPath, sync } satisfies SaveResult;
+          return {
+            status: 'saved',
+            path: state.savedPath,
+            sync,
+            localJournal: !insideFolder(state.savedPath, await recoveryRoot()),
+          } satisfies SaveResult;
         }
         if (operation === 'configure') {
           const result = await oneNoteClient().configure(input);
@@ -559,102 +596,138 @@ function registerCapture() {
     }
   });
   for (const operation of ['save', 'append'] as const)
-    ipcMain.handle(`journal:${operation}`, async (event, input: unknown): Promise<SaveResult> => {
-      assertSender(event, journal);
-      const owner = journal;
-      if (
-        !owner ||
-        state.busy ||
-        !state.screenshots.length ||
-        state.sources.length ||
-        state.areaSource
-      ) {
-        throw new Error('Choose a screenshot before saving');
-      }
-      if (!state.screenshots.every((shot) => validTimeframe(shot.timeframe)))
-        throw new Error('Choose a timeframe for every screenshot before saving');
-      const setup = validateSetup(input);
-      schemaStore().remember(setup.schema);
-      const screenshots = state.screenshots.map((shot) => ({
-        ...shot,
-        image: `data:image/png;base64,${images.get(shot.image)!.toString('base64')}`,
-      }));
-      state.busy = true;
-      publish();
-      try {
-        const store = connectionStore();
-        let folder = store.get().folders.journal;
-        if (operation === 'save' && !folder) {
-          const selection = await dialog.showOpenDialog(owner, {
-            title: 'Choose journal folder',
-            buttonLabel: 'Save setup here',
-            properties: ['openDirectory', 'createDirectory'],
-          });
-          if (selection.canceled || !selection.filePaths.length || journal !== owner)
-            return { status: 'cancelled' };
-          folder = await realpath(selection.filePaths[0]);
-          store.setFolder('journal', folder);
+    ipcMain.handle(
+      `journal:${operation}`,
+      async (event, input: unknown, targets: unknown): Promise<SaveResult> => {
+        assertSender(event, journal);
+        const owner = journal;
+        if (
+          !owner ||
+          state.busy ||
+          !state.screenshots.length ||
+          state.sources.length ||
+          state.areaSource
+        ) {
+          throw new Error('Choose a screenshot before saving');
         }
-        let savedPath: string;
-        if (operation === 'append') {
-          if (!state.savedPath) throw new Error('Open or save a setup before adding screenshots');
-          await appendScreenshots(state.savedPath, savedFingerprint, setup, screenshots);
-          savedPath = state.savedPath;
-        } else savedPath = await writeSetup(folder!, setup, screenshots, filingStore().snapshot());
-        state.savedPath = savedPath;
-        state.requiresTimeframeCopy = false;
-        savedFingerprint = (await readSetup(savedPath)).fingerprint;
+        if (!state.screenshots.every((shot) => validTimeframe(shot.timeframe)))
+          throw new Error('Choose a timeframe for every screenshot before saving');
+        const selected = validateSaveDestinations(targets);
+        const setup = validateSetup(input);
+        schemaStore().remember(setup.schema);
+        const screenshots = state.screenshots.map((shot) => ({
+          ...shot,
+          image: `data:image/png;base64,${images.get(shot.image)!.toString('base64')}`,
+        }));
+        state.busy = true;
+        publish();
+        let forked: { file: string; folder: string } | undefined;
         try {
-          const oneNoteState = await oneNoteClient().getState();
-          const jobs = store.enqueue(
-            savedPath,
-            oneNoteState.connected && oneNoteState.notebook ? oneNoteState.section : undefined,
-            oneNoteState.connected ? oneNoteState.notebook?.id : undefined,
-          );
-          const sync = await store.retry(
-            jobs.map((job) => job.id),
-            deliverOneNote,
-          );
-          return {
-            status: 'saved',
-            path: savedPath,
-            sync,
-            ...(oneNoteState.connected && !oneNoteState.notebook
-              ? {
-                  warning:
-                    'Local save succeeded. Choose a OneNote notebook in Connections, then use Send saved setup to OneNote.',
-                }
-              : !oneNoteState.connected && oneNoteState.notebook
-                ? {
-                    warning:
-                      'Local save succeeded. OneNote was not sent: reconnect in Connections, then send the saved setup.',
-                  }
-                : {}),
-          };
-        } catch {
-          return {
-            status: 'saved',
-            path: savedPath,
-            sync: [],
-            warning:
-              'Local save succeeded, but sync could not finish. Check Connections before retrying.',
-          };
-        }
-      } catch (error) {
-        if (operation === 'append')
+          const store = connectionStore();
+          const folders = store.get().folders;
+          for (const kind of ['obsidian', 'dropbox'] as const)
+            if (selected[kind] && !folders[kind])
+              throw new Error('Connect the selected destination first');
+          const root = await recoveryRoot();
+          const privateSource = !!state.savedPath && insideFolder(state.savedPath, root);
+          let folder = folders.journal;
+          const needsJournalFolder = selected.journal && (operation === 'save' || privateSource);
+          if (needsJournalFolder && !folder) {
+            const selection = await dialog.showOpenDialog(owner, {
+              title: 'Choose journal folder',
+              buttonLabel: 'Save setup here',
+              properties: ['openDirectory', 'createDirectory'],
+            });
+            if (selection.canceled || !selection.filePaths.length || journal !== owner)
+              return { status: 'cancelled' };
+            folder = await realpath(selection.filePaths[0]);
+            store.setFolder('journal', folder);
+          }
+          let savedPath: string;
+          if (operation === 'append') {
+            if (!state.savedPath) throw new Error('Open or save a setup before adding screenshots');
+            let source = state.savedPath;
+            let fingerprint = savedFingerprint;
+            const switchingStorage = selected.journal ? privateSource : !privateSource;
+            if (switchingStorage) {
+              forked = await copySetup(source, fingerprint, await recoveryRoot(true));
+              source = forked.file;
+              fingerprint = (await readSetup(source)).fingerprint;
+            }
+            await appendScreenshots(source, fingerprint, setup, screenshots);
+            if (selected.journal && privateSource)
+              savedPath = await copySnapshot(source, folder!, 'journal');
+            else savedPath = source;
+          } else
+            savedPath = await writeSetup(
+              selected.journal ? folder! : await recoveryRoot(true),
+              setup,
+              screenshots,
+              filingStore().snapshot(),
+            );
+          state.savedPath = savedPath;
+          state.requiresTimeframeCopy = false;
+          savedFingerprint = (await readSetup(savedPath)).fingerprint;
+          let oneNoteState: OneNoteState | null = null;
+          let warning: string | undefined;
+          if (selected.onenote) {
+            try {
+              oneNoteState = await oneNoteClient().getState();
+              if (!oneNoteState.connected || !oneNoteState.notebook)
+                warning =
+                  'OneNote was not sent. Connect and choose a notebook, then use Send saved setup to OneNote.';
+            } catch {
+              warning =
+                'OneNote could not be checked. Review Connections, then send the saved setup.';
+            }
+          }
+          try {
+            const jobs = store.enqueue(
+              savedPath,
+              oneNoteState?.connected && oneNoteState.notebook ? oneNoteState.section : undefined,
+              oneNoteState?.connected ? oneNoteState.notebook?.id : undefined,
+              selected,
+            );
+            const sync = await store.retry(
+              jobs.map((job) => job.id),
+              deliverOneNote,
+            );
+            return {
+              status: 'saved',
+              path: savedPath,
+              sync,
+              localJournal: selected.journal,
+              ...(warning ? { warning } : {}),
+            };
+          } catch {
+            return {
+              status: 'saved',
+              path: savedPath,
+              sync: [],
+              localJournal: selected.journal,
+              warning:
+                'Your copy was kept, but delivery could not finish. Check Connections before retrying.',
+            };
+          }
+        } catch (error) {
+          if (operation === 'append')
+            throw new Error(
+              'Could not append. Keep existing fields and screenshots unchanged, or reopen a file changed elsewhere. The original content and any backup remain in its folder.',
+            );
           throw new Error(
-            'Could not append. Keep existing fields and screenshots unchanged, or reopen a file changed elsewhere. The original content and any backup remain in its folder.',
+            'Could not save the setup. Check folder access and free space, then retry.',
           );
-        throw new Error(
-          'Could not save the setup. Check folder access and free space, then retry.',
-        );
-      } finally {
-        if (journal === owner) {
-          state.busy = false;
-          publish();
+        } finally {
+          // A cleanup failure keeps an extra private copy; it must not undo a completed save.
+          if (forked && state.savedPath !== forked.file)
+            await rm(forked.folder, { recursive: true, force: true }).catch(() => {});
+          if (journal === owner) {
+            state.busy = false;
+            publish();
+          }
         }
-      }
-    });
+      },
+    );
   ipcMain.handle('capture:state', (event) => {
     assertSender(event);
     return state;

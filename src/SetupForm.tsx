@@ -28,6 +28,8 @@ export function SetupForm({
   const {
     schema,
     values,
+    destinations,
+    changeDestination,
     editing,
     ready,
     saving,
@@ -195,7 +197,13 @@ export function SetupForm({
             </fieldset>
             <section className="save-section" aria-labelledby="save-title">
               <h3 id="save-title">3. Save your setup</h3>
-              <SaveDestinations api={api} busy={busy} visible={view === 'journal' && hasPreview} />
+              <SaveDestinations
+                api={api}
+                busy={busy || saving}
+                visible={view === 'journal' && hasPreview}
+                selected={destinations}
+                onChange={changeDestination}
+              />
               {!timeframesReady && (
                 <p className="preview-note" role="status">
                   Choose a timeframe for every screenshot before saving.
@@ -208,7 +216,12 @@ export function SetupForm({
                     type="submit"
                     name="action"
                     value="append"
-                    disabled={disabled || choosing || !timeframesReady}
+                    disabled={
+                      disabled ||
+                      choosing ||
+                      !timeframesReady ||
+                      !Object.values(destinations).some(Boolean)
+                    }
                   >
                     {saving ? 'Saving…' : 'Append screenshots'}
                   </button>
@@ -220,7 +233,12 @@ export function SetupForm({
                   type="submit"
                   name="action"
                   value="copy"
-                  disabled={disabled || choosing || !timeframesReady}
+                  disabled={
+                    disabled ||
+                    choosing ||
+                    !timeframesReady ||
+                    !Object.values(destinations).some(Boolean)
+                  }
                 >
                   {saving ? 'Saving…' : savedPath ? 'Save a separate copy' : 'Save setup'}
                 </button>
@@ -240,7 +258,7 @@ export function SetupForm({
                   ? 'This older setup has no per-image timeframes. Choose them above and save a separate copy once. The original stays unchanged.'
                   : savedPath
                     ? 'Append keeps the same file and adds new screenshots. Save a separate copy for changes to earlier details. Send saved setup uses the last saved version; save pending edits first.'
-                    : 'Your journal folder is remembered. Trading journal notes use dated folders and readable names.'}
+                    : 'Choose at least one save destination. A selected journal folder is remembered.'}
               </p>
             </section>
           </form>

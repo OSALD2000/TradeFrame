@@ -26,8 +26,9 @@ const capture: CaptureAPI = {
   setScreenshotTimeframe: (id, timeframe) => ipcRenderer.invoke('capture:timeframe', id, timeframe),
   newSetup: () => ipcRenderer.invoke('journal:new'),
   showJournal: () => ipcRenderer.invoke('capture:journal'),
-  saveSetup: (input) => ipcRenderer.invoke('journal:save', input),
-  appendScreenshots: (input) => ipcRenderer.invoke('journal:append', input),
+  saveSetup: (input, destinations) => ipcRenderer.invoke('journal:save', input, destinations),
+  appendScreenshots: (input, destinations) =>
+    ipcRenderer.invoke('journal:append', input, destinations),
   getSchemas: () => ipcRenderer.invoke('forms:list'),
   saveSchema: (schema) => ipcRenderer.invoke('forms:save', schema),
   openSetup: () => ipcRenderer.invoke('journal:open'),

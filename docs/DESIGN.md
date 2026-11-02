@@ -1,5 +1,23 @@
 # TradeFrame visual direction
 
+## Destination selection, 0.7.5
+
+The owner requests independent checkboxes for every save target, including a
+OneNote-only path. Reuse the approved dark/Linear tokens and the bundled Refero
+form/focus craft: labeled native checkboxes, the existing destination rows,
+44px label targets, visible keyboard focus and the established responsive grid.
+
+| Decision                                             | Source / role                           | Implementation                                                                              |
+| ---------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Four controlled choices, none mandatory individually | Owner's explicit selection              | Local journal is initially checked; all may be unchecked individually                       |
+| Connected and checked have separate meanings         | Owner reports all targets feel required | Connection status is descriptive; only a check opts into Save/Append                        |
+| Incomplete connection does not hide other targets    | Independent destination contract        | Partial metadata failures retain usable choices; unavailable checked rows can be unchecked  |
+| Honest cloud-only feedback                           | Real local working-copy requirement     | Disclose private recovery storage; hide its internal path and avoid claiming a journal save |
+
+The existing Hook owns draft selection, and checkbox labels use the existing
+form semantics. Desktop/narrow, keyboard/screen-reader and actual target checks
+remain open; static rendering and controller tests do not establish native UI QA.
+
 ## Capture repair, 0.7.4
 
 The owner rejects 0.7.3 capture behavior and reports clipped chart content,

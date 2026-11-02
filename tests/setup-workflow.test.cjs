@@ -29,12 +29,12 @@ async function fixture(t, overrides = {}, props = {}) {
   const calls = [];
   const api = {
     getSchemas: async () => [DEFAULT_SCHEMA],
-    saveSetup: async (input) => {
-      calls.push(['save', input]);
+    saveSetup: async (input, destinations) => {
+      calls.push(['save', input, destinations]);
       return saved;
     },
-    appendScreenshots: async (input) => {
-      calls.push(['append', input]);
+    appendScreenshots: async (input, destinations) => {
+      calls.push(['append', input, destinations]);
       return saved;
     },
     openSetup: async () => loaded,
@@ -57,8 +57,16 @@ test('setup save and append preserve the entered schema and values', async (t) =
   await view.submit();
   await view.submit(true);
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
-    ['save', { schema: DEFAULT_SCHEMA, values: answers }],
-    ['append', { schema: DEFAULT_SCHEMA, values: answers }],
+    [
+      'save',
+      { schema: DEFAULT_SCHEMA, values: answers },
+      { journal: true, obsidian: false, dropbox: false, onenote: false },
+    ],
+    [
+      'append',
+      { schema: DEFAULT_SCHEMA, values: answers },
+      { journal: true, obsidian: false, dropbox: false, onenote: false },
+    ],
   ]);
   assert.equal(view.value('note'), answers.note);
 });
@@ -240,4 +248,35 @@ test('sending a saved setup delegates to OneNote without saving another local co
   assert.equal(calls.length, 0);
   assert.equal(view.value('note'), answers.note);
   assert.equal(view.find((n) => n.type.name === 'DeliveryStatus').props.result, saved);
+});
+
+test('destination choices are independent and reach both save and append without changing form values', async (t) => {
+  const { view, calls } = await fixture(t);
+  const change = (kind, value) => {
+    view.find((node) => node.type.name === 'SaveDestinations').props.onChange(kind, value);
+    view.render();
+  };
+  change('journal', false);
+  change('onenote', true);
+  await view.submit();
+  await view.submit(true);
+  for (const call of calls) {
+    assert.deepEqual(JSON.parse(JSON.stringify(call[2])), {
+      journal: false,
+      obsidian: false,
+      dropbox: false,
+      onenote: true,
+    });
+  }
+  assert.equal(view.value('note'), answers.note);
+});
+
+test('no selected destinations prevents submission while preserving fields and screenshots', async (t) => {
+  const { view, calls } = await fixture(t);
+  view.find((node) => node.type.name === 'SaveDestinations').props.onChange('journal', false);
+  view.render();
+  await view.submit();
+  assert.deepEqual(calls, []);
+  assert.ok(view.messages().includes('Choose at least one save destination'));
+  assert.equal(view.value('note'), answers.note);
 });

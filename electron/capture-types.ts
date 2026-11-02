@@ -39,10 +39,38 @@ export type OneNoteState = {
   login: { userCode: string; expiresAt: number } | null;
 };
 export type SetupInput = { schema: FormSchema; values: FormValues };
+export type SaveDestinations = Record<'journal' | 'obsidian' | 'dropbox' | 'onenote', boolean>;
+export const DEFAULT_SAVE_DESTINATIONS: SaveDestinations = {
+  journal: true,
+  obsidian: false,
+  dropbox: false,
+  onenote: false,
+};
+export function validateSaveDestinations(
+  value: unknown = DEFAULT_SAVE_DESTINATIONS,
+): SaveDestinations {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new Error('Invalid save destinations');
+  const data = value as Record<string, unknown>;
+  const keys = Object.keys(DEFAULT_SAVE_DESTINATIONS);
+  if (
+    Object.keys(data).length !== keys.length ||
+    keys.some((key) => typeof data[key] !== 'boolean')
+  )
+    throw new Error('Invalid save destinations');
+  if (!keys.some((key) => data[key])) throw new Error('Choose at least one save destination');
+  return {
+    journal: data.journal as boolean,
+    obsidian: data.obsidian as boolean,
+    dropbox: data.dropbox as boolean,
+    onenote: data.onenote as boolean,
+  };
+}
 export type OpenedSetup = SetupInput & { capture: CaptureState };
 
 export type SaveResult =
-  { status: 'cancelled' } | { status: 'saved'; path: string; sync: SyncJob[]; warning?: string };
+  | { status: 'cancelled' }
+  | { status: 'saved'; path: string; sync: SyncJob[]; warning?: string; localJournal?: boolean };
 
 export type CaptureMode = 'chart' | 'area';
 export type CropRectangle = { x: number; y: number; width: number; height: number };
@@ -89,8 +117,8 @@ export type CaptureAPI = {
   setScreenshotTimeframe(id: string, timeframe: string): Promise<void>;
   newSetup(): Promise<void>;
   showJournal(): Promise<void>;
-  saveSetup(input: SetupInput): Promise<SaveResult>;
-  appendScreenshots(input: SetupInput): Promise<SaveResult>;
+  saveSetup(input: SetupInput, destinations?: SaveDestinations): Promise<SaveResult>;
+  appendScreenshots(input: SetupInput, destinations?: SaveDestinations): Promise<SaveResult>;
   getSchemas(): Promise<FormSchema[]>;
   saveSchema(schema: FormSchema): Promise<FormSchema>;
   openSetup(): Promise<OpenedSetup | null>;

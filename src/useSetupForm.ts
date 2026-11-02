@@ -1,7 +1,9 @@
+import { DEFAULT_SAVE_DESTINATIONS, validateSaveDestinations } from '../electron/capture-types';
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type {
   SetupDraftAPI,
+  SaveDestinations,
   CaptureState,
   SetupInput,
   SaveResult,
@@ -45,6 +47,9 @@ export function useSetupForm(
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [browsingOneNote, setBrowsingOneNote] = useState(false);
+  const [destinations, setDestinations] = useState<SaveDestinations>({
+    ...DEFAULT_SAVE_DESTINATIONS,
+  });
   const [lastSaved, setLastSaved] = useState<SaveResult | null>(null);
   const [confirmation, setConfirmation] = useState<{
     message: string;
@@ -170,13 +175,16 @@ export function useSetupForm(
     try {
       input = { schema, values: validateValues(schema, values) };
       journalValues(schema, input.values);
+      validateSaveDestinations(destinations);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Check the visible field values.');
       return;
     }
     setSaving(true);
     try {
-      const result = await (append ? api.appendScreenshots(input) : api.saveSetup(input));
+      const result = await (append
+        ? api.appendScreenshots(input, destinations)
+        : api.saveSetup(input, destinations));
       if (result.status === 'cancelled') setMessage('Save cancelled. Your draft is unchanged.');
       else {
         setLastSaved(result);
@@ -185,7 +193,7 @@ export function useSetupForm(
       setError(
         append
           ? 'Could not append. Keep existing fields and screenshots unchanged, capture another image, or reopen a file changed elsewhere. Backups stay beside the original. Use Save copy to change existing details.'
-          : 'Could not save. Check your details, folder permissions and free space, then retry. Your draft and screenshots are unchanged.',
+          : 'Could not save. Check the selected destinations, connections, details and folder access, then retry. Your draft and screenshots are unchanged.',
       );
     } finally {
       setSaving(false);
@@ -207,7 +215,7 @@ export function useSetupForm(
       if (result.status === 'saved') setLastSaved(result);
     } catch {
       setError(
-        'Could not send the saved setup. Connect OneNote, choose a notebook and check that the local file is unchanged.',
+        'Could not send the saved setup. Connect OneNote, choose a notebook and check that the saved setup is unchanged.',
       );
     } finally {
       setSaving(false);
@@ -300,8 +308,8 @@ export function useSetupForm(
     setError('');
     setMessage(
       loaded.legacy
-        ? 'Opened an older OneNote setup. Check the imported details and timeframes, then save a new local copy.'
-        : 'Opened OneNote setup as a draft. Save a local copy to continue; its OneNote page stays unchanged.',
+        ? 'Opened an older OneNote setup. Check the imported details and timeframes, then choose destinations and save a copy.'
+        : 'Opened OneNote setup as a draft. Choose destinations and save to continue; its OneNote page stays unchanged.',
     );
     onOpened(loaded.capture);
   };
@@ -310,6 +318,9 @@ export function useSetupForm(
   return {
     schema,
     values,
+    destinations,
+    changeDestination: (kind: keyof SaveDestinations, checked: boolean) =>
+      setDestinations((current) => ({ ...current, [kind]: checked })),
     editing,
     ready,
     saving,

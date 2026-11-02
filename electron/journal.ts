@@ -1,4 +1,4 @@
-import { mkdtemp, rm, readFile, lstat } from 'node:fs/promises';
+import { mkdtemp, mkdir, rm, readFile, lstat } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 
@@ -15,7 +15,12 @@ import {
   journalValues,
 } from './form-schema';
 import { appendDocument, createFile, recoverAppend } from './append-store';
-import { calendarPath, journalDirectory, journalFilename } from './journal-layout';
+import {
+  calendarPath,
+  journalDirectory,
+  journalFilename,
+  snapshotFolderName,
+} from './journal-layout';
 import { validateFilingRules } from './filing-rules';
 import type { FilingRules } from './filing-rules';
 
@@ -171,6 +176,34 @@ export async function readSetup(file: string): Promise<
     markdown,
     recoveredBackup,
   };
+}
+
+export async function copySetup(
+  file: string,
+  fingerprint: string,
+  root: string,
+): Promise<{ file: string; folder: string }> {
+  const loaded = await readSetup(file);
+  if (loaded.fingerprint !== fingerprint && !loaded.recoveredBackup)
+    throw new Error('The saved setup changed. Reopen it before adding screenshots.');
+  const document = deserializeSetup(loaded.markdown);
+  const references = document.screenshots ?? [{ file: 'chart.png' }];
+  const folder = await mkdtemp(path.join(root, 'copy-'));
+  const contents = path.join(folder, snapshotFolderName(file));
+  try {
+    await mkdir(contents, { mode: 0o700 });
+    for (const [index, reference] of references.entries())
+      await createFile(
+        path.join(contents, reference.file),
+        pngBytes(loaded.screenshots[index].image),
+      );
+    const copy = path.join(contents, path.basename(file));
+    await createFile(copy, Buffer.from(loaded.markdown));
+    return { file: copy, folder };
+  } catch (error) {
+    await rm(folder, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 export async function appendScreenshots(

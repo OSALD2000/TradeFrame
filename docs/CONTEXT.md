@@ -1,5 +1,25 @@
 # TradeFrame context
 
+2 November 2026, 0.7.5 destination preview: the owner requires every destination,
+including Local journal, to be optional. Four controlled checkboxes send explicit
+validated flags through Save/Append. The initial choice is local-only; choices
+remain for the current app session, independently of configured connections.
+An empty selection blocks writing; unchecked OneNote is not queried during a save.
+Selected folder jobs alone are queued/retried, while older jobs remain intact.
+Without a local journal, a private Markdown/PNG working copy stays in user data
+for retry/follow-up, without a folder prompt. This is disclosed in the UI; no
+automatic cleanup or no-local-data promise is made. Storage changes on append
+use exact private copies, stable legacy folder identities and existing conflict-
+safe copying back to the journal. Unselected public notes stay unchanged.
+No document/config/credential format or account migration is introduced.
+
+Automated checks cover all 15 nonempty combinations, empty/malformed choices,
+OneNote-only without a journal, unselected unavailable OneNote, partial metadata
+failure, source-byte preservation, same-note follow-ups across storage changes,
+calendar name collisions/pinned rules and working-root symlinks. Formatting,
+both TypeScript projects, the production build and all 200 tests pass. UI rendering
+and real destination acceptance still require a desktop check.
+
 2 November 2026, 0.7.4 capture repair preview: the owner reports 0.7.3 Auto chart
 cuts off the part above a trendline, an area-selection marker in output, and poor
 quality. Synthetic regression against 0.7.3 reproduces the trendline cut and

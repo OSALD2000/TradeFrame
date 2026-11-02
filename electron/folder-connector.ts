@@ -1,11 +1,11 @@
 import { mkdir, lstat, readFile, rm, realpath } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { deserializeSetup, journalValues } from './form-schema';
 import { readSetup, pngBytes } from './journal';
 import { appendDocument, createFile, recoverAppend } from './append-store';
 import {
   calendarPath,
+  snapshotFolderName,
   journalDirectory,
   safeNoteFilename,
   destinationNoteFilename,
@@ -22,13 +22,11 @@ export async function copySnapshot(
   const loaded = await readSetup(source);
   const markdown = loaded.markdown;
   const document = deserializeSetup(markdown);
-  const parent = path.basename(path.dirname(source));
-  const name = /^setup-[A-Za-z0-9_.-]{1,120}$/.test(parent)
-    ? parent
-    : `setup-import-${createHash('sha256').update(source).digest('hex').slice(0, 20)}`;
-  // Targets must already exist; a removed/unmounted destination must not be recreated elsewhere.
-  const root = await realpath(path.dirname(targetRoot));
-  if (root !== path.dirname(targetRoot)) throw new Error('Connection folder moved');
+  const name = snapshotFolderName(source);
+  // The journal root is direct; external folder adapters pass their TradeFrame subfolder.
+  const expectedRoot = kind === 'journal' ? targetRoot : path.dirname(targetRoot);
+  const root = await realpath(expectedRoot);
+  if (root !== expectedRoot) throw new Error('Connection folder moved');
   const custom = document.filing
     ? filingPath(document.filing[kind], journalValues(document.schema, document.values)!)
     : null;
@@ -41,13 +39,21 @@ export async function copySnapshot(
   const target = custom
     ? await journalDirectory(root, custom.segments)
     : calendar
-      ? await journalDirectory(root, [path.basename(targetRoot), ...calendar])
+      ? await journalDirectory(
+          root,
+          kind === 'journal' ? calendar : [path.basename(targetRoot), ...calendar],
+        )
       : path.join(targetRoot, name);
-  const filename = custom
-    ? await destinationNoteFilename(target, custom.filename, document.journalId!)
-    : calendar
-      ? path.basename(source)
-      : 'setup.md';
+  const filename =
+    custom || (kind === 'journal' && calendar && document.journalId)
+      ? await destinationNoteFilename(
+          target,
+          custom?.filename ?? path.basename(source),
+          document.journalId!,
+        )
+      : calendar
+        ? path.basename(source)
+        : 'setup.md';
   if (!safeNoteFilename(filename)) throw new Error('Invalid sync note filename');
   const files = loaded.screenshots.map((shot, index) => ({
     name: document.screenshots?.[index].file ?? 'chart.png',
@@ -119,7 +125,11 @@ export class FolderConnector implements SetupConnector {
     private kind: FilingDestination = 'obsidian',
   ) {}
   deliver(delivery: ConnectorDelivery): Promise<string> {
-    return copySnapshot(delivery.source, path.join(this.folder, 'TradeFrame'), this.kind);
+    return copySnapshot(
+      delivery.source,
+      this.kind === 'journal' ? this.folder : path.join(this.folder, 'TradeFrame'),
+      this.kind,
+    );
   }
   failureMessage(): string {
     return 'Could not sync. Check folder access, available space, and conflicting files, then retry.';
