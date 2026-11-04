@@ -9,3 +9,4 @@ release/
 !.env.example
 .DS_Store
 Thumbs.db
+.todo.lock
