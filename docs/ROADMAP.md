@@ -112,6 +112,12 @@ processing-role/legal review, public hosting and support/security contacts remai
 required decisions. These documents do not close the legal or native acceptance
 gates, and their presence in preview packages does not make them effective terms.
 
+The 5 November [dependency review](RELEASE.md#dependency-review-5-november-2026)
+updates Vite 6.4.2 to 6.4.5 after a reproduced development-server file-access
+bypass. The current npm registry audit has no reported vulnerabilities; this
+does not close Electron/Chromium runtime review, dependency/asset licensing,
+private vulnerability contact or native/platform acceptance.
+
 ## Later, only when justified
 
 Saved-setup browsing/search, outcome/R review, two-way merges, direct Dropbox API

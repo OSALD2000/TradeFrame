@@ -1,5 +1,21 @@
 # TradeFrame context
 
+5 November 2026, dependency security preparation: npm audit identified Vite
+6.4.2 as the one affected direct dependency (seven advisory entries, aggregate
+high severity). The exact development pin is now 6.4.5. Only Vite's root/package
+lock entries changed; Electron 45.0.0 and all other dependencies are unchanged.
+A socket-free synthetic regression reproduces an outside-file authorization
+bypass after a project import on 6.4.2 and passes on 6.4.5. It is a non-Windows
+advisory test, not a real private-file read or a Windows exploit test. The registry
+audit after the patch reports zero known vulnerabilities. Full dependency/runtime
+security review and native/platform acceptance remain separate; see
+[release dependency review](RELEASE.md#dependency-review-5-november-2026).
+`npm run check` passes formatting, both TypeScript projects, production build and
+all 201 tests on Linux. A clean temporary `npm ci --ignore-scripts` and its copied
+security regression pass; that does not test Electron's download/install script.
+All four production renderer files are byte-identical to the previous build, so
+this patch introduces no rendered UI change.
+
 5 November 2026, renderer acceptance follow-up: an isolated sandboxed Chrome
 process can render the compiled app when local serving/socket access is allowed
 outside the execution sandbox. A synthetic in-memory `CaptureAPI` supplies forms,

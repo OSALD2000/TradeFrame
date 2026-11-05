@@ -26,6 +26,12 @@ are verified; native desktop/keyboard workflows and external targets still need
 owner acceptance. The unmodified Linux archive still requires a correctly
 installed sandbox helper. Previous capture-marker/quality gates remain open.
 
+Development security follow-up: Vite is pinned to 6.4.5 instead of 6.4.2. A
+synthetic regression verifies the non-Windows outside-file authorization fix;
+the updated lockfile has no known vulnerabilities reported by npm audit on
+5 November 2026. Vite is not shipped as a runtime module. Electron 45.0.0 and all
+other dependency versions are unchanged; runtime security review remains open.
+
 # TradeFrame 0.7.4 capture repair preview
 
 The owner rejected the first capture implementation: Auto chart cut away content

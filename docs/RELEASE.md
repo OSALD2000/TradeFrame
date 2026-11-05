@@ -139,6 +139,46 @@ Resolve trusted signing/notarization and installer requirements for a stable rel
 Automatic updates, publisher account registration and public upload are not
 performed by the package script.
 
+## Dependency review, 5 November 2026
+
+The npm registry audit of the committed 0.7.5 lockfile identified one affected
+direct development dependency: Vite 6.4.2, with seven advisory entries and an
+aggregate high severity. Vite is now pinned to **6.4.5**, the same-series patch
+recommended by that audit. Only the root Vite pin and Vite's version, registry
+URL and integrity entry changed; all other lock entries, including Electron
+45.0.0, remain unchanged. No dependency or install-time script was added.
+
+A focused regression reproduces
+[GHSA-rq7h-c2jc-7f22](https://github.com/vitejs/vite/security/advisories/GHSA-rq7h-c2jc-7f22)
+on 6.4.2: transforming a project import wrongly allows an outside file whose
+absolute path matches the import's root-relative URL. It passes on 6.4.5 using
+only synthetic temporary files and Vite's middleware/permission API, with no
+listening server. This non-Windows regression is skipped on Windows because that
+advisory excludes it. The patch also includes the earlier
+[Windows path-denial fix](https://github.com/vitejs/vite/security/advisories/GHSA-fx2h-pf6j-xcff);
+no Windows exploit or native acceptance is claimed here. See the
+[upstream 6.4.5 release](https://github.com/vitejs/vite/releases/tag/v6.4.5).
+
+The follow-up npm audit reports **zero known vulnerabilities** for this exact
+lockfile on this date. This is registry evidence, not a complete security audit:
+it does not establish safety of bundled Chromium/Node, native capture, account
+flows or every asset. Vite serves development only, binds to 127.0.0.1 in the
+project command and is not bundled as a runtime module. Keep that bind address;
+do not expose a development server with journals or credentials in its workspace.
+
+Verification on Linux: formatting, both TypeScript projects, production build and
+all 201 tests pass. A clean temporary `npm ci --ignore-scripts` resolves the lock
+and passes the copied security regression; it does not exercise Electron's native
+download/install script. The four production renderer files remain byte-identical
+to the previous build. This patch does not establish fresh native/other-OS QA.
+
+The separate Electron runtime review remains open. Upstream
+[45.2.2](https://releases.electronjs.org/release/v45.2.2) includes newer Chromium/Node
+and a Wayland hidden-parent crash fix. It was not installed or validated by this
+Vite patch; assess it before public distribution rather than treating a clean npm
+audit as Electron security clearance. Private vulnerability contact, supported
+versions, incident process and the other release gates below remain unresolved.
+
 ## Release documentation and legal readiness
 
 Research date: **2 November 2026**. Jurisdiction assumption: a publisher based in

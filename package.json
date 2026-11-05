@@ -34,7 +34,7 @@
     "electron": "45.0.0",
     "prettier": "3.9.6",
     "typescript": "5.9.3",
-    "vite": "6.4.2"
+    "vite": "6.4.5"
   },
   "config": {
     "microsoftClientId": "09c42f94-4515-4051-ab93-eebf431f547e"
