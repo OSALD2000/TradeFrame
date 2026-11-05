@@ -9,6 +9,7 @@ declare global {
 
 export function useCapture() {
   const [state, setState] = useState<CaptureState>({
+    autoCapture: false,
     barOpen: false,
     busy: false,
     sources: [],

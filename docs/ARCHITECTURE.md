@@ -28,9 +28,25 @@ credential encryption remain unchanged. Native filesystem checks reject a
 redirected working root. Working copies/backups are retained; automatic cleanup
 and persistent global delivery preferences are outside this change.
 
-## Local chart isolation and area selection
+## Clipboard Auto and per-image editing
 
-The owner approved automatic local chart detection without an extra preview,
+The owner chooses chart images exported by the trading app. Named IPC commands
+`setAutoCapture` and `editScreenshot` preserve the narrow native facade. Main owns
+the session-only polling timer, generation cancellation, PNG-only async reads,
+hash comparison, input limits and image cache. Native decode validates PNGs before
+they enter the draft; source bytes remain unchanged. Auto never invokes native
+desktop capture, requests text payloads, drives another app or auto-saves. It does
+not identify a clipboard provider. [Behavior and limits](CAPTURE.md).
+
+Per-image Edit image puts a trusted cached screenshot token into the existing
+area surface. Commit replaces only that draft image after native bounds/size
+checks, retaining metadata. Cancel keeps the old image. The existing journal
+fingerprint/image comparisons reject Append for edited saved images; Save copy
+preserves the old files without introducing a new persistence format.
+
+## Legacy local chart isolation and area selection
+
+For the older native capture path, the owner approved automatic local chart detection without an extra preview,
 and a separate free area selection. This reuses the existing functional-module,
 native composition/IPC facade and React view patterns; no class hierarchy,
 connector change or image-processing dependency is introduced.

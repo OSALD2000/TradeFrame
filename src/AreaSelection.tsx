@@ -37,8 +37,14 @@ export function AreaSelection({
     >
       <div className="preview-heading">
         <div>
-          <h2 id="area-title">Select an area</h2>
-          <p id="area-help">Drag and release to add only this area. Escape cancels.</p>
+          <h2 id="area-title">
+            {source.editing ? 'Edit image · Select an area' : 'Select an area'}
+          </h2>
+          <p id="area-help">
+            {source.editing
+              ? 'Drag and release to crop this draft image. Escape keeps it unchanged.'
+              : 'Drag and release to add only this area. Escape cancels.'}
+          </p>
         </div>
         <button className="secondary-button" type="button" onClick={cancel}>
           Cancel
@@ -77,8 +83,8 @@ export function AreaSelection({
         )}
       </div>
       <p id="area-keyboard" className="area-help">
-        Keyboard: arrow keys move, Shift moves faster. Enter marks the first corner; Enter again
-        adds the area.
+        Keyboard: arrow keys move, Shift moves faster. Enter marks the first corner; Enter again{' '}
+        {source.editing ? 'applies the crop.' : 'adds the area.'}
       </p>
       <p className="area-help" role="status">
         {rectangle

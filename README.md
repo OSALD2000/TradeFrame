@@ -7,7 +7,7 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 
 ## Current preview
 
-- Floating capture bar with local light/dark chart detection and free area selection.
+- Opt-in Auto imports new clipboard PNGs from TradingView or other apps; Edit image crops individual draft images.
 - Up to 20 screenshots, each with a required timeframe, optional multiline notes and capture timestamp in one setup Markdown.
 - Save/reopen, append follow-up screenshots to the same file with a Markdown
   backup and prepared crash recovery, or save a separate copy to change earlier fields/images.
@@ -56,9 +56,18 @@ those systems. The archive includes public guides with working relative links.
 Development conventions: [architecture and implemented patterns](docs/ARCHITECTURE.md)
 and [code style and formatting](docs/CODE_STYLE.md).
 
+## Copy chart images with Auto
+
+Enable **Auto**, then use TradingView's **Copy chart image**: Linux/Windows
+Ctrl+Shift+S; macOS Cmd+Shift+S, or the chart camera menu. New PNG clipboard images
+from any app enter the draft while Auto is on; existing/unchanged content is
+ignored. Add a timeframe per image and save explicitly. **Edit image** crops one
+draft image; changing a saved image requires Save copy. Stop Auto when finished.
+See [capture behavior, limits and verification](docs/CAPTURE.md).
+
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.7.7`.
+The top-right toolbar shows the installed app version, for example `v0.7.8`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup
@@ -67,16 +76,15 @@ text, 44px controls and subtle feedback for clicks, loading and opening panels.
 Animations respect the system reduced-motion preference. Form selection/editing is under
 **Customize the form (optional)**, leaving the first capture in focus.
 
-Click **Capture your first chart** (or **Capture chart**), then choose **Auto chart** or **Select area** on the floating bar. Choose a source
-if prompted. Auto chart looks for a large, distinct background region regardless
-of its color, and adds the result directly. Unclear images stay whole with a note.
-For a precise cutout, Select area opens the captured image full-screen: drag and release to
-add only that rectangle, or Escape to cancel. There is no extra confirmation.
-Processing stays local; existing saved images are never recropped. Each capture adds a view. Choose its **Timeframe (required)**, such
-as `1m`, `2m` or `1h`; add optional multiline notes for this view. Every image needs
-its own timeframe before saving. The older Trading setup form retains its separate setup-level Timeframe field.
+Enable **Auto** in the journal or floating capture controls, then copy a chart
+image from the trading app. Each changed PNG adds a view; the exported image stays
+whole. Choose **Edit image** on a screenshot to crop its draft, or Escape to cancel.
+Use Save copy after editing an already saved image; source files stay unchanged.
+Choose **Timeframe (required)** per image, such as `1m`, `2m` or `1h`, and add optional
+multiline notes. The older Trading setup form retains its setup-level Timeframe.
 Remove individual draft images or use **Start a new setup** to clear the current setup.
 The bar stays open until closed from the journal or with **×**.
+Closing it or replacing/opening a setup stops Auto.
 
 Enter **Setup details**, check at least one **Save destination**, then **Save setup**.
 Local journal, Obsidian, Dropbox and OneNote are individually optional; only Local

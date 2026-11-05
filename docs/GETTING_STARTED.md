@@ -12,9 +12,15 @@ first-use link. It covers the same workflow without requiring an account.
    and reorder folder/name blocks, review the example, then **Save rules**.
    These choices apply to new Trading journal notes. Existing notes retain their
    saved filing choices; older/custom forms keep their established layout.
-3. In **Create setup**, open the capture bar and click **Screenshot**. Choose the
-   intended source if asked. Record a timeframe on every image, such as `1m` or
-   `2m`; screenshot notes are optional.
+3. In **Create setup**, enable **Auto** here or on the floating capture bar.
+   Use TradingView's **Copy chart image**: Linux/Windows Ctrl+Shift+S;
+   macOS Cmd+Shift+S, or the chart camera menu. New PNG clipboard images from any
+   app enter the draft while Auto is on. The already present image and unchanged
+   contents are ignored. Copy one chart at a time and check the count.
+   Record a timeframe on every image, such as `1m` or `2m`; notes are optional.
+   **Edit image** crops a draft image; Escape cancels. Use **Save a separate copy**
+   after changing an already saved image. Stop Auto when finished; closing the
+   bar or replacing/opening a setup also stops it. [Limits and behavior](CAPTURE.md).
 4. Complete the form. **Market date** is the day being documented, including a
    historical backtest. Review destinations and save. Inspect the local result
    separately from each transfer result.

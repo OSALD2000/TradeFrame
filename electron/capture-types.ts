@@ -79,6 +79,7 @@ export type CaptureSource = {
   name: string;
   image: string;
   crop?: 'chart' | 'full' | 'area';
+  editing?: boolean;
 };
 export type Screenshot = {
   id: string;
@@ -90,6 +91,7 @@ export type Screenshot = {
 };
 
 export type CaptureState = {
+  autoCapture: boolean;
   barOpen: boolean;
   busy: boolean;
   sources: CaptureSource[];
@@ -109,6 +111,8 @@ export type CaptureAPI = {
   getState(): Promise<CaptureState>;
   openBar(): Promise<void>;
   takeScreenshot(mode?: CaptureMode): Promise<void>;
+  setAutoCapture(enabled: boolean): Promise<void>;
+  editScreenshot(id: string): Promise<void>;
   chooseSource(id: string): Promise<void>;
   selectArea(image: string, rectangle: CropRectangle): Promise<void>;
   discard(): Promise<void>;

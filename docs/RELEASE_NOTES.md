@@ -1,3 +1,23 @@
+# TradeFrame 0.7.8 clipboard Auto preview
+
+Enable Auto, then use the trading app's Copy chart image command. New PNG images
+enter the current draft while Auto stays on, with no automatic save, resizing or
+chart detection. The existing clipboard image and unchanged consecutive contents
+are ignored. The UI shows Linux/Windows/macOS TradingView hints and a camera-menu
+fallback; no foreign-window control or synthetic shortcut is used.
+
+Edit image replaces Select area on the capture bar: choose it on an individual
+screenshot to crop that draft image. Notes/timeframe stay intact; Escape preserves
+it. Use Save a separate copy after editing an already saved image. Old files,
+formats and connections are preserved; no dependency or migration is added.
+
+Auto is off at startup and stops on Stop Auto, bar/window closure or draft
+replacement/opening. Late clipboard replies cannot enter a later session. It
+accepts images from any app, cannot reliably identify TradingView, and can miss
+rapidly replaced clipboard images. Limits and actual verification scope:
+[CAPTURE](CAPTURE.md). Native Windows/macOS and real TradingView export acceptance
+remain open; this is an unpublished local preview.
+
 # TradeFrame 0.7.7 OneNote cancellation preview
 
 Late HTTP 401 responses from an earlier OneNote session no longer clear a newer

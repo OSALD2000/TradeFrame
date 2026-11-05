@@ -1,5 +1,35 @@
 # TradeFrame context
 
+5 November 2026, 0.7.8 clipboard preview: the owner chooses continuous opt-in
+clipboard Auto instead of driving another app or capturing its live screen.
+The native process reads only PNG image payloads through Electron 45's async
+clipboard API while selected. The initial image is baselined; SHA-256 detects
+changed contents. One in-flight poll, generation checks between async stages,
+native decode/dimension/size checks and existing cache/setup limits protect the
+boundary. Stop, window/bar closure and draft replacement invalidate pending reads.
+Auto is session-only/off on restart and pauses while save/edit is busy. It does
+not modify the clipboard, request text payloads, auto-save, identify the source app
+or focus/show the journal. Duplicate/rapid-copy limits: [CAPTURE](CAPTURE.md).
+
+The journal and bar expose Auto/Stop Auto and platform export hints. The bar no
+longer offers Select area. Edit image beside each screenshot reuses the native
+still-image crop surface, replacing just that draft image with metadata intact;
+cancel preserves its bytes. Editing a saved image keeps its old Markdown/PNG and
+requires Save copy. Native APIs for the older screen-capture path remain for
+compatibility, but the current Auto UI imports unchanged clipboard PNGs instead.
+No dependency, saved format, connection, credential or profile migration changes.
+Implementation/verification is tracked in [ROADMAP](ROADMAP.md).
+
+Formatting, both TypeScript projects, production build and all 213 tests pass;
+all 213 also pass under Electron 45.2.2's embedded Node. A native private Sway
+session with external `wl-copy` verifies byte-identical PNG save, old/unchanged
+clipboard suppression, imports without showing the journal, stop/error recovery,
+metadata-preserving crop/cancel and original-file-preserving Save copy. Pointer
+101x81 and keyboard 11x11 exports match expected pixels. Eight inspected desktop,
+minimum-width, editor and normal/error bar views have no horizontal overflow.
+The focused review reports no important findings. No real user clipboard, account
+or journal was accessed; Windows/macOS and actual TradingView exports remain open.
+
 5 November 2026, 0.7.7 native Linux verification: the packaged app runs on a
 private headless Sway display using a temporary copy linked to the host's existing
 root-owned mode-4755 Chrome sandbox helper. The original distribution, global

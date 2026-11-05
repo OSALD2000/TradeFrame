@@ -63,11 +63,12 @@ export function SetupGuide({ api }: { api: SetupGuideAPI | undefined }) {
           <li>
             <strong>Capture your chart</strong>
             <p>
-              In Create setup, open the floating bar and choose Auto chart for local light/dark
-              chart detection, or Select area to drag a precise cutout. Release to add the area;
-              Escape cancels. Choose the intended source if asked. Auto chart adds directly; an
-              unclear image stays whole with a note. Each screenshot needs its own timeframe, such
-              as 1m or 2m; notes are optional.
+              In Create setup, enable Auto, then use your trading app’s Copy chart image command.
+              TradingView: Linux / Windows Ctrl+Shift+S; macOS Cmd+Shift+S. New PNG clipboard images
+              from any app are added while Auto is on. Use Edit image on a screenshot to crop it;
+              release or press Enter twice to apply, or Escape to cancel. Clipboard images are kept
+              whole until you edit them. Each screenshot needs its own timeframe, such as 1m or 2m;
+              notes are optional.
             </p>
           </li>
           <li>

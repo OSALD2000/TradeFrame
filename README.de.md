@@ -7,7 +7,7 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 
 ## Aktuelle Vorschau
 
-- Schwebende Aufnahmeleiste mit lokaler Erkennung heller/dunkler Charts und freier Bereichsauswahl.
+- Auto uebernimmt nach Aktivierung neue PNG-Bilder aus der Zwischenablage; Edit image schneidet einzelne Entwurfsbilder zu.
 - Bis zu 20 Screenshots mit jeweils verpflichtendem Timeframe, optionalem mehrzeiligem Bildtext und Aufnahmezeit in einer Setup-Markdown-Datei.
 - Speichern/Oeffnen, weitere Bilder an dieselbe Datei anhaengen mit Markdown-Sicherung,
   mit vorbereiteter Wiederherstellung nach Prozessabbruch, oder eine eigene Kopie fuer Aenderungen an bisherigen Feldern/Bildern speichern.
@@ -57,9 +57,19 @@ relativen Links. [Build, Download und Abnahme](docs/RELEASE.md)
 Entwicklungsregeln: [Architektur und verwendete Patterns](docs/ARCHITECTURE.md)
 und [Codestil und Formatierung](docs/CODE_STYLE.md).
 
+## Chartbilder mit Auto uebernehmen
+
+**Auto** einschalten, dann in TradingView **Copy chart image** verwenden:
+Linux/Windows Ctrl+Shift+S; macOS Cmd+Shift+S, alternativ das Kamera-Menue.
+Neue PNG-Bilder aus jeder App kommen bei aktivem Auto in den Entwurf; vorhandene
+und unveraenderte Inhalte werden ausgelassen. Pro Bild einen Timeframe ergaenzen
+und ausdruecklich speichern. **Edit image** schneidet ein Entwurfsbild zu;
+Aenderungen an gespeicherten Bildern brauchen Save copy. Danach Auto ausschalten.
+[Verhalten, Grenzen und Pruefnachweise](docs/CAPTURE.md).
+
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.7`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.8`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →
@@ -68,18 +78,17 @@ groessere Schrift, 44-Pixel-Bedienelemente und dezente Animationen bei Klicks,
 Ladevorgaengen und geoeffneten Bereichen. Reduzierte Bewegung wird beruecksichtigt. Formularwahl und Bearbeitung liegen unter
 **Customize the form (optional)**, damit der Einstieg uebersichtlich bleibt.
 
-**Capture your first chart** (oder **Capture chart**) und dann **Auto chart** oder **Select area** in der Leiste anklicken. Bei Bedarf
-eine Quelle auswaehlen. Auto chart sucht eine grosse, farblich abgegrenzte
-Hintergrundflaeche und uebernimmt den Ausschnitt direkt. Bei unklarer Erkennung
-bleibt das Bild vollstaendig mit einem Hinweis. Fuer einen praezisen Ausschnitt
-mit Select area ein Rechteck auf der bildschirmfuellenden Aufnahme ziehen: Loslassen uebernimmt,
-Escape bricht ab. Es gibt keine zusaetzliche Bestaetigung. Die Verarbeitung bleibt
-lokal; bereits gespeicherte Bilder werden nicht neu zugeschnitten. Unter jedem Bild **Timeframe (required)** auswaehlen,
-zum Beispiel `1m`, `2m` oder `1h`. Jedes Bild braucht vor dem Speichern einen
-eigenen Timeframe; mehrzeiliger Text je Bild ist optional. Das alte Formular
-Trading setup behaelt sein zusaetzliches Setup-Timeframe-Feld. Einzelne Entwurfsbilder lassen sich entfernen;
-**Start a new setup** leert nach Rueckfrage das aktuelle Setup. Die Leiste bleibt bis
-zum Schliessen im Journal oder ueber **×** offen.
+**Auto** im Journal oder in der schwebenden Aufnahmeleiste einschalten, dann ein
+Chartbild aus der Trading-App kopieren. Jedes neue PNG fuegt eine Ansicht hinzu;
+der Export bleibt vollstaendig. **Edit image** schneidet ein Entwurfsbild zu,
+Escape bricht ab. Fuer ein bearbeitetes gespeichertes Bild Save copy verwenden;
+die alten Dateien bleiben erhalten. Pro Bild **Timeframe (required)** waehlen,
+zum Beispiel `1m`, `2m` oder `1h`; mehrzeilige Notizen sind optional. Das alte
+Trading-setup-Formular behaelt sein zusaetzliches Setup-Timeframe-Feld.
+Einzelne Entwurfsbilder lassen sich entfernen; **Start a new setup** leert nach
+Rueckfrage den Entwurf. Schliessen der Aufnahmeleiste oder ein neuer/geoeffneter
+Entwurf schaltet Auto aus. Die Leiste bleibt bis zum Schliessen im Journal oder
+ueber **×** offen.
 
 **Setup details** ausfuellen, mindestens ein **Save destination** ankreuzen und
 **Save setup** anklicken. Local journal, Obsidian, Dropbox und OneNote sind einzeln

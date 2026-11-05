@@ -1,5 +1,28 @@
 # TradeFrame roadmap
 
+## Implemented work step: clipboard Auto and per-image editing, 0.7.8
+
+Owner-approved on 5 November 2026: Auto listens for new clipboard images while
+selected; the owner triggers the trading app's own image export. Replace the
+capture bar's Select area action with Edit image on each draft screenshot.
+Existing notes/images must not be overwritten by editing a draft.
+
+- [x] Add validated `setAutoCapture` IPC/preload commands and session-only Auto
+      state in `electron/main.ts`/`capture-types.ts`; use Electron's asynchronous
+      PNG clipboard API, skip the image present on activation, suppress unchanged
+      content, serialize polling, reject invalid/oversized PNGs and cancel late reads
+      after stop, draft replacement or window closure. Never request text payloads or auto-save.
+- [x] Add trusted per-image `editScreenshot` entry using the existing crop
+      surface; commit replaces only that draft image, preserves its metadata and
+      requires Save copy for edits to an already saved image. Cancel preserves bytes.
+- [x] Update `CaptureBar`, `App`, preload/types and capture-state defaults; expose
+      visible Auto status/stop controls and Linux/Windows/macOS export hints. Explain
+      that clipboard images cannot be attributed reliably to TradingView.
+- [x] Run focused red/green native-boundary regressions, `npm run check`, real
+      isolated clipboard/crop/save checks and desktop/narrow rendered inspection.
+      Update authoritative guides, legal/privacy draft and both READMEs; package and
+      review the preview locally. Leave untested platform/account checks explicit.
+
 ## Active owner goal
 
 Build a professional downloadable trading journal, connect it to Obsidian,

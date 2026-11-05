@@ -1,10 +1,16 @@
 # Back up, update and remove TradeFrame data
 
-These instructions describe preview **0.7.7**. Use a synthetic setup to rehearse
+These instructions describe preview **0.7.8**. Use a synthetic setup to rehearse
 restoration. They do not establish native acceptance on another operating system.
 For installation and checksum verification, see [RELEASE](RELEASE.md).
 
 ## Where data lives
+
+Auto's clipboard-monitoring choice and unsaved imported/cropped images are
+session-only. Auto starts off and stops on draft replacement or app exit. Auto
+does not change or clear the OS clipboard; a separately installed clipboard
+manager can retain its own copies. Edit image changes the in-memory draft only;
+use Save copy after editing an already saved image to preserve its old files.
 
 The installation directory contains the app, not its journal or profile.
 TradeFrame uses Electron's `app.getPath('userData')` for its profile. Typical

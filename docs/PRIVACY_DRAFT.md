@@ -1,9 +1,10 @@
 # TradeFrame privacy notice — review draft
 
-**Draft dated 5 November 2026 for preview 0.7.7. Not an effective privacy notice.**
+**Draft dated 5 November 2026 for preview 0.7.8. Not an effective privacy notice.**
 The data-flow description below is based on the source code. The publisher must
 complete the identified legal/contact details, review applicability and approve
-the notice before public distribution. No real journal or account was inspected.
+the notice before public distribution. This source review is not an audit of
+the owner's actual data or accounts; behavior checks use synthetic fixtures.
 Publication gates remain in [RELEASE](RELEASE.md#documentation-and-evidence-gate-for-the-first-public-release).
 
 ## Publisher and privacy contact
@@ -15,10 +16,18 @@ The GitHub account name alone does not identify a legal controller.
 
 ## What TradeFrame does with your data
 
-TradeFrame is a desktop journal. You choose the screen/window to capture, enter
-setup answers and image notes, and choose where to save them. Screenshots can
-include account information or other personal content visible on that source;
-review it before saving or sending. Chart detection and area cropping run locally.
+TradeFrame is a desktop journal. You explicitly enable Auto to import new PNG
+clipboard images, enter setup answers/image notes and choose where to save them.
+Auto checks for PNGs every 500 ms while selected, using the operating system's
+clipboard. It does not request text/HTML payloads or modify the clipboard. Electron/OS
+clipboard APIs enumerate available formats; TradeFrame requests only the PNG
+payload and does not import or store clipboard text.
+Images can come from any app; their origin is not reliably identified. They may
+include account or other personal information, so review them before saving/sending.
+Auto starts off, skips the already present image and stops when disabled, on
+capture-bar/journal closure, draft replacement/opening or app exit. It is not a
+system-wide background service. Unchanged PNG contents are suppressed; rapidly
+replaced images can be missed. Edit image crops one draft image locally.
 Unsaved fields and screenshots stay in memory and can be lost on closing/crash.
 
 The app writes Markdown/PNG notes to the folders you select and stores form

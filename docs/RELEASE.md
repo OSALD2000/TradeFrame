@@ -40,7 +40,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.7.7`. The tag must match
+only, or when the owner pushes a version tag such as `v0.7.8`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -58,8 +58,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.7.7
-git push origin v0.7.7
+git tag v0.7.8
+git push origin v0.7.8
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.
@@ -145,6 +145,38 @@ Choose a project license before presenting the source as reusable open source.
 Resolve trusted signing/notarization and installer requirements for a stable release.
 Automatic updates, publisher account registration and public upload are not
 performed by the package script.
+
+## Clipboard preview, 0.7.8
+
+Auto is an explicit session-only PNG clipboard monitor, off at startup. It skips
+old/unchanged image contents, imports original bytes into the draft, and stops on
+Stop Auto, bar/window closure and draft replacement. Generation checks discard
+late asynchronous results; PNG decode/size/pixel/cache limits remain native.
+It does not control another app or request clipboard text payloads. All app sources
+are possible; source identity and rapid replacement limits are disclosed.
+
+Edit image replaces the capture-bar Select area choice, using the existing crop
+surface for a single draft image. Notes/timeframes remain; cancel and Save copy
+preserve old saved files. There is no dependency, saved format, credential or
+profile migration. See [current capture behavior](CAPTURE.md).
+
+The old/late-image, content-preservation, limit, cancellation, edit and saved-file
+regressions pass; all 213 tests pass on host Node and Electron's embedded Node,
+along with formatting, both TypeScript projects and production build. Real
+Electron 45.2.2 with external `wl-copy` on a private Sway
+display verifies two byte-identical PNG imports, no journal activation, unchanged
+clipboard suppression, stop/error recovery, edit cancellation, exact 101x81 pointer
+and 11x11 keyboard crops and Save copy
+preserving old Markdown/PNG. Desktop 1120x760, minimum 640x480 and 680x128 bar
+screenshots have no horizontal overflow and were inspected against DESIGN.
+Only the temporary test runtime uses the existing verified system sandbox helper;
+the distributed helper remains original. Synthetic evidence is kept locally
+under ignored `release/qa-0.7.8-clipboard/`, outside packages. All QA processes close.
+
+Real TradingView desktop/browser clipboard formats and export contents, Windows/
+macOS, installed launch and physical display/assistive-technology acceptance remain
+open. The shortcut hints are guidance, with TradingView's camera menu as fallback;
+they do not establish target-OS support. Legal/publisher/signing gates remain open.
 
 ## Native Linux verification, 5 November 2026
 

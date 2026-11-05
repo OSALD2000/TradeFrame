@@ -170,15 +170,32 @@ export function App() {
                 <p>{descriptions[view]}</p>
               </div>
               {view === 'journal' && (
-                <button
-                  className="secondary-button"
-                  disabled={!api || state.busy}
-                  onClick={() => api && run(state.barOpen ? api.showJournal : api.openBar)}
-                  aria-expanded={state.barOpen}
-                >
-                  <span aria-hidden="true">{state.barOpen ? '×' : '＋'}</span>{' '}
-                  {state.barOpen ? 'Close capture bar' : 'Capture chart'}
-                </button>
+                <div className="journal-actions">
+                  <button
+                    className={state.autoCapture ? 'capture-button' : 'secondary-button'}
+                    aria-pressed={state.autoCapture}
+                    disabled={
+                      !api ||
+                      (!state.autoCapture &&
+                        (state.busy ||
+                          !!state.areaSource ||
+                          !!state.sources.length ||
+                          state.screenshots.length >= 20))
+                    }
+                    onClick={() => api && run(() => api.setAutoCapture(!state.autoCapture))}
+                  >
+                    {state.autoCapture ? 'Stop Auto' : 'Auto'}
+                  </button>
+                  <button
+                    className="secondary-button"
+                    disabled={!api || state.busy}
+                    onClick={() => api && run(state.barOpen ? api.showJournal : api.openBar)}
+                    aria-expanded={state.barOpen}
+                  >
+                    <span aria-hidden="true">{state.barOpen ? '×' : '＋'}</span>{' '}
+                    {state.barOpen ? 'Close capture bar' : 'Capture controls'}
+                  </button>
+                </div>
               )}
             </header>
             {error && (
@@ -192,6 +209,21 @@ export function App() {
               </p>
             )}
             <section id="journal" hidden={view !== 'journal'} aria-label="Create setup">
+              <div className="clipboard-help">
+                <p role="status">
+                  {state.autoCapture
+                    ? 'Auto on · Waiting for new clipboard images.'
+                    : 'Auto off · Enable Auto before copying a chart image.'}
+                </p>
+                <p>
+                  TradingView · Linux / Windows: <kbd>Ctrl+Shift+S</kbd> · macOS:{' '}
+                  <kbd>Cmd+Shift+S</kbd>. Or use the chart camera menu → Copy chart image.
+                </p>
+                <p>
+                  While Auto is on, new PNG images from any app are added to this draft. Images stay
+                  unchanged until you choose Edit image. Saving is always a separate action.
+                </p>
+              </div>
               <ol className="setup-steps" aria-label="Setup workflow">
                 <li data-state={state.screenshots.length ? 'complete' : 'current'}>
                   <span>1</span>
@@ -253,14 +285,24 @@ export function App() {
                       <article className="screenshot-card" key={shot.id}>
                         <div className="screenshot-heading">
                           <h3>Screenshot {index + 1}</h3>
-                          <button
-                            className="secondary-button"
-                            disabled={state.busy}
-                            aria-label={`Remove screenshot ${index + 1}`}
-                            onClick={() => api && run(() => api.removeScreenshot(shot.id))}
-                          >
-                            Remove
-                          </button>
+                          <div className="journal-actions">
+                            <button
+                              className="secondary-button"
+                              disabled={state.busy || !!state.areaSource || !!state.sources.length}
+                              aria-label={`Edit image ${index + 1}`}
+                              onClick={() => api && run(() => api.editScreenshot(shot.id))}
+                            >
+                              Edit image
+                            </button>
+                            <button
+                              className="secondary-button"
+                              disabled={state.busy}
+                              aria-label={`Remove screenshot ${index + 1}`}
+                              onClick={() => api && run(() => api.removeScreenshot(shot.id))}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
                         <img
                           className="preview-image"
@@ -269,8 +311,7 @@ export function App() {
                         />
                         {shot.crop === 'full' && (
                           <p className="area-help">
-                            No clear chart boundary found; the full image was kept. Use Select area
-                            for a precise cutout.
+                            The full image was kept. Use Edit image for a precise cutout.
                           </p>
                         )}
                         <ScreenshotFields
@@ -316,8 +357,8 @@ export function App() {
                   </div>
                   <h2 id="empty-title">Start with a chart.</h2>
                   <p>
-                    Capture your trading window. Then add a timeframe, your reasoning, and the
-                    result.
+                    Enable Auto and copy a chart image. Then add a timeframe, your reasoning, and
+                    the result.
                   </p>
                   <div className="empty-actions">
                     <button
@@ -325,7 +366,7 @@ export function App() {
                       disabled={!api || state.busy}
                       onClick={() => api && run(api.openBar)}
                     >
-                      {state.barOpen ? 'Show capture bar' : 'Capture your first chart'}
+                      {state.barOpen ? 'Show capture bar' : 'Open capture controls'}
                     </button>
                     <a className="secondary-button" href="#open">
                       Open an existing setup
@@ -334,8 +375,8 @@ export function App() {
                   <p className="capture-status" id="capture-status">
                     {api
                       ? state.barOpen
-                        ? 'Choose Auto chart or Select area on the floating bar, then choose the source if prompted.'
-                        : 'The floating bar lets you take screenshots without leaving your chart.'
+                        ? 'Enable Auto on the floating bar, then use your trading app’s Copy chart image command.'
+                        : 'You can enable Auto here or open the floating capture controls.'
                       : 'Open the desktop app to capture and save setups. This browser view is a preview only.'}
                   </p>
                   <a className="first-use-guide" href="#guide">

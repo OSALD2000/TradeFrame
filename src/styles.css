@@ -248,6 +248,27 @@ main:focus {
   padding: 38px 36px 30px;
   gap: 24px;
 }
+.journal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.clipboard-help {
+  padding: 0 36px 24px;
+  color: var(--secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.clipboard-help p + p {
+  margin-top: 6px;
+  color: var(--muted);
+}
+.bar-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
 h1,
 h2,
 h3,

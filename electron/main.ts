@@ -2,6 +2,7 @@ import {
   app,
   BrowserWindow,
   desktopCapturer,
+  clipboard,
   dialog,
   ipcMain,
   Menu,
@@ -13,7 +14,7 @@ import {
 } from 'electron';
 import type { IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { realpath, mkdir, lstat, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -94,6 +95,7 @@ function oneNoteClient() {
 const deliverOneNote = (file: string, section: string, id: string, notebookId?: string) =>
   oneNoteClient().deliver(file, section, id, notebookId);
 let state: CaptureState = {
+  autoCapture: false,
   barOpen: false,
   busy: false,
   sources: [],
@@ -107,6 +109,122 @@ let savedFingerprint = '';
 let capturedAt = '';
 let captureMode: CaptureMode = 'chart';
 const images = new Map<string, Buffer>();
+let clipboardTimer: ReturnType<typeof setInterval> | null = null;
+let clipboardGeneration = 0;
+
+function stopAutoCapture() {
+  clipboardGeneration++;
+  if (clipboardTimer !== null) clearInterval(clipboardTimer);
+  clipboardTimer = null;
+  state.autoCapture = false;
+}
+
+async function clipboardPng(generation: number): Promise<Buffer | null> {
+  const active = () => generation === clipboardGeneration && state.autoCapture;
+  if (!active()) return null;
+  if (!(await clipboard.has('image/png'))) return null;
+  if (!active()) return null;
+  const item = (await clipboard.read()).find((entry) => entry.types.includes('image/png'));
+  if (!active() || !item) return null;
+  const blob = await item.getType('image/png');
+  if (!active()) return null;
+  if (blob.size < 24 || blob.size > 32_000_000) throw new Error('Invalid clipboard image size');
+  const bytes = Buffer.from(await blob.arrayBuffer());
+  if (!active()) return null;
+  if (
+    bytes.length < 24 ||
+    bytes.length > 32_000_000 ||
+    !bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex')) ||
+    bytes.toString('ascii', 12, 16) !== 'IHDR'
+  )
+    throw new Error('Invalid clipboard PNG');
+  const width = bytes.readUInt32BE(16),
+    height = bytes.readUInt32BE(20);
+  if (!width || !height || width * height > 16_000_000)
+    throw new Error('Clipboard image exceeds 16 million pixels');
+  return bytes;
+}
+
+async function setAutoCapture(enabled: boolean) {
+  if (enabled === state.autoCapture) return;
+  stopAutoCapture();
+  if (!enabled) {
+    publish();
+    return;
+  }
+  if (state.screenshots.length >= MAX_SCREENSHOTS) throw new Error('This setup has 20 screenshots');
+  if (state.busy || state.areaSource || state.sources.length)
+    throw new Error('Finish the current operation first');
+  state.autoCapture = true;
+  state.error = null;
+  const generation = clipboardGeneration;
+  const hash = (bytes: Buffer | null) => bytes && createHash('sha256').update(bytes).digest('hex');
+  const failed = () => {
+    stopAutoCapture();
+    state.error =
+      'Auto stopped. Check clipboard access, image size (32 MB / 16 MP), or remove screenshots. Enable Auto, then copy again. Existing screenshots are unchanged.';
+    publish();
+  };
+  publish();
+  try {
+    // Baseline the existing image; enabling Auto must not import an older clipboard.
+    let previous = hash(await clipboardPng(generation));
+    if (generation !== clipboardGeneration) return;
+    let reading = false;
+    clipboardTimer = setInterval(async () => {
+      if (
+        generation !== clipboardGeneration ||
+        reading ||
+        state.busy ||
+        state.areaSource ||
+        state.sources.length
+      )
+        return;
+      reading = true;
+      try {
+        const bytes = await clipboardPng(generation);
+        if (
+          generation !== clipboardGeneration ||
+          state.busy ||
+          state.areaSource ||
+          state.sources.length
+        )
+          return;
+        const current = hash(bytes);
+        if (!bytes || current === previous) {
+          previous = current;
+          return;
+        }
+        const decoded = nativeImage.createFromBuffer(bytes);
+        const size = decoded.getSize(1);
+        if (
+          decoded.isEmpty() ||
+          size.width !== bytes.readUInt32BE(16) ||
+          size.height !== bytes.readUInt32BE(20)
+        )
+          throw new Error('Clipboard PNG could not be decoded');
+        const url = cacheImage('data:image/png;base64,' + bytes.toString('base64'));
+        try {
+          capturedAt = new Date().toISOString();
+          appendScreenshot({ id: randomUUID(), name: 'Clipboard image', image: url });
+        } catch (error) {
+          images.delete(url);
+          throw error;
+        }
+        previous = current;
+        state.error = null;
+        if (state.screenshots.length >= MAX_SCREENSHOTS) stopAutoCapture();
+        publish();
+      } catch {
+        if (generation === clipboardGeneration) failed();
+      } finally {
+        reading = false;
+      }
+    }, 500);
+  } catch {
+    if (generation === clipboardGeneration) failed();
+  }
+}
 
 function cacheImage(image: string) {
   const bytes = pngBytes(image);
@@ -232,6 +350,7 @@ function publish() {
 }
 
 function showJournal() {
+  stopAutoCapture();
   state.barOpen = false;
   bar?.hide();
   journal?.show();
@@ -259,6 +378,7 @@ async function openBar() {
     window.on('page-title-updated', (event) => event.preventDefault());
     protectWindow(window);
     window.on('closed', () => {
+      stopAutoCapture();
       bar = null;
       state.barOpen = false;
       publish();
@@ -376,6 +496,7 @@ function registerCapture() {
   ipcMain.handle('journal:new', (event) => {
     assertSender(event, journal);
     if (state.busy) throw new Error('Wait for the current operation to finish');
+    stopAutoCapture();
     state = {
       ...state,
       sources: [],
@@ -409,6 +530,7 @@ function registerCapture() {
         if (operation === 'poll') return oneNoteClient().getState();
         throw new Error('Wait for the current operation to finish');
       }
+      if (operation === 'open') stopAutoCapture();
       state.busy = true;
       publish();
       try {
@@ -561,6 +683,7 @@ function registerCapture() {
     assertSender(event, journal);
     const owner = journal;
     if (!owner || state.busy) throw new Error('Wait for the current operation to finish');
+    stopAutoCapture();
     state.busy = true;
     publish();
     try {
@@ -736,6 +859,20 @@ function registerCapture() {
     assertSender(event, journal);
     return openBar();
   });
+  ipcMain.handle('capture:auto', (event, enabled: unknown) => {
+    assertSender(event);
+    if (typeof enabled !== 'boolean') throw new Error('Invalid Auto selection');
+    return setAutoCapture(enabled);
+  });
+  ipcMain.handle('capture:edit', (event, id: unknown) => {
+    assertSender(event, journal);
+    const shot = state.screenshots.find((item) => item.id === id);
+    if (state.busy || state.areaSource || state.sources.length || !shot)
+      throw new Error('Invalid screenshot edit');
+    state.areaSource = { id: shot.id, name: 'Edit image', image: shot.image, editing: true };
+    state.error = null;
+    publish();
+  });
   ipcMain.handle('capture:screenshot', (event, mode: unknown = 'chart') => {
     assertSender(event, bar);
     if (event.sender !== bar?.webContents) throw new Error('Open the capture bar first');
@@ -765,7 +902,20 @@ function registerCapture() {
       throw new Error('The capture area could not be copied. Try again.');
     const url = cacheImage(cropped.toDataURL({ scaleFactor: 1 }));
     try {
-      appendScreenshot({ ...source, image: url, crop: 'area' });
+      if (source.editing) {
+        const shot = state.screenshots.find(
+          (item) => item.id === source.id && item.image === source.image,
+        );
+        if (!shot) throw new Error('This screenshot changed. Cancel and try again.');
+        const bytes = state.screenshots.reduce(
+          (sum, item) => sum + images.get(item === shot ? url : item.image)!.length,
+          0,
+        );
+        if (bytes > 128_000_000) throw new Error('Screenshots exceed 128 MB');
+        shot.image = url;
+        shot.crop = 'area';
+        state.areaSource = null;
+      } else appendScreenshot({ ...source, image: url, crop: 'area' });
     } catch (error) {
       images.delete(url);
       throw error;
@@ -888,6 +1038,7 @@ function createWindow() {
   });
   window.once('ready-to-show', () => window.show());
   window.on('closed', () => {
+    stopAutoCapture();
     app.removeListener('before-quit', beforeQuit);
     answerUnload = null;
     journal = null;
@@ -895,6 +1046,7 @@ function createWindow() {
     areaFullscreenRestore = null;
     bar?.close();
     state = {
+      autoCapture: false,
       barOpen: false,
       busy: false,
       sources: [],
@@ -958,6 +1110,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 app.on('will-quit', () => {
+  stopAutoCapture();
   schemas?.close();
   schemas = null;
 });

@@ -1,5 +1,32 @@
 # TradeFrame visual direction
 
+## Clipboard Auto and per-image editing, 0.7.8
+
+The owner chooses native chart exports copied by the trading app, with Auto
+waiting for clipboard images while selected. Replace the capture bar's Auto chart
+and Select area actions with one explicit Auto/Stop Auto toggle. Keep its approved
+680x128 size, draggable grip, Journal and close controls. Put the same visible
+toggle in the journal header so monitoring can be stopped without opening a bar.
+
+Retain the approved black/lime palette, 44px controls, native button semantics,
+visible focus and responsive wrapping. `aria-pressed` exposes the selection.
+Show Linux/Windows/macOS shortcut hints plus the camera-menu fallback, image count
+and waiting/off status. Disclose that Auto accepts PNG images from any app, and
+that saving remains separate. Imports must not show or activate the native window.
+
+Each screenshot gets Edit image beside Remove. Reuse the existing full-screen
+crop surface, pointer/keyboard mapping and Escape behavior; commit changes only
+the selected draft image, retaining its notes/timeframe. Saved originals require
+Save copy. Clipboard images are initially preserved whole without auto-cropping.
+Actual desktop/minimum-width rendering and native clipboard behavior are the
+verification gates for this work step; other-OS acceptance remains separate.
+
+The isolated native 0.7.8 check inspects eight views at 1120x760, 640x480,
+full-screen editing and 680x128 bar sizes. Controls, hints, normal/error status
+and edit actions fit without horizontal overflow; source files remain intact
+through mouse/keyboard cropping and Save copy. No real user clipboard or account
+is used. Physical displays, assistive technology and other platforms remain open.
+
 ## Native verification, 5 November 2026
 
 The packaged 0.7.7 renderer was inspected in actual Electron on a private Sway

@@ -1,41 +1,53 @@
 # Capture prototype
 
-## Implemented flow
+## Implemented flow, 0.7.8
 
-1. Click **Capture chart** in the desktop journal. A
-   compact, draggable **TradeFrame Capture** bar opens.
-2. Choose **Auto chart** or **Select area** on the bar. TradeFrame makes the capture bar transparent
-   and ignores mouse input there, waits briefly for the compositor, then requests
-   screen/window snapshots from Electron. The native bar remains mapped so it
-   retains its dragged position rather than being placed again by Wayland.
-   The journal is hidden before capture so it cannot cover the chart, and returns
-   after capture or cancellation.
-3. On PipeWire, the operating system may prompt for a screen/window. If only one
-   image is returned, Auto chart detects/crops it locally and adds it directly.
-   Select area instead opens a full-screen still-image selection surface in TradeFrame:
-   drag a rectangle and release to add just those pixels, or Escape/Cancel to
-   abandon it. There is no further preview/confirmation. Arrow keys move the
-   selection cursor; Enter marks the first corner and Enter again adds the area.
-   Shift moves the cursor faster. The preceding full-screen state is restored on
-   commit or cancellation. When multiple sources
-   are returned, choose a snapshot in the journal. After each capture attempt,
-   the bar reappears and stays open for another screenshot, including after
-   cancellation or failure.
-4. **Cancel selection** preserves all earlier screenshots. **Remove** deletes only
-   the selected draft image. **Add screenshot** returns to the floating controls;
-   failed/cancelled capture preserves the current setup. Each view has an optional
-   caption and a capture timestamp; a setup contains up to 20 views.
-5. **Close capture bar** in the journal, or **Journal** / **×** on the bar, hides
-   the bar explicitly without discarding the preview. Closing the app closes it too.
+1. Enable **Auto** in Create setup or on the floating capture bar. Auto is off
+   at startup; enabling it ignores the image already on the clipboard.
+2. In TradingView, use **Copy chart image** (Linux/Windows: Ctrl+Shift+S;
+   macOS: Cmd+Shift+S), or the chart camera menu. Shortcut bindings depend on the
+   client; the menu is the fallback. Other apps can supply PNG images too.
+3. While Auto is on, the native process checks the clipboard for PNG images every
+   500 ms and adds changed image contents to the draft. It reads PNG data only,
+   never requests clipboard text/HTML payloads, and never modifies the clipboard. Imported
+   PNG bytes are preserved without automatic chart detection, cropping or resizing.
+   Imports do not show/focus the journal or hide the trading app.
+4. Each image still needs a timeframe before saving; notes are optional. Images
+   stay in memory until an explicit save to the selected destinations. Clipboard
+   image arrival does not write a note or send anything to an account.
+5. Choose **Edit image** beside an image to use the existing full-screen still-image
+   crop surface. Drag/release, or use arrows and two Enter presses; Shift moves
+   faster. Escape/Cancel preserves the image. Commit replaces only that draft
+   image, retaining its ID, timeframe, notes and import timestamp. Editing a saved
+   image requires **Save a separate copy**; the previous Markdown/PNG stays intact.
+6. **Stop Auto** immediately cancels monitoring and ignores late asynchronous
+   replies. Closing the capture bar, replacing/opening a setup, closing the
+   journal or quitting also stops Auto. Save/crop operations temporarily pause
+   polling. Restart always starts with Auto off.
 
-This collects individual snapshots, not video. Captures and source titles
-stay in memory until explicit save; candidate-source titles are not exported.
-Saving may deliver the selected setup to explicitly connected destinations;
-[SYNC](SYNC.md) describes those boundaries. All candidate
-snapshots are collected at capture time and discarded after selection. Closing
-the journal clears unsaved screenshots after a discard confirmation. To save images and setup
-details locally, use [the journal save flow](JOURNAL.md). There is no global
-shortcut, annotation tool or saved crop profile.
+The clipboard does not reliably identify which app supplied an image. Auto can
+therefore import PNGs copied from any application while it is enabled; the UI
+states this explicitly. It does not detect TradingView, synthesize keystrokes,
+control other apps or monitor the clipboard when Auto is off.
+
+Unchanged consecutive PNG content is ignored, including an identical recopy.
+Clearing/non-image clipboard content resets that comparison. The clipboard holds
+only its latest image: rapidly replaced images, including while save/edit is busy,
+can be missed. Copy one chart at a time and check the image count before the next.
+Limits are 20 images, 32 MB and 16 million pixels per imported PNG, plus existing
+128 MB per-setup and 256 MB cache bounds. Invalid/oversized data, clipboard failures
+or exhausted capacity stop Auto with a recoverable message, preserving the draft.
+
+The source application's export determines the content: TradeFrame does not erase
+crosshairs, indicators or other rendered pixels. Verify TradingView's own export
+on the actual client. [TradingView snapshot instructions](https://www.tradingview.com/support/solutions/43000482537-how-to-share-a-snapshot/).
+
+## Legacy native capture implementation
+
+The native screenshot API and its tests remain for compatibility. The current
+Auto UI uses clipboard images instead; Select area is no longer a capture-bar
+choice. The algorithm/platform notes below and 0.7.7 evidence describe that older
+native screen-capture path, not the new Auto behavior.
 
 ## Local chart isolation
 
@@ -177,47 +189,34 @@ Windows/macOS or elimination of the owner's previously reported marker.
 
 ## Manual acceptance checks
 
-Use a synthetic chart/test window without personal or employer data.
+The isolated native 0.7.8 run passes initial-image suppression, two external
+`wl-copy` imports with byte-exact saves, no native window activation, duplicate
+suppression, stop and invalid-PNG recovery. Mouse/keyboard crops export the exact
+expected 101x81/11x11 pixels without adding another screenshot; cancellation and
+Save copy preserve the original files/metadata. Desktop/minimum-width, edit and
+normal/error capture-bar screenshots are inspected. This uses a synthetic profile,
+private Wayland socket and test-only runtime copy with an existing sandbox helper;
+no real clipboard/account/journal is accessed. All test processes are closed.
 
-- Launch with `npm start`; open the bar and verify it is usable above the chart.
-- Confirm the journal is hidden while taking a screenshot/selecting a source,
-  and returns after success or cancellation. It must not cover the chart.
-- Drag it, click Journal, reopen it, and use × to return without capturing.
-- Drag the bar away from the center, take repeated screenshots, and cancel or
-  deny a capture. Confirm it returns to the same spot and remains clickable.
-- After successful, cancelled, and failed captures, confirm the bar reappears.
-  Take another screenshot without reopening it; close it from the journal's
-  **Close capture bar** button and then from the bar's **×**. Both controls
-  must preserve the preview. Activating the app must not close the bar.
-- Take a screen and a window snapshot. Confirm the capture bar is absent and
-  the preview is legible. Verify that the journal is absent from the source,
-  and compare exported PNG dimensions/detail with the physical source resolution.
-- If several sources appear, select one; repeat and cancel selection. The
-  earlier preview must survive cancellation.
-- Add another screenshot and deny/cancel OS access. The journal must return; an earlier preview
-  must remain. Permission prompts may be cached differently by each desktop.
-- Remove one of several screenshots; confirm the others remain. Use Start a new setup
-  and verify the confirmation. Closing a populated draft must ask before discard.
-  Reopen saved Markdown and append another image to that same file; verify its
-  old text/images and Markdown backup remain, including after restart.
-- Inspect the journal at desktop and minimum window sizes and the bar at its
-  fixed size. Verify keyboard focus and actionable errors.
-- Capture synthetic light/dark/colored charts with asymmetric toolbars and grid
-  lines. Verify exported PNG dimensions and content, including price/time axes.
-  Try large drawing zones, identical backgrounds and multiple panes; fallback
-  must keep the whole image with a note when no bounds are accepted.
-- Select a tiny area, drag in all four directions and beyond image edges, and
-  test Escape/Cancel, pointer cancellation and keyboard selection. Verify that
-  release adds exactly the selected pixels without another confirmation. Repeat
-  on scaled displays and narrow windows, then save/open/append and check images
-  at connected folder/OneNote targets using a synthetic account/setup.
+Use synthetic images and temporary folders; do not copy personal/account content.
 
-Automated checks cover lifecycle, trust boundaries, selection, discard,
-cancellation/failure recovery, parallel capture prevention, and pending capture
-cleanup. Real capture, layout, permissions, and stacking remain to be tested on
-Sway/Wayland, Windows, and macOS. Do not mark those checks complete from mocks.
+- Start with Auto off and an existing clipboard image. Enable Auto; verify that
+  the old image is not imported. Copy a new PNG from TradingView/Desktop/browser
+  and inspect its dimensions/pixels. Repeat with several images and timeframes.
+- Verify Linux/Windows/macOS shortcut hints and the actual client's camera-menu
+  fallback. A platform hint is not tested support on that OS.
+- Check that background imports do not activate the journal or take focus from
+  the trading app. Unchanged clipboard content must not add duplicates.
+- Disable Auto, close the bar, replace/open the draft and restart the app;
+  confirm monitoring stops and old/late results cannot enter the next draft.
+- Copy an unsupported/non-image item, then a PNG. Text contents must not enter
+  the draft. Invalid/oversized images stop Auto without changing existing images.
+- Edit one image with mouse and keyboard; inspect exact exported pixels and
+  metadata. Cancel and verify the image survives unchanged. Edit a full 20-image
+  draft without adding an image. Use Save copy after editing a saved image and
+  verify the old files remain byte-identical.
+- Save/reopen/append and verify image notes/timeframes and selected folder/cloud
+  results separately. Inspect desktop and narrow layouts and the 680x128 bar.
 
-0.7.3 guided-dark controls use a 680x128 floating window with larger text and
-44px buttons. The transparent-during-capture behavior and position preservation
-remain in place. Verify text/button fit and screen placement on the target
-desktop; the automated lifecycle tests do not establish native geometry.
+Real Windows/macOS clipboard ownership/formats, TradingView export content,
+physical display scaling and assistive technology require target-system checks.

@@ -89,7 +89,10 @@ test('workspace screens highlight the right navigation and include the draft for
       assert.match(markup, /<details class="form-customization"><summary>Customize the form/);
       assert.match(markup, /Choose a local setup/);
       assert.match(markup, /Browse OneNote setups/);
-      assert.match(markup, /Capture your first chart/);
+      assert.match(markup, /Open capture controls/);
+      assert.match(markup, /Ctrl\+Shift\+S/);
+      assert.match(markup, /Cmd\+Shift\+S/);
+      assert.match(markup, /new PNG images from any app/);
       const journalTag = markup.match(/<section id="journal"[^>]*>/)[0];
       const openTag = markup.match(/<section id="open"[^>]*>/)[0];
       assert.equal(journalTag.includes('hidden'), screen !== 'journal');

@@ -10,29 +10,18 @@ export function CaptureBar() {
         </div>
         <button
           className="capture-button"
+          aria-pressed={state.autoCapture}
           disabled={
             !api ||
-            state.busy ||
-            !!state.areaSource ||
-            !!state.sources.length ||
-            state.screenshots.length >= 20
+            (!state.autoCapture &&
+              (state.busy ||
+                !!state.areaSource ||
+                !!state.sources.length ||
+                state.screenshots.length >= 20))
           }
-          onClick={() => api && run(() => api.takeScreenshot('chart'))}
+          onClick={() => api && run(() => api.setAutoCapture(!state.autoCapture))}
         >
-          Auto chart
-        </button>
-        <button
-          className="bar-return"
-          disabled={
-            !api ||
-            state.busy ||
-            !!state.areaSource ||
-            !!state.sources.length ||
-            state.screenshots.length >= 20
-          }
-          onClick={() => api && run(() => api.takeScreenshot('area'))}
-        >
-          Select area
+          {state.autoCapture ? 'Stop Auto' : 'Auto'}
         </button>
         <button
           className="bar-return"
@@ -55,8 +44,11 @@ export function CaptureBar() {
         {error ||
           (state.busy
             ? 'Working…'
-            : `${state.screenshots.length} of 20 screenshots · Capture adds to the current setup.`)}
+            : `${state.screenshots.length} of 20 · ${state.screenshots.length >= 20 ? 'Limit reached · Remove an image or start a new setup' : state.autoCapture ? 'Auto on · Waiting for new clipboard images' : 'Auto off · Enable Auto, then copy a chart image'}`)}
       </p>
+      {!error && (
+        <p className="bar-hint">TradingView: Linux / Windows Ctrl+Shift+S · macOS Cmd+Shift+S</p>
+      )}
     </main>
   );
 }

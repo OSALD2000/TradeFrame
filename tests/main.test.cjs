@@ -126,9 +126,10 @@ async function boot(
     }
   }
   const electron = {
+    clipboard: runtime.clipboard ?? { has: async () => false, read: async () => [] },
     app,
     BrowserWindow,
-    nativeImage,
+    nativeImage: runtime.nativeImage ?? nativeImage,
     screen: {
       getAllDisplays: () =>
         runtime.displays ?? [{ size: { width: 1920, height: 1080 }, scaleFactor: 1 }],
@@ -159,6 +160,8 @@ async function boot(
     },
   };
   const dirname = path.resolve(__dirname, '../dist-electron');
+  const intervals = new Map();
+  let intervalId = 0;
   vm.runInNewContext(readFileSync(path.join(dirname, 'main.js'), 'utf8'), {
     exports: {},
     __dirname: dirname,
@@ -167,6 +170,11 @@ async function boot(
     Response,
     Uint8Array,
     setTimeout: (callback) => queueMicrotask(callback),
+    setInterval: (callback) => {
+      intervals.set(++intervalId, callback);
+      return intervalId;
+    },
+    clearInterval: (id) => intervals.delete(id),
     require: (name) =>
       name === 'electron'
         ? electron
@@ -204,7 +212,14 @@ async function boot(
       },
       ...args,
     );
-  return { app, windows, handlers, invoke };
+  return {
+    app,
+    windows,
+    handlers,
+    invoke,
+    tick: () => Promise.all([...intervals.values()].map((callback) => callback())),
+    intervalCount: () => intervals.size,
+  };
 }
 
 async function captureReady(invoke, windows) {
@@ -710,6 +725,12 @@ test('preload exposes named commands and strips event objects from subscriptions
     ['forms:list'],
     ['forms:save', DEFAULT_SCHEMA],
     ['journal:open'],
+  ]);
+  api.setAutoCapture(true);
+  api.editScreenshot('synthetic');
+  assert.deepEqual(calls.slice(-2), [
+    ['capture:auto', true],
+    ['capture:edit', 'synthetic'],
   ]);
   const received = [];
   const unsubscribe = api.onStateChange((...args) => received.push(args));
@@ -1811,4 +1832,259 @@ test('calendar filing choices and note identity survive deselecting and reselect
     ),
     false,
   );
+});
+
+function clipboardFixture(initial = null) {
+  let current = initial;
+  let reads = 0;
+  const clipboard = {
+    has: async (type) => {
+      assert.equal(type, 'image/png');
+      return current !== null;
+    },
+    read: async () => {
+      reads++;
+      const bytes = current;
+      return [
+        {
+          types: ['text/html', 'image/png'],
+          getType: async (type) => {
+            assert.equal(type, 'image/png', 'Never read unrelated clipboard contents');
+            return new Blob([bytes]);
+          },
+        },
+      ];
+    },
+  };
+  return {
+    clipboard,
+    set: (bytes) => {
+      current = bytes;
+    },
+    reads: () => reads,
+  };
+}
+
+test('Auto imports only new clipboard PNGs while selected, preserves bytes, and never captures or raises windows', async () => {
+  const first = syntheticImage(8, 6, () => [20, 40, 60, 255]);
+  const second = syntheticImage(8, 6, () => [60, 40, 20, 255]);
+  const f = clipboardFixture(first.png);
+  let decoded = 0;
+  const { invoke, tick, windows, handlers, intervalCount } = await boot(
+    async () => assert.fail('Auto must not take a desktop screenshot'),
+    undefined,
+    true,
+    undefined,
+    {
+      clipboard: f.clipboard,
+      nativeImage: {
+        ...nativeImage,
+        createFromBuffer: (bytes) => {
+          decoded++;
+          return nativeImage.createFromBuffer(bytes);
+        },
+      },
+    },
+  );
+  assert.equal(f.reads(), 0);
+  assert.equal((await invoke('capture:state')).autoCapture, false);
+  await invoke('capture:auto', windows[0], true);
+  assert.equal(
+    (await invoke('capture:state')).screenshots.length,
+    0,
+    'Activation ignores the old image',
+  );
+  await tick();
+  assert.equal((await invoke('capture:state')).screenshots.length, 0);
+  assert.equal(decoded, 0, 'Do not decode the existing/unchanged PNG every polling interval');
+  f.set(second.png);
+  await tick();
+  await tick();
+  let state = await invoke('capture:state');
+  assert.equal(state.screenshots.length, 1);
+  assert.equal(decoded, 1, 'Decode only a new candidate image');
+  assert.equal(state.autoCapture, true);
+  assert.equal(state.screenshots[0].timeframe, '');
+  assert.equal(
+    state.screenshots[0].crop,
+    undefined,
+    'Exported charts are not automatically cropped',
+  );
+  assert.equal(windows[0].visible, false, 'Background imports must not steal window focus');
+  const response = handlers.get('protocol:tradeframe-image')({
+    method: 'GET',
+    url: state.screenshots[0].image,
+  });
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), second.png);
+  f.set(null);
+  await tick();
+  f.set(second.png);
+  await tick();
+  assert.equal(
+    (await invoke('capture:state')).screenshots.length,
+    2,
+    'A new copy after clearing is accepted',
+  );
+  await invoke('capture:auto', windows[0], false);
+  const reads = f.reads();
+  f.set(first.png);
+  await tick();
+  assert.equal(f.reads(), reads);
+  assert.equal(intervalCount(), 0);
+  await assert.rejects(invoke('capture:auto', windows[0], 'true'), /Invalid/);
+  await invoke('capture:auto', windows[0], true);
+  windows[0].close();
+  assert.equal(intervalCount(), 0);
+});
+
+test('Auto serializes pending reads and ignores their result after Stop or draft replacement', async () => {
+  const png = syntheticImage(5, 5, () => [10, 20, 30, 255]).png;
+  const f = clipboardFixture();
+  const runtime = { clipboard: f.clipboard };
+  const { invoke, tick, windows } = await boot(undefined, undefined, true, undefined, runtime);
+  await invoke('capture:auto', windows[0], true);
+  let resolve,
+    reads = 0;
+  f.clipboard.has = async () => true;
+  f.clipboard.read = () => {
+    reads++;
+    return new Promise((r) => {
+      resolve = r;
+    });
+  };
+  const pending = tick();
+  await new Promise(setImmediate);
+  await tick();
+  assert.equal(reads, 1);
+  await invoke('capture:auto', windows[0], false);
+  resolve([{ types: ['image/png'], getType: async () => new Blob([png]) }]);
+  await pending;
+  assert.equal((await invoke('capture:state')).screenshots.length, 0);
+  f.clipboard.has = async () => false;
+  await invoke('capture:auto', windows[0], true);
+  f.clipboard.has = async () => true;
+  const next = tick();
+  await new Promise(setImmediate);
+  await invoke('journal:new');
+  resolve([{ types: ['image/png'], getType: async () => new Blob([png]) }]);
+  await next;
+  assert.equal((await invoke('capture:state')).autoCapture, false);
+  assert.equal((await invoke('capture:state')).screenshots.length, 0);
+});
+
+test('Auto stops safely at invalid data, oversized images and twenty screenshots', async () => {
+  const f = clipboardFixture();
+  const { invoke, tick, windows, intervalCount } = await boot(
+    undefined,
+    undefined,
+    true,
+    undefined,
+    { clipboard: f.clipboard },
+  );
+  await invoke('capture:auto', windows[0], true);
+  f.set(syntheticImage(4, 4, () => [1, 2, 3, 255]).png);
+  await tick();
+  f.set(Buffer.from('not a PNG'));
+  await tick();
+  assert.equal((await invoke('capture:state')).screenshots.length, 1);
+  assert.equal((await invoke('capture:state')).autoCapture, false);
+  assert.match((await invoke('capture:state')).error, /Auto stopped/);
+  f.set(null);
+  await invoke('capture:auto', windows[0], true);
+  const oversized = Buffer.from(syntheticImage(4, 4, () => [2, 3, 4, 255]).png);
+  oversized.writeUInt32BE(100000, 16);
+  f.set(oversized);
+  await tick();
+  assert.equal((await invoke('capture:state')).screenshots.length, 1);
+  assert.equal((await invoke('capture:state')).autoCapture, false);
+  f.set(null);
+  await invoke('capture:auto', windows[0], true);
+  for (let i = 0; i < 19; i++) {
+    f.set(syntheticImage(4, 4, () => [10 + i, 20, 30, 255]).png);
+    await tick();
+  }
+  assert.equal((await invoke('capture:state')).screenshots.length, 20);
+  assert.equal((await invoke('capture:state')).autoCapture, false);
+  assert.equal(intervalCount(), 0);
+  await assert.rejects(invoke('capture:auto', windows[0], true), /20 screenshots/);
+});
+
+test('Edit image crops only the selected draft image, retains metadata and cancellation, and permits twenty-image drafts', async () => {
+  const full = syntheticImage(400, 300, (x, y) => [x % 256, y % 256, 20, 255]);
+  const { app, invoke, windows, handlers } = await boot(
+    async () => [{ ...source('screen:0:0'), thumbnail: full }],
+    async () => ({ canceled: false, filePaths: [app.getPath()] }),
+  );
+  await invoke('capture:open-bar');
+  await invoke('capture:screenshot', windows[1], 'chart');
+  const original = (await invoke('capture:state')).screenshots[0];
+  await invoke('capture:timeframe', windows[0], original.id, '5m');
+  await invoke('capture:caption', windows[0], original.id, 'Keep notes 🕯');
+  const saved = await invoke('journal:save', windows[0], setupInput());
+  const fs = require('node:fs/promises');
+  const savedBytes = await fs.readFile(saved.path);
+  const savedPng = await fs.readFile(path.join(path.dirname(saved.path), 'chart.png'));
+  await assert.rejects(invoke('capture:edit', windows[1], original.id), /Untrusted/);
+  await assert.rejects(invoke('capture:edit', windows[0], 'missing'), /Invalid/);
+  await invoke('capture:edit', windows[0], original.id);
+  await invoke('capture:discard');
+  assert.equal((await invoke('capture:state')).screenshots[0].image, original.image);
+  await invoke('capture:edit', windows[0], original.id);
+  const pending = (await invoke('capture:state')).areaSource;
+  await invoke('capture:area', windows[0], pending.image, { x: 15, y: 12, width: 9, height: 6 });
+  const state = await invoke('capture:state');
+  assert.equal(state.screenshots.length, 1);
+  const edited = state.screenshots[0];
+  assert.equal(edited.id, original.id);
+  assert.equal(edited.timeframe, '5m');
+  assert.equal(edited.caption, 'Keep notes 🕯');
+  assert.equal(edited.capturedAt, original.capturedAt);
+  assert.equal(edited.crop, 'area');
+  const response = handlers.get('protocol:tradeframe-image')({ method: 'GET', url: edited.image });
+  assert.deepEqual(
+    Buffer.from(await response.arrayBuffer()),
+    full.crop({ x: 15, y: 12, width: 9, height: 6 }).png,
+  );
+  assert.deepEqual(await fs.readFile(saved.path), savedBytes);
+  assert.deepEqual(await fs.readFile(path.join(path.dirname(saved.path), 'chart.png')), savedPng);
+  await assert.rejects(invoke('journal:append', windows[0], setupInput()), /Could not append/);
+  const copied = await invoke('journal:save', windows[0], setupInput());
+  assert.notEqual(copied.path, saved.path);
+  assert.deepEqual(await fs.readFile(saved.path), savedBytes);
+  for (let i = 0; i < 19; i++) await invoke('capture:screenshot', windows[1], 'chart');
+  assert.equal((await invoke('capture:state')).screenshots.length, 20);
+  await invoke('capture:edit', windows[0], original.id);
+  await invoke('capture:area', windows[0], (await invoke('capture:state')).areaSource.image, {
+    x: 0,
+    y: 0,
+    width: 2,
+    height: 2,
+  });
+  assert.equal((await invoke('capture:state')).screenshots.length, 20);
+});
+
+test('stopping Auto during its initial format query prevents any later clipboard content read', async () => {
+  let ready,
+    reads = 0;
+  const clipboard = {
+    has: () =>
+      new Promise((resolve) => {
+        ready = resolve;
+      }),
+    read: async () => {
+      reads++;
+      return [];
+    },
+  };
+  const { invoke, windows, intervalCount } = await boot(undefined, undefined, true, undefined, {
+    clipboard,
+  });
+  const pending = invoke('capture:auto', windows[0], true);
+  await new Promise(setImmediate);
+  await invoke('capture:auto', windows[0], false);
+  ready(true);
+  await pending;
+  assert.equal(reads, 0, 'Stopped Auto must not read clipboard contents');
+  assert.equal(intervalCount(), 0);
+  assert.equal((await invoke('capture:state')).autoCapture, false);
 });
