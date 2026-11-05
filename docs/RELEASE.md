@@ -40,7 +40,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.7.9`. The tag must match
+only, or when the owner pushes a version tag such as `v0.7.10`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -58,8 +58,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.7.9
-git push origin v0.7.9
+git tag v0.7.10
+git push origin v0.7.10
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.
@@ -141,7 +141,8 @@ verify completion without duplicate captures; verify a live writer is left alone
 and an external edit stops recovery. Test a hard-link-capable journal filesystem.
 Verify a clean user data folder and that no private data appears in the archive.
 
-Choose a project license before presenting the source as reusable open source.
+The project uses the custom [TradeFrame Source-Available License 1.0](../LICENSE.md);
+do not present it as OSI-approved open source.
 Resolve trusted signing/notarization and installer requirements for a stable release.
 Automatic updates, publisher account registration and public upload are not
 performed by the package script.
@@ -399,9 +400,11 @@ below remain unresolved.
 
 Research date: **2 November 2026**. Jurisdiction assumption: a publisher based in
 Germany, distributing to Germany/EU through GitHub. The owner's stated plan is a
-free, personally maintained public project, with a restriction on others making
-money from it. The scope of that restriction is still undecided. This section is
-a sourced preparation checklist, not final legal terms or a legal clearance.
+free, personally maintained public project. On 5 November the owner confirmed
+own personal/professional use, modification and free redistribution, with sale
+and paid hosting prohibited. [LICENSE.md](../LICENSE.md) implements that scope as
+the custom TradeFrame Source-Available License 1.0. This section is a sourced
+preparation checklist, not final legal terms or a legal clearance.
 Recheck time-sensitive sources immediately before publication; other countries,
 stores or a changed business model can add requirements.
 
@@ -415,27 +418,38 @@ The 5 November 2026 preparation step adds app-specific review drafts for privacy
 terms and provider information, plus a factual data-maintenance guide. They are
 bundled as clearly labeled drafts so relative links also work in new packages;
 they are not effective legal notices or approved Microsoft legal URLs. No project
-`LICENSE` or `SECURITY.md` has been adopted. No publisher identity, address,
+`SECURITY.md` has been adopted. The subsequent 0.7.10 work step adds the approved
+custom [project license](../LICENSE.md). No publisher identity, address,
 legal basis or support promise has been invented. The original legal research
 date above is unchanged; the new drafts identify their own checked sources/date.
 
-| Document or evidence                        | Purpose and release treatment                                                                                                                         | Current state                                                                                                                      |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Project `LICENSE`                           | Define allowed use, modification and redistribution for source and binaries; keep the README and package metadata consistent                          | Owner decision required; no license selected                                                                                       |
-| Third-party notices                         | Preserve each bundled component's copyright/license obligations independently of TradeFrame's own license                                             | Package script includes Electron/Chromium notices and React/React DOM/Scheduler licenses; full dependency and asset review remains |
-| Public privacy statement                    | Describe actual local storage, optional services, support/hosting data, recipients, retention and rights; make it reachable before connecting OneNote | [Review draft](PRIVACY_DRAFT.md); identity, processing roles/grounds, support retention, transfers and publication unresolved      |
-| Public terms of use                         | Explain provider, journal-only purpose, permitted use, third-party connections, support and legally valid liability provisions                        | [Review draft](TERMS_DRAFT.md); license, provider, contractual model and liability review unresolved                               |
-| Provider information / Impressum assessment | Determine applicable German identification duties and publish the necessary reachable information                                                     | [Preparation draft](PROVIDER_DRAFT.md); applicability, approved details and public URLs unresolved                                 |
-| Security policy / contact                   | Provide a private vulnerability-reporting route, supported-version policy and incident handling                                                       | Recommended project document; Microsoft API security obligations also need a process                                               |
-| User and release guides                     | Installation/uninstall/update, backup/export, compatibility, known limitations and supported OS evidence                                              | [Backup/update/removal guide](DATA.md) added to existing guides; native restoration and final package acceptance remain open       |
+| Document or evidence                        | Purpose and release treatment                                                                                                                         | Current state                                                                                                                            |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Project `LICENSE.md`                        | Define allowed use, modification and redistribution for source and binaries; keep the README and package metadata consistent                          | [Custom license adopted](../LICENSE.md); independent legal/rights review remains open                                                    |
+| Third-party notices                         | Preserve each bundled component's copyright/license obligations independently of TradeFrame's own license                                             | Package script includes Electron/Chromium notices and React/React DOM/Scheduler licenses; full dependency and asset review remains       |
+| Public privacy statement                    | Describe actual local storage, optional services, support/hosting data, recipients, retention and rights; make it reachable before connecting OneNote | [Review draft](PRIVACY_DRAFT.md); identity, processing roles/grounds, support retention, transfers and publication unresolved            |
+| Public terms of use                         | Explain provider, journal-only purpose, permitted use, third-party connections, support and legally valid liability provisions                        | [Review draft](TERMS_DRAFT.md); provider, contractual model and liability review unresolved; software rights link to the adopted license |
+| Provider information / Impressum assessment | Determine applicable German identification duties and publish the necessary reachable information                                                     | [Preparation draft](PROVIDER_DRAFT.md); applicability, approved details and public URLs unresolved                                       |
+| Security policy / contact                   | Provide a private vulnerability-reporting route, supported-version policy and incident handling                                                       | Recommended project document; Microsoft API security obligations also need a process                                                     |
+| User and release guides                     | Installation/uninstall/update, backup/export, compatibility, known limitations and supported OS evidence                                              | [Backup/update/removal guide](DATA.md) added to existing guides; native restoration and final package acceptance remain open             |
 
 `PRIVACY_DRAFT.md`, `TERMS_DRAFT.md` and `PROVIDER_DRAFT.md` under `docs/` are the
-authoritative preparation texts, not parallel final policies. `LICENSE` and
-`SECURITY.md` remain proposed files. The owner must supply/approve the missing
-identity, contact, licensing and operating decisions before the drafts can be
+authoritative preparation texts, not parallel final policies. `LICENSE.md` now
+records the software rights; `SECURITY.md` remains proposed. The owner must
+supply/approve the missing identity, contact and operating decisions before the drafts can be
 finalized. Their **Pending** sections deliberately keep these decisions open.
 
 ### License decision: commercial restrictions are not Apache 2.0
+
+**Adopted on 5 November 2026:** [TradeFrame Source-Available License 1.0](../LICENSE.md)
+allows own personal/professional use, modifications and free source/binary
+redistribution. It requires preserved terms/notices and identification of changes;
+sales, paid bundles and paid hosted/managed access need separate written permission.
+User content and third-party licenses remain separate. npm metadata uses
+`SEE LICENSE IN LICENSE.md`, following [npm's custom-license format](https://docs.npmjs.com/cli/v11/configuring-npm/package-json/#license).
+This custom text has not received independent legal review; its adoption does
+not certify enforceability or ownership of every contribution/asset. The options
+below record the alternatives assessed before this choice.
 
 A public repository and a zero download price do not determine its license.
 Apache 2.0 allows commercial use. An Open Source Definition-compliant license
@@ -445,21 +459,21 @@ open source. Sources: [Apache licensing FAQ](https://www.apache.org/foundation/l
 [OSI definition](https://opensource.org/osd) and
 [OSI licensing FAQ](https://opensource.org/faq).
 
-| Candidate                                   | Commercial use / selling copies                                   | Relevance to the owner's goal                                                                                                    |
-| ------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Apache License 2.0                          | Allowed subject to its terms                                      | Suitable only if the owner accepts commercial reuse; does not implement a no-profit rule                                         |
-| GPLv3                                       | Allowed; redistribution has applicable license/source obligations | Copyleft is not a commercial-use or resale ban                                                                                   |
-| PolyForm Noncommercial 1.0.0                | Grants rights for its defined permitted noncommercial purposes    | Candidate for evaluation, not a selected license; personal-use wording excludes anticipated commercial application               |
-| A narrowly drafted source-available license | Depends on the reviewed wording                                   | May be necessary if using the journal for one's own trades is allowed but selling the software or a hosted service is prohibited |
+| Candidate                                  | Commercial use / selling copies                                   | Relevance to the owner's goal                                                                                      |
+| ------------------------------------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Apache License 2.0                         | Allowed subject to its terms                                      | Suitable only if the owner accepts commercial reuse; does not implement a no-profit rule                           |
+| GPLv3                                      | Allowed; redistribution has applicable license/source obligations | Copyleft is not a commercial-use or resale ban                                                                     |
+| PolyForm Noncommercial 1.0.0               | Grants rights for its defined permitted noncommercial purposes    | Candidate for evaluation, not a selected license; personal-use wording excludes anticipated commercial application |
+| Custom TradeFrame source-available license | Own professional use permitted; sale and paid hosting restricted  | Selected for the confirmed scope; legal and contribution/asset-rights review remains open                          |
 
 GPL source: [GNU licensing FAQ](https://www.gnu.org/licenses/gpl-faq.en.html#DoesTheGPLAllowMoney).
 PolyForm source: [official versioned license text](https://github.com/polyformproject/polyform-licenses/blob/1.0.0/PolyForm-Noncommercial-1.0.0.md).
 
-For a trading journal, distinguish **earning money by using the journal for
+The adopted scope distinguishes **earning money by using the journal for
 trading** from **earning money by selling/distributing/hosting the software**.
 A blanket noncommercial choice could exclude intended users. Do not assume a
-particular trader's use is legally noncommercial; resolve the exact scope before
-adopting a license. Do not attach an extra no-commercial clause to Apache/GPL and
+particular trader's use is legally noncommercial; this custom license explicitly
+permits professional own use instead of relying on that classification. Do not attach an extra no-commercial clause to Apache/GPL and
 still present it as the unchanged standard license. Confirm rights to source,
 icons, screenshots and outside contributions before licensing them.
 
@@ -467,8 +481,10 @@ Local metadata currently lists React, React DOM, Scheduler and Electron as MIT.
 That is not a complete audit of the embedded Chromium/Node components or assets.
 Keep upstream license texts intact; a TradeFrame restriction must not purport to
 relicense those components. Preserve the existing package `LICENSE`,
-`LICENSES.chromium.html` and `THIRD_PARTY_NOTICES.txt`. Include the approved own
-license separately in future packages and verify the resulting artifacts.
+`LICENSES.chromium.html` and `THIRD_PARTY_NOTICES.txt`. Packages from 0.7.10 include the own
+`LICENSE.md` at their root and beside the app manifest, without overwriting
+Electron's `LICENSE`. Verification checks both copies against the source text
+and checks app license metadata. Earlier packages are unchanged.
 
 ### AGB, terms and liability are different from a software license
 
@@ -623,9 +639,9 @@ No finding here grants a blanket exemption for future business models.
 These boxes remain open until the indicated decision or evidence exists. The
 research itself does not complete them.
 
-- [ ] Owner resolves resale/hosting restrictions versus use for personal or
-      professional trading, selects the actual license and approves accurate
-      open-source/source-available wording.
+- [x] Owner resolves resale/hosting restrictions versus use for personal or
+      professional trading; the custom source-available license and matching
+      README/package metadata implement the confirmed scope.
 - [ ] Rights to code, contributions and visual assets are confirmed; dependency
       notices and the approved own license are included in source and every package.
 - [ ] Provider/Impressum applicability, lawful contact details and release model
@@ -647,8 +663,8 @@ research itself does not complete them.
 - [ ] The owner reviews the concrete source/artifacts and publishes the release;
       no private plans, account credentials, real journals or screenshots are uploaded.
 
-Recommended next decisions: first settle the license restriction, then the
-publisher/contact and legal-hosting details, then complete/review the linked
+Recommended next decisions: settle the publisher/contact and legal-hosting
+details, then complete/review the linked
 privacy, terms and provider drafts against the actual publisher operations. A legal professional should review the
 nonstandard licensing/usage boundary and unresolved German/EU applicability
 before the owner treats this as a legally cleared public offer.

@@ -67,7 +67,7 @@ See [capture behavior, limits and verification](docs/CAPTURE.md).
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.7.9`.
+The top-right toolbar shows the installed app version, for example `v0.7.10`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup
@@ -171,12 +171,26 @@ added for SQLite, integrations or packaging.
 [Agent entry point](AGENTS.md) · [Domain language](GLOSSARY.md)
 
 Saved-setup browsing, general Markdown importing, two-way sync, direct Dropbox
-OAuth, automatic updates, broker and AI features are not implemented. No source
-license has been selected. The owner performs pushes and public release uploads.
+OAuth, automatic updates, broker and AI features are not implemented. The owner
+performs pushes and public release uploads.
 
 [First use, filing rules and OneNote connection](docs/GETTING_STARTED.md).
 
 [Backup, updates and data removal](docs/DATA.md) ·
 [Legal documents and outstanding publisher decisions](docs/RELEASE.md#current-evidence-and-documents-to-prepare).
-Privacy, terms and provider texts are review drafts; no final legal notice or
-project license has been approved.
+Privacy, terms and provider texts remain review drafts; final legal notices are
+not yet approved.
+
+## License
+
+[TradeFrame Source-Available License 1.0](LICENSE.md) permits personal and
+professional own use, including trading, modifications and free redistribution.
+Selling the software or modified versions, paid bundles and paid hosting/managed
+access require separate written permission. Keep the license/notices and identify
+changes when sharing a modified version. User journals and screenshots are not
+licensed as part of the app. This is source-available software with restrictions
+on sale and paid hosting; it is not OSI-approved open source.
+
+The package's `LICENSE.md` covers TradeFrame. Electron's `LICENSE`, Chromium
+notices and `THIRD_PARTY_NOTICES.txt` retain their separate terms. A license does
+not complete the outstanding provider, privacy or legal-review release gates.

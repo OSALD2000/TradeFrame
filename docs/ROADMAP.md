@@ -1,5 +1,17 @@
 # TradeFrame roadmap
 
+## Owner-approved source license, 0.7.10
+
+The owner confirmed personal/professional own use, modification and free
+redistribution, with sales and paid hosting prohibited. The implementation adds
+the custom root `LICENSE.md`, aligns both READMEs and package metadata, and
+includes it separately from unchanged third-party licenses. A fresh Linux package
+passes runtime/license verification; the boundary rejects missing or altered own
+license copies. Legal review, contribution/asset rights and Windows/macOS artifact
+checks remain open.
+Formatting/build and all 219 tests pass on host and embedded Node; the focused
+package regression rejects missing/changed copies in either license location.
+
 ## Clipboard recovery repair, 0.7.9
 
 The owner reports that one TradingView image arrives, Auto stops with a generic

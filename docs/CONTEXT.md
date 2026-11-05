@@ -1,5 +1,19 @@
 # TradeFrame context
 
+5 November 2026, 0.7.10 source license: the owner confirms own personal and
+professional use, modification and free redistribution, with sale and paid
+hosting restricted. [LICENSE.md](../LICENSE.md) is the authoritative custom
+TradeFrame Source-Available License 1.0. Both READMEs, npm metadata and draft terms
+are aligned. Packages preserve the separate Electron `LICENSE` and include
+`LICENSE.md` at the download root and app-manifest directory; verification rejects
+missing/altered copies. No application behavior, saved format or dependency
+changes. Previous artifacts retain their original contents. This records the
+license choice, not an independent legal review or confirmation of all asset
+rights; other legal/publisher/platform gates remain open. Formatting, both
+TypeScript projects, production build and all 219 tests pass; all 219 also pass
+under Electron's embedded Node. Package regressions cover missing and altered
+license copies at both locations while retaining the wrong-runtime guard.
+
 5 November 2026, 0.7.9 recovery repair: a synthetic PNG provider reproduces the
 owner-reported sequence of a successful import followed by a stopped Auto and an
 unusable restart. Empty PNG offers, missing advertised formats and native read

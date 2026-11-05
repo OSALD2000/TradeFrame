@@ -1,6 +1,6 @@
 # Back up, update and remove TradeFrame data
 
-These instructions describe preview **0.7.9**. Use a synthetic setup to rehearse
+These instructions describe preview **0.7.10**. Use a synthetic setup to rehearse
 restoration. They do not establish native acceptance on another operating system.
 For installation and checksum verification, see [RELEASE](RELEASE.md).
 

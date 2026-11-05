@@ -69,7 +69,7 @@ Aenderungen an gespeicherten Bildern brauchen Save copy. Danach Auto ausschalten
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.9`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.10`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →
@@ -185,12 +185,27 @@ Integrationen und Paketierung kamen keine neuen App-Abhaengigkeiten hinzu.
 
 Nicht umgesetzt: Setup-Browser, allgemeiner Markdown-Import, Zweiwege-Sync,
 direkte Dropbox-OAuth-Anmeldung, automatische Updates, Broker- und KI-Funktionen.
-Eine Quellcode-Lizenz ist noch nicht gewaehlt. Push und oeffentliche Release-Uploads
-fuehrt der Nutzer selbst aus.
+Push und oeffentliche Release-Uploads fuehrt der Nutzer selbst aus.
 
 [Ersteinrichtung, Ablageregeln und OneNote-Verbindung](docs/GETTING_STARTED.md).
 
 [Backup, Updates und Daten entfernen](docs/DATA.md) ·
 [Rechtliche Dokumente und offene Anbieterentscheidungen](docs/RELEASE.md#current-evidence-and-documents-to-prepare).
 Datenschutz, Nutzungsbedingungen und Anbieterangaben liegen als Pruefentwuerfe vor;
-endgueltige Rechtstexte und Projektlizenz sind noch nicht freigegeben.
+endgueltige Rechtstexte sind noch nicht freigegeben.
+
+## Lizenz
+
+Die [TradeFrame Source-Available License 1.0](LICENSE.md) erlaubt eigene private
+und berufliche Nutzung einschliesslich Trading, Aenderungen und kostenlose
+Weitergabe. Verkauf der Software oder geaenderter Versionen, kostenpflichtige
+Pakete und kostenpflichtiges Hosting erfordern eine gesonderte schriftliche
+Erlaubnis. Bei Weitergabe muessen Lizenz/Hinweise erhalten und Aenderungen
+kenntlich gemacht werden. Eigene Journale und Screenshots fallen nicht unter die
+App-Lizenz. Der Quellcode ist einsehbar (source available); wegen der Verkaufs-
+und Hostingbeschraenkungen ist dies keine OSI-anerkannte Open-Source-Lizenz.
+
+Im Paket gilt `LICENSE.md` fuer TradeFrame. Electrons `LICENSE`, Chromium-Hinweise
+und `THIRD_PARTY_NOTICES.txt` behalten ihre eigenen Bedingungen. Die Lizenz
+schliesst die offenen Anbieter-, Datenschutz- und rechtlichen Pruefpunkte vor
+Veroeffentlichung nicht ab.

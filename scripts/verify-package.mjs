@@ -2,6 +2,7 @@ import { readFile, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import assert from 'node:assert/strict';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
@@ -21,6 +22,18 @@ const executable =
     : path.join(directory, process.platform === 'win32' ? 'TradeFrame.exe' : 'tradeframe');
 await access(executable);
 await access(path.join(application, 'dist', 'index.html'));
+const projectLicense = await readFile(path.join(root, 'LICENSE.md'), 'utf8');
+for (const file of [path.join(directory, 'LICENSE.md'), path.join(application, 'LICENSE.md')])
+  assert.equal(
+    await readFile(file, 'utf8').catch(() => null),
+    projectLicense,
+    `TradeFrame license is missing or differs: ${file}`,
+  );
+assert.equal(
+  JSON.parse(await readFile(path.join(application, 'package.json'), 'utf8')).license,
+  manifest.license,
+  'Packaged license metadata differs from package.json',
+);
 const script = [
   '(async () => {',
   "const assert = require('node:assert/strict'); const path = require('node:path');",

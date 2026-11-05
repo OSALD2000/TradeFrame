@@ -102,6 +102,13 @@ test('package verification rejects a Node executable masquerading as the pinned 
     path.join(application, 'dist-electron', 'integrations.json'),
     JSON.stringify({ microsoftClientId: '' }),
   );
+  await fs.writeFile(path.join(root, 'LICENSE.md'), 'Synthetic project license');
+  await fs.writeFile(path.join(directory, 'LICENSE.md'), 'Synthetic project license');
+  await fs.writeFile(path.join(application, 'LICENSE.md'), 'Synthetic project license');
+  await fs.writeFile(
+    path.join(application, 'package.json'),
+    JSON.stringify({ license: 'SEE LICENSE IN LICENSE.md' }),
+  );
   await fs.mkdir(path.join(root, 'scripts'));
   const verifier = path.join(root, 'scripts', 'verify-package.mjs');
   await fs.copyFile(path.resolve(__dirname, '../scripts/verify-package.mjs'), verifier);
@@ -109,6 +116,7 @@ test('package verification rejects a Node executable masquerading as the pinned 
     path.join(root, 'package.json'),
     JSON.stringify({
       version: '0.0.0',
+      license: 'SEE LICENSE IN LICENSE.md',
       devDependencies: { electron: '99.0.0' },
     }),
   );
@@ -126,4 +134,54 @@ test('package verification rejects a Node executable masquerading as the pinned 
   });
   assert.notEqual(result.status, 0, 'A plain Node runtime must not pass Electron verification');
   assert.match(result.stderr, /Packaged Electron version does not match package.json/);
+});
+
+test('package verification rejects a missing or changed TradeFrame license before launching a runtime', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-license-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const directory = path.join(
+    root,
+    'release',
+    `TradeFrame-0.0.0-${process.platform}-${process.arch}`,
+  );
+  const application =
+    process.platform === 'darwin'
+      ? path.join(directory, 'TradeFrame.app', 'Contents', 'Resources', 'app')
+      : path.join(directory, 'resources', 'app');
+  const executable =
+    process.platform === 'darwin'
+      ? path.join(directory, 'TradeFrame.app', 'Contents', 'MacOS', 'Electron')
+      : path.join(directory, process.platform === 'win32' ? 'TradeFrame.exe' : 'tradeframe');
+  await fs.mkdir(path.dirname(executable), { recursive: true });
+  await fs.copyFile(process.execPath, executable);
+  await fs.chmod(executable, 0o755);
+  await fs.mkdir(path.join(application, 'dist'), { recursive: true });
+  await fs.writeFile(path.join(application, 'dist', 'index.html'), 'Synthetic renderer');
+  await fs.mkdir(path.join(root, 'scripts'));
+  const verifier = path.join(root, 'scripts', 'verify-package.mjs');
+  await fs.copyFile(path.resolve(__dirname, '../scripts/verify-package.mjs'), verifier);
+  const manifest = {
+    version: '0.0.0',
+    license: 'SEE LICENSE IN LICENSE.md',
+    devDependencies: { electron: '99.0.0' },
+  };
+  await fs.writeFile(path.join(root, 'package.json'), JSON.stringify(manifest));
+  await fs.writeFile(path.join(application, 'package.json'), JSON.stringify(manifest));
+  const license = 'Synthetic project license for package boundary checks\n';
+  await fs.writeFile(path.join(root, 'LICENSE.md'), license);
+  await fs.writeFile(path.join(application, 'LICENSE.md'), license);
+  for (const file of [path.join(directory, 'LICENSE.md'), path.join(application, 'LICENSE.md')]) {
+    for (const content of [null, 'Changed license']) {
+      await fs.writeFile(path.join(directory, 'LICENSE.md'), license);
+      await fs.writeFile(path.join(application, 'LICENSE.md'), license);
+      if (content === null) await fs.rm(file);
+      else await fs.writeFile(file, content);
+      const result = require('node:child_process').spawnSync(process.execPath, [verifier], {
+        encoding: 'utf8',
+      });
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /TradeFrame license is missing or differs/);
+      assert.doesNotMatch(result.stderr, /Packaged Electron version does not match/);
+    }
+  }
 });

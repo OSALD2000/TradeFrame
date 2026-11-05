@@ -105,11 +105,14 @@ try {
         description: manifest.description,
         main: manifest.main,
         author: manifest.author,
+        license: manifest.license,
       },
       null,
       2,
     ),
   );
+  await cp(path.join(root, 'LICENSE.md'), path.join(application, 'LICENSE.md'));
+  await cp(path.join(root, 'LICENSE.md'), path.join(staging, 'LICENSE.md'));
   const clientId =
     process.env.TRADEFRAME_MICROSOFT_CLIENT_ID?.trim() || manifest.config?.microsoftClientId || '';
   assert(

@@ -1,8 +1,8 @@
 # TradeFrame terms of use — review draft
 
-**Draft dated 5 November 2026 for preview 0.7.9. Not effective contractual terms
+**Draft dated 5 November 2026 for preview 0.7.10. Not effective contractual terms
 or a software license.** The intended offering is a free, personally maintained
-desktop journal. Publisher identity, licensing and legal review are outstanding;
+desktop journal. Publisher identity and legal review are outstanding;
 see the [release gates](RELEASE.md#documentation-and-evidence-gate-for-the-first-public-release).
 
 ## Provider and scope
@@ -39,12 +39,12 @@ snapshot restores originally sent values and does not merge subsequent edits.
 
 ## Software rights and third-party components
 
-**Pending license decision:** specify the rights to use, copy, modify and
-redistribute both source and binaries in an approved project license. Resolve
-whether the proposed restriction concerns selling/hosting TradeFrame, using it
-for professional trading, or both. This draft grants no additional software
-rights and does not implement a commercial-use restriction. Keep the README,
-license, package metadata and terms consistent after that decision.
+The [TradeFrame Source-Available License 1.0](../LICENSE.md) governs the project
+software. It permits personal/professional own use, modifications and free
+redistribution, with restrictions on sales, paid bundles and paid hosted/managed
+access. It preserves user-content and third-party rights. The license text is
+authoritative; these draft terms do not expand or replace it. Its custom wording
+has not received an independent legal review.
 
 Bundled third-party software retains its own licenses, supplied in the packages'
 Electron/Chromium notices and `THIRD_PARTY_NOTICES.txt`. The project's own terms

@@ -1,3 +1,17 @@
+# TradeFrame 0.7.10 source license preview
+
+The owner-approved [TradeFrame Source-Available License 1.0](../LICENSE.md) permits
+personal and professional own use, modification and free redistribution. Sale,
+paid bundles and paid hosted/managed access require separate written permission.
+User journals/screenshots and third-party license terms remain separate. This
+is a custom source-available license, not an OSI-approved open-source license.
+
+Source/package metadata now points to `LICENSE.md`. Packages include it both at
+the download root and alongside the app manifest; Electron's `LICENSE` is
+preserved. Package verification rejects missing or changed project license copies.
+Earlier 0.7.9 packages do not contain this new license. No app behavior, dependency
+or saved format changes. Legal review and the other release gates remain open.
+
 # TradeFrame 0.7.9 clipboard recovery preview
 
 Auto now waits and retries when a PNG provider temporarily offers no readable
