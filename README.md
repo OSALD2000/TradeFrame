@@ -7,7 +7,7 @@ Inspired by a personal Eww/Sway journal; TradeFrame runs independently of it.
 
 ## Current preview
 
-- Opt-in Auto imports new clipboard PNGs from TradingView or other apps; Edit image crops individual draft images.
+- Opt-in Auto imports new clipboard PNGs from TradingView or other apps and retries temporary read failures; Edit image crops individual draft images.
 - Up to 20 screenshots, each with a required timeframe, optional multiline notes and capture timestamp in one setup Markdown.
 - Save/reopen, append follow-up screenshots to the same file with a Markdown
   backup and prepared crash recovery, or save a separate copy to change earlier fields/images.
@@ -67,7 +67,7 @@ See [capture behavior, limits and verification](docs/CAPTURE.md).
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.7.8`.
+The top-right toolbar shows the installed app version, for example `v0.7.9`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup

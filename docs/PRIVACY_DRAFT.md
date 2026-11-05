@@ -1,6 +1,6 @@
 # TradeFrame privacy notice — review draft
 
-**Draft dated 5 November 2026 for preview 0.7.8. Not an effective privacy notice.**
+**Draft dated 5 November 2026 for preview 0.7.9. Not an effective privacy notice.**
 The data-flow description below is based on the source code. The publisher must
 complete the identified legal/contact details, review applicability and approve
 the notice before public distribution. This source review is not an audit of

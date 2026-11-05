@@ -111,6 +111,9 @@ let captureMode: CaptureMode = 'chart';
 const images = new Map<string, Buffer>();
 let clipboardTimer: ReturnType<typeof setInterval> | null = null;
 let clipboardGeneration = 0;
+let clipboardHash: string | null = null;
+class ClipboardReadError extends Error {}
+class ClipboardImageError extends Error {}
 
 function stopAutoCapture() {
   clipboardGeneration++;
@@ -121,28 +124,41 @@ function stopAutoCapture() {
 
 async function clipboardPng(generation: number): Promise<Buffer | null> {
   const active = () => generation === clipboardGeneration && state.autoCapture;
-  if (!active()) return null;
-  if (!(await clipboard.has('image/png'))) return null;
-  if (!active()) return null;
-  const item = (await clipboard.read()).find((entry) => entry.types.includes('image/png'));
-  if (!active() || !item) return null;
-  const blob = await item.getType('image/png');
-  if (!active()) return null;
-  if (blob.size < 24 || blob.size > 32_000_000) throw new Error('Invalid clipboard image size');
-  const bytes = Buffer.from(await blob.arrayBuffer());
-  if (!active()) return null;
-  if (
-    bytes.length < 24 ||
-    bytes.length > 32_000_000 ||
-    !bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex')) ||
-    bytes.toString('ascii', 12, 16) !== 'IHDR'
-  )
-    throw new Error('Invalid clipboard PNG');
-  const width = bytes.readUInt32BE(16),
-    height = bytes.readUInt32BE(20);
-  if (!width || !height || width * height > 16_000_000)
-    throw new Error('Clipboard image exceeds 16 million pixels');
-  return bytes;
+  let stage = 'format check';
+  try {
+    if (!active()) return null;
+    if (!(await clipboard.has('image/png'))) return null;
+    if (!active()) return null;
+    stage = 'format list';
+    const item = (await clipboard.read()).find((entry) => entry.types.includes('image/png'));
+    if (!active()) return null;
+    if (!item) throw new ClipboardReadError('The advertised PNG format is not ready');
+    stage = 'PNG transfer';
+    const blob = await item.getType('image/png');
+    if (!active()) return null;
+    // Providers may advertise PNG before they can deliver its bytes.
+    if (blob.size === 0) throw new ClipboardReadError('PNG image data is not ready');
+    if (blob.size < 24 || blob.size > 32_000_000)
+      throw new ClipboardImageError('PNG size must be between 24 bytes and 32 MB');
+    stage = 'PNG bytes';
+    const bytes = Buffer.from(await blob.arrayBuffer());
+    if (!active()) return null;
+    if (
+      bytes.length < 24 ||
+      bytes.length > 32_000_000 ||
+      !bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex')) ||
+      bytes.toString('ascii', 12, 16) !== 'IHDR'
+    )
+      throw new ClipboardImageError('The copied data is not a valid PNG');
+    const width = bytes.readUInt32BE(16),
+      height = bytes.readUInt32BE(20);
+    if (!width || !height || width * height > 16_000_000)
+      throw new ClipboardImageError('PNG dimensions exceed 16 million pixels or are empty');
+    return bytes;
+  } catch (error) {
+    if (error instanceof ClipboardReadError || error instanceof ClipboardImageError) throw error;
+    throw new ClipboardReadError(`Clipboard ${stage} is temporarily unavailable`);
+  }
 }
 
 async function setAutoCapture(enabled: boolean) {
@@ -159,16 +175,37 @@ async function setAutoCapture(enabled: boolean) {
   state.error = null;
   const generation = clipboardGeneration;
   const hash = (bytes: Buffer | null) => bytes && createHash('sha256').update(bytes).digest('hex');
-  const failed = () => {
+  const failed = (error: unknown) => {
     stopAutoCapture();
-    state.error =
-      'Auto stopped. Check clipboard access, image size (32 MB / 16 MP), or remove screenshots. Enable Auto, then copy again. Existing screenshots are unchanged.';
+    const reason =
+      error instanceof ClipboardImageError
+        ? error.message
+        : 'The image could not be added; check image size or remove screenshots';
+    state.error = `Auto stopped: ${reason}. Enable Auto, then copy again. Existing screenshots are unchanged.`;
     publish();
+  };
+  const waiting = (error: ClipboardReadError) => {
+    const message = `Auto waiting: ${error.message}. Copy the chart again; Auto will retry.`;
+    if (state.error !== message) {
+      state.error = message;
+      publish();
+    }
   };
   publish();
   try {
     // Baseline the existing image; enabling Auto must not import an older clipboard.
-    let previous = hash(await clipboardPng(generation));
+    try {
+      const baseline = await clipboardPng(generation);
+      if (generation !== clipboardGeneration) return;
+      clipboardHash = hash(baseline);
+    } catch (error) {
+      if (generation !== clipboardGeneration) return;
+      if (error instanceof ClipboardReadError) waiting(error);
+      else {
+        failed(error);
+        return;
+      }
+    }
     if (generation !== clipboardGeneration) return;
     let reading = false;
     clipboardTimer = setInterval(async () => {
@@ -191,8 +228,12 @@ async function setAutoCapture(enabled: boolean) {
         )
           return;
         const current = hash(bytes);
-        if (!bytes || current === previous) {
-          previous = current;
+        if (!bytes || current === clipboardHash) {
+          clipboardHash = current;
+          if (state.error?.startsWith('Auto waiting:')) {
+            state.error = null;
+            publish();
+          }
           return;
         }
         const decoded = nativeImage.createFromBuffer(bytes);
@@ -202,7 +243,7 @@ async function setAutoCapture(enabled: boolean) {
           size.width !== bytes.readUInt32BE(16) ||
           size.height !== bytes.readUInt32BE(20)
         )
-          throw new Error('Clipboard PNG could not be decoded');
+          throw new ClipboardImageError('The copied PNG could not be decoded');
         const url = cacheImage('data:image/png;base64,' + bytes.toString('base64'));
         try {
           capturedAt = new Date().toISOString();
@@ -211,18 +252,21 @@ async function setAutoCapture(enabled: boolean) {
           images.delete(url);
           throw error;
         }
-        previous = current;
+        clipboardHash = current;
         state.error = null;
         if (state.screenshots.length >= MAX_SCREENSHOTS) stopAutoCapture();
         publish();
-      } catch {
-        if (generation === clipboardGeneration) failed();
+      } catch (error) {
+        if (generation === clipboardGeneration) {
+          if (error instanceof ClipboardReadError) waiting(error);
+          else failed(error);
+        }
       } finally {
         reading = false;
       }
     }, 500);
-  } catch {
-    if (generation === clipboardGeneration) failed();
+  } catch (error) {
+    if (generation === clipboardGeneration) failed(error);
   }
 }
 
@@ -1058,6 +1102,7 @@ function createWindow() {
     };
     savedFingerprint = '';
     images.clear();
+    clipboardHash = null;
   });
   window.loadFile(uiFile).catch((error: Error) => {
     dialog.showErrorBox('TradeFrame could not start', error.message);

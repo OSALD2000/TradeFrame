@@ -1,5 +1,23 @@
 # TradeFrame context
 
+5 November 2026, 0.7.9 recovery repair: a synthetic PNG provider reproduces the
+owner-reported sequence of a successful import followed by a stopped Auto and an
+unusable restart. Empty PNG offers, missing advertised formats and native read
+errors now keep Auto selected and retry; safe stage messages clear on recovery.
+Last-known hashes survive toggling when a baseline cannot be read, with late
+baselines guarded before changing that hash. Hard PNG/size/cache limits still
+stop Auto without changing existing images. The unreadable-baseline limit is
+explicit in [CAPTURE](CAPTURE.md). No saved format, dependency, native security
+setting or clipboard-writing behavior changes. The exact TradingView provider
+failure has not been observed; this fixes the reproduced failure/recovery path.
+Formatting, both TypeScript projects, production build and all 218 tests pass;
+the same 218 pass under Electron 45.2.2's embedded Node. Real external `wl-copy`
+on private Sway verifies first import, empty-PNG retry, restart while empty,
+unchanged-image suppression and next-image recovery without raising the journal.
+Five inspected desktop/narrow/bar views fit without horizontal overflow. Native
+read exceptions and transient format-list loss are covered by synthetic tests,
+not induced in the actual provider. No real clipboard/account/journal was used.
+
 5 November 2026, 0.7.8 clipboard preview: the owner chooses continuous opt-in
 clipboard Auto instead of driving another app or capturing its live screen.
 The native process reads only PNG image payloads through Electron 45's async

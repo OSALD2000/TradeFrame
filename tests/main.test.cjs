@@ -2088,3 +2088,130 @@ test('stopping Auto during its initial format query prevents any later clipboard
   assert.equal(intervalCount(), 0);
   assert.equal((await invoke('capture:state')).autoCapture, false);
 });
+
+test('Auto retries a temporarily empty PNG after a successful import and can restart while the provider is not ready', async () => {
+  const one = syntheticImage(10, 8, () => [10, 20, 30, 255]).png;
+  const two = syntheticImage(10, 8, () => [30, 20, 10, 255]).png;
+  const f = clipboardFixture();
+  const { invoke, tick, windows } = await boot(undefined, undefined, true, undefined, {
+    clipboard: f.clipboard,
+  });
+  await invoke('capture:auto', windows[0], true);
+  f.set(one);
+  await tick();
+  assert.equal((await invoke('capture:state')).screenshots.length, 1);
+  f.set(Buffer.alloc(0));
+  await tick();
+  let state = await invoke('capture:state');
+  assert.equal(
+    state.autoCapture,
+    true,
+    'A temporarily unavailable PNG must not permanently stop Auto',
+  );
+  assert.match(state.error, /Auto waiting/);
+  await invoke('capture:auto', windows[0], false);
+  await invoke('capture:auto', windows[0], true);
+  assert.equal(
+    (await invoke('capture:state')).autoCapture,
+    true,
+    'Unreadable old clipboard must not block restart',
+  );
+  f.set(one);
+  await tick();
+  state = await invoke('capture:state');
+  assert.equal(state.screenshots.length, 1, 'Recovery must not duplicate the last imported image');
+  assert.equal(state.error, null);
+  f.set(two);
+  await tick();
+  assert.equal((await invoke('capture:state')).screenshots.length, 2);
+  await invoke('capture:auto', windows[0], false);
+});
+
+test('Auto exposes safe read-stage diagnostics and resumes without leaking native error contents', async () => {
+  const f = clipboardFixture();
+  const nativeRead = f.clipboard.read;
+  const { invoke, tick, windows } = await boot(undefined, undefined, true, undefined, {
+    clipboard: f.clipboard,
+  });
+  await invoke('capture:auto', windows[0], true);
+  f.set(syntheticImage(10, 8, () => [10, 20, 30, 255]).png);
+  f.clipboard.read = async () => {
+    throw new Error('private-clipboard-title-secret');
+  };
+  await tick();
+  const state = await invoke('capture:state');
+  assert.equal(state.autoCapture, true);
+  assert.match(state.error, /Auto waiting.*format list/);
+  assert.doesNotMatch(state.error, /private-clipboard-title-secret/);
+  f.clipboard.read = nativeRead;
+  await tick();
+  assert.equal((await invoke('capture:state')).screenshots.length, 1);
+  assert.equal((await invoke('capture:state')).error, null);
+  await invoke('capture:auto', windows[0], false);
+});
+
+test('a canceled baseline cannot overwrite the next Auto session clipboard hash', async () => {
+  const png = syntheticImage(10, 8, () => [10, 20, 30, 255]).png;
+  const f = clipboardFixture(png);
+  const { invoke, tick, windows } = await boot(undefined, undefined, true, undefined, {
+    clipboard: f.clipboard,
+  });
+  let resolve;
+  const has = f.clipboard.has;
+  f.clipboard.has = () =>
+    new Promise((r) => {
+      resolve = r;
+    });
+  const old = invoke('capture:auto', windows[0], true);
+  await new Promise(setImmediate);
+  await invoke('capture:auto', windows[0], false);
+  f.clipboard.has = has;
+  await invoke('capture:auto', windows[0], true);
+  resolve(false);
+  await old;
+  await tick();
+  assert.equal(
+    (await invoke('capture:state')).screenshots.length,
+    0,
+    'Late baseline must not make the current image look new',
+  );
+  await invoke('capture:auto', windows[0], false);
+});
+
+test('an advertised PNG missing from one format list preserves the duplicate guard until recovery', async () => {
+  const png = syntheticImage(10, 8, () => [10, 20, 30, 255]).png;
+  const f = clipboardFixture();
+  const read = f.clipboard.read;
+  const { invoke, tick, windows } = await boot(undefined, undefined, true, undefined, {
+    clipboard: f.clipboard,
+  });
+  await invoke('capture:auto', windows[0], true);
+  f.set(png);
+  await tick();
+  f.clipboard.read = async () => [];
+  await tick();
+  assert.equal((await invoke('capture:state')).autoCapture, true);
+  f.clipboard.read = read;
+  await tick();
+  const state = await invoke('capture:state');
+  assert.equal(
+    state.screenshots.length,
+    1,
+    'A transient missing PNG offer must not duplicate an image',
+  );
+  assert.equal(state.error, null);
+  await invoke('capture:auto', windows[0], false);
+});
+
+test('an unreadable initial clipboard waits then imports its first readable image', async () => {
+  const f = clipboardFixture(Buffer.alloc(0));
+  const { invoke, tick, windows } = await boot(undefined, undefined, true, undefined, {
+    clipboard: f.clipboard,
+  });
+  await invoke('capture:auto', windows[0], true);
+  assert.equal((await invoke('capture:state')).autoCapture, true);
+  f.set(syntheticImage(10, 8, () => [10, 20, 30, 255]).png);
+  await tick();
+  assert.equal((await invoke('capture:state')).screenshots.length, 1);
+  await invoke('capture:auto', windows[0], false);
+});

@@ -40,7 +40,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.7.8`. The tag must match
+only, or when the owner pushes a version tag such as `v0.7.9`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -58,8 +58,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.7.8
-git push origin v0.7.8
+git tag v0.7.9
+git push origin v0.7.9
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.
@@ -145,6 +145,38 @@ Choose a project license before presenting the source as reusable open source.
 Resolve trusted signing/notarization and installer requirements for a stable release.
 Automatic updates, publisher account registration and public upload are not
 performed by the package script.
+
+## Clipboard recovery preview, 0.7.9
+
+The native PNG reader distinguishes temporary empty data, missing advertised
+formats and native read errors from invalid nonempty/oversized image data.
+Temporary failures leave Auto selected and retry; safe read-stage warnings clear
+on recovery. The last known hash survives a toggle with an unreadable baseline;
+canceled baselines cannot mutate a newer session. The unreadable activation
+limit is explicit in [CAPTURE](CAPTURE.md). No dependency, saved format or native
+security setting changes.
+
+Formatting, both TypeScript projects, production build and all 218 tests pass on
+host Node; the same 218 pass under Electron 45.2.2's embedded Node. Regressions
+cover empty PNG after import/restart, safe native-read diagnostics, transient
+missing formats, canceled baselines and unreadable activation. The focused review
+identified the missing-format duplicate issue; it is corrected and tested.
+
+Real Electron with external `wl-copy` on private Sway verifies initial-image
+suppression, successful first import, empty-PNG retry, restart while empty,
+no duplicate after restoring the last image, next-image import and Auto off.
+Background imports never raise the hidden journal; both draft images survive.
+Five inspected screenshots cover 1120x760, 640x480 and 680x128 normal/waiting bar
+states without horizontal overflow. Only the temporary test runtime uses the
+existing sandbox helper; the distribution and global settings are unchanged.
+Evidence is retained under ignored `release/qa-0.7.9-clipboard/`; no profile,
+real clipboard, account or journal is copied. All test processes are closed.
+
+The owner's exact TradingView provider failure has not been observed. Native
+read exceptions and inconsistent format lists are tested with the synthetic
+harness; the real provider test supplies empty PNG data. TradingView desktop/
+browser, other operating systems, installed launch and physical display testing
+remain open, as do the existing legal/publisher/signing gates.
 
 ## Clipboard preview, 0.7.8
 

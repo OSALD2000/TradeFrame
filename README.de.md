@@ -7,7 +7,7 @@ Inspiriert vom persoenlichen Eww-/Sway-Journal; TradeFrame funktioniert eigensta
 
 ## Aktuelle Vorschau
 
-- Auto uebernimmt nach Aktivierung neue PNG-Bilder aus der Zwischenablage; Edit image schneidet einzelne Entwurfsbilder zu.
+- Auto uebernimmt nach Aktivierung neue PNG-Bilder aus der Zwischenablage und wiederholt voruebergehend fehlgeschlagene Leseversuche; Edit image schneidet einzelne Entwurfsbilder zu.
 - Bis zu 20 Screenshots mit jeweils verpflichtendem Timeframe, optionalem mehrzeiligem Bildtext und Aufnahmezeit in einer Setup-Markdown-Datei.
 - Speichern/Oeffnen, weitere Bilder an dieselbe Datei anhaengen mit Markdown-Sicherung,
   mit vorbereiteter Wiederherstellung nach Prozessabbruch, oder eine eigene Kopie fuer Aenderungen an bisherigen Feldern/Bildern speichern.
@@ -69,7 +69,7 @@ Aenderungen an gespeicherten Bildern brauchen Save copy. Danach Auto ausschalten
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.8`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.9`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →

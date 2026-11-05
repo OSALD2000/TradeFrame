@@ -1,5 +1,22 @@
 # TradeFrame roadmap
 
+## Clipboard recovery repair, 0.7.9
+
+The owner reports that one TradingView image arrives, Auto stops with a generic
+error, and enabling it again immediately fails. Repair the shared native PNG
+reader and Auto retry state: temporary empty/missing/read failures keep monitoring
+selected, recovery preserves the duplicate guard, canceled baselines cannot
+change a newer session, and hard image/capacity failures still preserve the draft.
+Verify these boundaries with focused regressions and an isolated external PNG
+provider; keep actual TradingView/client and other-OS acceptance explicit.
+
+Implemented: five boundary regressions cover empty-PNG,
+read-error, format-list, canceled-baseline and unreadable-activation behavior.
+`npm run check` and all 218 embedded-runtime tests pass. An external provider on
+private Sway verifies native empty-PNG recovery/restart and duplicate suppression;
+1120x760, 640x480 and 680x128 views are inspected. No real clipboard or journal is
+used. See [verification scope](RELEASE.md#clipboard-recovery-preview-079).
+
 ## Implemented work step: clipboard Auto and per-image editing, 0.7.8
 
 Owner-approved on 5 November 2026: Auto listens for new clipboard images while

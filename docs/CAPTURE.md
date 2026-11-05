@@ -1,9 +1,9 @@
 # Capture prototype
 
-## Implemented flow, 0.7.8
+## Implemented flow, 0.7.9
 
 1. Enable **Auto** in Create setup or on the floating capture bar. Auto is off
-   at startup; enabling it ignores the image already on the clipboard.
+   at startup; enabling it ignores a readable image already on the clipboard.
 2. In TradingView, use **Copy chart image** (Linux/Windows: Ctrl+Shift+S;
    macOS: Cmd+Shift+S), or the chart camera menu. Shortcut bindings depend on the
    client; the menu is the fallback. Other apps can supply PNG images too.
@@ -35,8 +35,16 @@ Clearing/non-image clipboard content resets that comparison. The clipboard holds
 only its latest image: rapidly replaced images, including while save/edit is busy,
 can be missed. Copy one chart at a time and check the image count before the next.
 Limits are 20 images, 32 MB and 16 million pixels per imported PNG, plus existing
-128 MB per-setup and 256 MB cache bounds. Invalid/oversized data, clipboard failures
-or exhausted capacity stop Auto with a recoverable message, preserving the draft.
+128 MB per-setup and 256 MB cache bounds. Invalid nonempty/oversized data or
+exhausted capacity stop Auto with a recoverable message, preserving the draft.
+Temporarily empty PNG data, a missing advertised PNG format or native read errors
+keep Auto selected and retry every poll. The safe “Auto waiting” message identifies
+the read stage without exposing native error contents; it clears on recovery.
+The last known image hash survives Stop/Enable in memory, so a failed baseline
+and recovery do not duplicate that image. It is cleared when the journal closes.
+If the activation baseline is unreadable, Auto cannot identify its old contents:
+the first readable image is imported unless it matches the last known hash.
+Copy again and check the draft; an unreadable initial offer cannot prove its age.
 
 The source application's export determines the content: TradeFrame does not erase
 crosshairs, indicators or other rendered pixels. Verify TradingView's own export
@@ -209,6 +217,10 @@ Use synthetic images and temporary folders; do not copy personal/account content
   the trading app. Unchanged clipboard content must not add duplicates.
 - Disable Auto, close the bar, replace/open the draft and restart the app;
   confirm monitoring stops and old/late results cannot enter the next draft.
+- After one import, supply temporarily empty PNG data or an advertised PNG missing
+  from the format list. Auto must remain selected; restart it during the failure,
+  restore the previous image without duplication, then copy a different image.
+  The waiting message must clear and the next image must arrive.
 - Copy an unsupported/non-image item, then a PNG. Text contents must not enter
   the draft. Invalid/oversized images stop Auto without changing existing images.
 - Edit one image with mouse and keyboard; inspect exact exported pixels and

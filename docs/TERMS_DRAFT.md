@@ -1,6 +1,6 @@
 # TradeFrame terms of use — review draft
 
-**Draft dated 5 November 2026 for preview 0.7.8. Not effective contractual terms
+**Draft dated 5 November 2026 for preview 0.7.9. Not effective contractual terms
 or a software license.** The intended offering is a free, personally maintained
 desktop journal. Publisher identity, licensing and legal review are outstanding;
 see the [release gates](RELEASE.md#documentation-and-evidence-gate-for-the-first-public-release).

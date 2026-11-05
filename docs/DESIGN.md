@@ -27,6 +27,11 @@ and edit actions fit without horizontal overflow; source files remain intact
 through mouse/keyboard cropping and Save copy. No real user clipboard or account
 is used. Physical displays, assistive technology and other platforms remain open.
 
+The 0.7.9 recovery check inspects five additional views at the same desktop,
+minimum-width and bar sizes. The safe Auto waiting message wraps within the
+existing status area; Stop Auto remains available. Recovery restores normal
+status and hints. No layout/style change is needed; see [verification](RELEASE.md#clipboard-recovery-preview-079).
+
 ## Native verification, 5 November 2026
 
 The packaged 0.7.7 renderer was inspected in actual Electron on a private Sway

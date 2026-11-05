@@ -1,3 +1,18 @@
+# TradeFrame 0.7.9 clipboard recovery preview
+
+Auto now waits and retries when a PNG provider temporarily offers no readable
+bytes, drops an advertised format or fails a native read. It stays selected,
+including when re-enabled during the failure. Recovery clears the safe read-stage
+message and preserves duplicate suppression. A canceled activation cannot change
+the next session's baseline. Invalid nonempty/oversized images and capacity
+limits still stop Auto without changing existing screenshots.
+
+Readable existing images are skipped on activation. If that baseline is
+unreadable, its age cannot be identified; the first readable image is imported
+unless equal to the last known hash. See [capture limits](CAPTURE.md).
+No dependency, saved format or security setting changes. Actual TradingView
+client behavior and other platforms remain unverified; this is a local preview.
+
 # TradeFrame 0.7.8 clipboard Auto preview
 
 Enable Auto, then use the trading app's Copy chart image command. New PNG images
