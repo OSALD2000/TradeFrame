@@ -391,7 +391,7 @@ export function App() {
               </section>
             )}
             <footer className="journal-footer">
-              <span>Saved setups stay in your chosen folder</span>
+              <span>Each save goes to your selected destinations</span>
               <span>Drafts stay in memory until saved</span>
             </footer>
           </main>

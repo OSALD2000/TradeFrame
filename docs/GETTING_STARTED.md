@@ -5,8 +5,9 @@ first-use link. It covers the same workflow without requiring an account.
 
 ## Local journal and screenshots
 
-1. In **Connections**, choose the **Local journal** folder, or choose it on your
-   first save. Keep the Markdown note and its linked images together.
+1. In **Connections**, connect the destinations you want. **Local journal** is
+   optional too: choose its folder now or on the first save there. Check at least
+   one destination for each save. Keep saved Markdown notes and linked images together.
 2. Optionally expand **Folder structure & file name** for each folder destination. Choose
    and reorder folder/name blocks, review the example, then **Save rules**.
    These choices apply to new Trading journal notes. Existing notes retain their
@@ -68,7 +69,9 @@ Then connect from TradeFrame:
 4. Save a setup, or use **Send saved setup to OneNote** for an already saved file.
    Verify the destination result. Failed delivery never undoes the local save.
 5. Use **Open setup → Browse OneNote setups** to restore fields/images as a new
-   draft. Saving creates a new local copy; the original cloud page is preserved.
+   draft. Saving creates a copy in the selected destinations; the original cloud
+   page is preserved. Without Local journal, a private recovery copy still stays
+   on this device.
 
 Session-only sign-in indicates unavailable secure storage: start/unlock the OS
 keyring and review Connections. Switching notebooks or disconnecting cancels

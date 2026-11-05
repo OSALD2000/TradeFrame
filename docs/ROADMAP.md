@@ -65,6 +65,14 @@ follow-up data. Automated combinations/preservation checks pass, while actual
 checkbox layout, real only-OneNote/only-Obsidian use and restart/retry acceptance
 remain open. Capture quality/marker acceptance remains open independently.
 
+5 November browser verification covers desktop/minimum-width rendering and
+synthetic destination selection, draft navigation, discard focus/Escape and
+reduced motion; see [DESIGN](DESIGN.md#browser-verification-5-november-2026).
+Outdated mandatory-local/all-connected-target copy is corrected. The synthetic
+browser bridge does not establish native capture, installed launch or actual
+folder/cloud delivery. The Linux archive still needs a correctly installed
+sandbox helper; host user-namespace restrictions were not relaxed.
+
 ## Required before claiming the goal complete
 
 - Verify the final package and checksum, clean extraction, absence of private

@@ -1,5 +1,26 @@
 # TradeFrame visual direction
 
+## Browser verification, 5 November 2026
+
+The compiled 0.7.5 renderer was inspected in an isolated sandboxed Chrome at
+1120x760 and 640x480 with synthetic in-memory bridge data. Empty/chart screens,
+save choices, Connections, expanded filing controls, the guide and discard dialog
+fit without horizontal overflow. The existing black surfaces, lime action,
+single-column narrow layout and modal treatment match this reference lock.
+DOM checks cover draft-preserving navigation, destination independence, dialog
+initial/restored focus, Escape preservation and reduced-motion transitions.
+First-use/connection/footer text now consistently describes per-save choices.
+The browser reports Namespace and Seccomp-BPF sandboxing; all eleven checked
+views have no horizontal overflow or renderer exceptions. `npm run check` passes
+the build, both TypeScript projects, formatting and all 200 tests.
+
+This supersedes the earlier local-serving blocker for browser rendering only:
+the test required permission to serve compiled assets and use local sockets
+outside the execution sandbox. The bridge was synthetic. No native desktop
+capture, real connection, screen reader, DPI variation or other OS was tested;
+those acceptance items remain open. The archive's sandbox-helper ownership
+failure remains; no security setting was weakened to launch it.
+
 ## Destination selection, 0.7.5
 
 The owner requests independent checkboxes for every save target, including a

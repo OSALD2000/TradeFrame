@@ -19,8 +19,12 @@ A journal folder already inside a vault/Dropbox remains visible to those apps.
 Authentication, queue/config/document formats, capture and image processing are
 unchanged. No dependencies or source folders were added.
 
-Real rendered checkbox/keyboard workflows and external targets still need owner
-acceptance. Previous capture-marker/quality gates remain open.
+5 November follow-up aligns first-use, Connections, footer and cloud-open text
+with the optional destinations. Browser rendering at 1120x760 and 640x480 and
+synthetic checkbox, navigation, discard/Escape/focus and reduced-motion checks
+are verified; native desktop/keyboard workflows and external targets still need
+owner acceptance. The unmodified Linux archive still requires a correctly
+installed sandbox helper. Previous capture-marker/quality gates remain open.
 
 # TradeFrame 0.7.4 capture repair preview
 

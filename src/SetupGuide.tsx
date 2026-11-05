@@ -44,10 +44,11 @@ export function SetupGuide({ api }: { api: SetupGuideAPI | undefined }) {
         <h2 id="guide-first-setup">Your first setup</h2>
         <ol className="guide-steps">
           <li>
-            <strong>Choose a local journal folder</strong>
+            <strong>Choose your destinations</strong>
             <p>
-              Open Connections and choose a folder for Local journal. You can also choose it on your
-              first save. Keep the Markdown note and its images together.
+              Open Connections to connect the destinations you want. For Local journal, choose a
+              folder now or on your first save there. Every destination is optional individually;
+              choose at least one when saving. Keep saved Markdown notes and their images together.
             </p>
           </li>
           <li>
@@ -206,17 +207,18 @@ export function SetupGuide({ api }: { api: SetupGuideAPI | undefined }) {
           <li>
             <strong>Save and check the result</strong>
             <p>
-              A new save sends a copy to the selected notebook. For an already saved setup, use Send
-              saved setup to OneNote. If it fails, the local save stays available; review
-              Connections and retry.
+              Check OneNote under Save destinations to send a copy to the chosen notebook. For an
+              already saved setup, use Send saved setup to OneNote. If it fails, the saved journal
+              or private recovery copy stays available; review Connections and retry.
             </p>
           </li>
           <li>
             <strong>Open a cloud setup</strong>
             <p>
               Open setup → Browse OneNote setups lists the selected notebook's TradeFrame pages.
-              Opening restores fields and screenshots as a separate draft. Saving that draft creates
-              a new local copy; it does not overwrite the cloud page.
+              Opening restores fields and screenshots as a separate draft. Saving creates a copy in
+              your selected destinations; it does not overwrite the cloud page. Without Local
+              journal, a private recovery copy still stays on this device.
             </p>
           </li>
         </ol>

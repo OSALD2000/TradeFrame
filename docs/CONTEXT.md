@@ -1,5 +1,32 @@
 # TradeFrame context
 
+5 November 2026, renderer acceptance follow-up: an isolated sandboxed Chrome
+process can render the compiled app when local serving/socket access is allowed
+outside the execution sandbox. A synthetic in-memory `CaptureAPI` supplies forms,
+one chart and destination metadata; no actual capture, filesystem IPC or account
+is used. Desktop 1120x760 and minimum 640x480 checks cover empty/chart views,
+destination choices, Connections, expanded filing rules, the guide and discard
+confirmation. Inspected screenshots preserve the approved design without
+horizontal overflow. DOM interactions verify a typed instrument survives
+navigation, all four choices are usable, an empty selection disables save, OneNote
+alone enables it and discloses recovery storage, Keep editing receives focus,
+Escape preserves the screenshot and restores focus, and reduced motion removes
+navigation transitions. Eleven checked views have no horizontal overflow or
+renderer exceptions. `chrome://sandbox` confirms Namespace, PID/network namespace
+and Seccomp-BPF protection. `npm run check` passes formatting, both TypeScript
+projects, production build and all 200 tests. This establishes browser
+rendering/interaction only.
+
+The check exposed outdated copy implying a mandatory public local journal and
+delivery to every connected target. Connections, footer, cloud-open guidance and
+first-use instructions now match the explicit per-save selection. There is no
+command, format, permission, dependency or version change. The unmodified Linux
+archive still aborts because its setuid sandbox helper is not root-owned; a
+private headless Wayland compositor starts, but a standalone `unshare` probe
+cannot map a user namespace on this host. No helper ownership, global security setting or sandbox flag was
+changed. Installed-package/capture/native focus, OS permissions and Windows/macOS
+acceptance remain open.
+
 5 November 2026, release documentation preparation: source-reviewed
 [privacy](PRIVACY_DRAFT.md), [terms](TERMS_DRAFT.md) and
 [provider](PROVIDER_DRAFT.md) drafts now describe the 0.7.5 preview and explicitly

@@ -103,7 +103,7 @@ export function SetupForm({
         </article>
         <p className="preview-note">
           Your current draft stays until you choose a setup and confirm replacement. OneNote setups
-          open as a separate draft; saving creates a new local copy.
+          open as a separate draft; saving creates a copy in your selected destinations.
         </p>
         {(editing || choosing) && (
           <p className="preview-note" role="status">

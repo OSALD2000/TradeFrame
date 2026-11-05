@@ -50,7 +50,7 @@ export function Connections({ api, busy }: { api: ConnectionsAPI | undefined; bu
       <div className="preview-heading">
         <div>
           <h2 id="connections-title">Destinations</h2>
-          <p>Save locally, then send the same setup to every connected destination.</p>
+          <p>Connect your destinations, then choose which receive each save.</p>
         </div>
         {pending.length > 0 && (
           <button
