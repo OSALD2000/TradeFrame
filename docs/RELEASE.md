@@ -146,6 +146,52 @@ Resolve trusted signing/notarization and installer requirements for a stable rel
 Automatic updates, publisher account registration and public upload are not
 performed by the package script.
 
+## Native Linux verification, 5 November 2026
+
+The generated 0.7.7 Linux x64 package was copied to a temporary directory, with
+only that copy's sandbox helper linked to the already installed, verified
+root-owned mode-4755 `/opt/google/chrome/chrome-sandbox`. This follows Chromium's
+[existing-helper approach](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
+Electron ignored the documented environment-variable alternative on this host;
+the temporary link allowed actual native QA. The distribution and global
+permissions/security settings are unchanged. This is test setup evidence, not
+an installed-package test or a required end-user workaround.
+
+The app ran on a private headless Sway display with an empty synthetic profile,
+journal and destination folders. Native window preferences confirm sandbox and
+context isolation enabled, Node integration disabled; renderers have no
+`window.process`/`window.require`, use an isolated preload context and report
+NoNewPrivs=1 and Seccomp=2. Actual Electron/React/preload/IPC, native image
+operations, SQLite and file adapters were exercised. The test replaced only
+capture-source input with a deterministic PNG and the open-file picker result
+with a synthetic saved-note path. Production app files were unchanged.
+
+| Verified flow       | Evidence                                                                                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rendered UI         | Inspected 1120x760 and 640x480 views, 680x128 capture bar and full-screen area selector; no horizontal overflow in the checked workspace views                        |
+| Capture pipeline    | Actual letterbox-aware pointer selection and full-screen restoration; saved area 501x251 and automatic crop 1040x520 equal every expected bitmap pixel                |
+| Save/append/copy    | Historical calendar folders, Unicode/multiline notes, two distinct timeframes, exact original-byte preservation, complete Markdown backup and numbered collision copy |
+| Folder adapters     | Actual temporary Obsidian/Dropbox directories receive matching notes/images; eight completed delivery jobs persist                                                    |
+| Local reopen/filing | Real file read/validation/IPC restores both images/timeframes; changed rules create a format-6 copy without moving previous notes                                     |
+| Draft lifecycle     | Navigation retains fields; native close defaults to Keep editing; Escape preserves images and restores focus; confirmed New setup preserves saved files               |
+| Restart/concurrency | Bridge-created form, rules, folders and jobs persist; cleared draft stays empty; second launch exits successfully and focuses one existing journal window             |
+
+The capture fixture and picker override disappear on process restart. Without the
+capture fixture, the private session has no working screen portal: capture shows
+an actionable error, clears busy state and restores both windows. No real
+desktop, journal, Microsoft account, cloud client or keyring was accessed. All QA
+app/compositor processes were closed afterward. Synthetic screenshots and reports
+are retained locally under ignored `release/qa-0.7.7-native/`, outside packages.
+
+Remaining checks: unmodified archive/installed Debian launch on a supported host;
+actual portal/OS picker and repeated capture, marker/quality/DPI/stacking;
+keyboard area selection and assistive technology; interrupted append recovery in
+a real native process; unavailable-target retry and conflicts through the UI;
+OneNote and actual Obsidian/Dropbox client/account flows; Windows/macOS. The
+license, provider, legal, signing and owner publication decisions below also
+remain open. Use synthetic data and an explicitly authorized account for the next
+native/cloud checks; do not infer acceptance from this fixture run.
+
 ## OneNote cancellation repair, 0.7.7
 
 Preview 0.7.7 retains Electron 45.2.2 and the same dependency/format/native
@@ -163,7 +209,8 @@ or Microsoft account was used. See [OneNote behavior](SYNC.md#onenote).
 This does not establish native/cloud or Windows/macOS acceptance, and does not
 close the license, provider, legal or owner publication gates below. The 0.7.6
 runtime checks and installation behavior remain relevant to the unchanged engine;
-the sandbox-helper limitation remains open for actual desktop launch here.
+the unmodified archive's sandbox-helper limitation remains open. The temporary-copy
+native check above provides narrower renderer/IPC/file evidence.
 
 ## Runtime maintenance, 0.7.6
 

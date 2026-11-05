@@ -14,6 +14,14 @@ Electron 45.2.2, dependencies, native protections and saved formats are unchange
 Real cloud/native acceptance, other OS builds and legal/publication gates remain
 open; this is a local preview preparation, not a published release.
 
+Native Linux follow-up verifies the real Electron renderer/IPC, pixel-exact
+cropping, save/append/backup/reopen, temporary folder delivery, draft-close
+protection, restart persistence and single-window launch. Desktop and narrow
+views are inspected. Capture and file-picker inputs were synthetic; only a test
+copy used an existing system sandbox helper. Actual screen capture, installed
+launch, cloud accounts and other platforms remain open. See the precise
+[verification scope](RELEASE.md#native-linux-verification-5-november-2026).
+
 # TradeFrame 0.7.6 runtime maintenance preview
 
 The desktop runtime is pinned to Electron 45.2.2, including Chromium

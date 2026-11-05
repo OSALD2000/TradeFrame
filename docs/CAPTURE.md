@@ -126,6 +126,25 @@ The app keeps this title stable for matching. The rule requests a floating bar
 visible across workspaces; it is not a cross-platform always-on-top guarantee.
 The app and agent do not edit desktop configuration automatically.
 
+## Native synthetic-input verification, 5 November 2026
+
+The packaged 0.7.7 app was exercised on a private headless Sway display with a
+synthetic 1200x600 PNG returned only at `desktopCapturer.getSources`. Real Electron
+image decoding, renderer/preload/IPC, pointer mapping, native cropping and PNG
+file writes were used. Full-screen letterboxed area selection produces exactly
+the expected 501x251 bitmap; Auto chart produces exactly the expected 1040x520
+bitmap. Every exported pixel equals the independently prepared expected image.
+Two distinct timeframes and multiline notes survive save, append, local reopen
+and folder delivery; the append backup equals the complete previous Markdown.
+The selector restores the previous full-screen state, and the 680x128 bar fits.
+
+Without that input fixture, capture in the private session reports unavailable
+screen access, clears busy state and restores the journal/bar. This does not
+verify the real portal, actual source resolution, capture-bar exclusion, the
+reported marker, physical DPI or real chart accuracy. Those checks below remain
+required. Sandbox setup and input boundaries are recorded in
+[RELEASE](RELEASE.md#native-linux-verification-5-november-2026).
+
 ## Manual acceptance checks
 
 Use a synthetic chart/test window without personal or employer data.

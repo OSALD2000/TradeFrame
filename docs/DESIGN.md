@@ -1,5 +1,24 @@
 # TradeFrame visual direction
 
+## Native verification, 5 November 2026
+
+The packaged 0.7.7 renderer was inspected in actual Electron on a private Sway
+display at 1120x760 and 640x480; the 680x128 capture bar and 1600x1000 full-screen
+area selector were also inspected. Connections, expanded filing rules, save
+choices, guide and draft/close dialogs retain the approved surfaces, typography,
+lime action, responsive layout and visible default focus without horizontal
+overflow. Native close cancellation through Escape keeps two screenshots and
+restores the previous focus. Navigation preserves entered setup values. An actual
+pointer drag through the letterboxed selector saves the expected original pixels
+and restores the preceding window state.
+
+The app used an isolated synthetic profile and a temporary package copy with an
+existing system sandbox helper; capture-source and file-picker inputs were
+simulated. This extends the browser evidence to real Electron rendering, IPC and
+window lifecycle. Actual OS capture/pickers, physical display scaling, screen
+readers, other platforms and the unmodified/installed package remain open; see
+[release verification](RELEASE.md#native-linux-verification-5-november-2026).
+
 ## Browser verification, 5 November 2026
 
 The compiled 0.7.5 renderer was inspected in an isolated sandboxed Chrome at

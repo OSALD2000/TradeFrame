@@ -1,5 +1,33 @@
 # TradeFrame context
 
+5 November 2026, 0.7.7 native Linux verification: the packaged app runs on a
+private headless Sway display using a temporary copy linked to the host's existing
+root-owned mode-4755 Chrome sandbox helper. The original distribution, global
+settings and helper permissions remain unchanged. Actual Electron preferences
+confirm sandbox/context isolation enabled and renderer Node integration disabled;
+renderer processes report NoNewPrivs and Seccomp protection. See the exact
+[verification scope](RELEASE.md#native-linux-verification-5-november-2026).
+
+Real renderer/preload/IPC, native image decoding/cropping, SQLite and file adapters
+pass with synthetic data. Native full-screen area selection exports exactly the
+expected 501x251 pixels; Auto chart exports the expected 1040x520 pixels. Save,
+historical calendar filing, Unicode/multiline image notes, append with an exact
+old-file backup, collision-safe Save copy and folder delivery preserve the
+expected bytes. Opening restores two images/timeframes; changed filing rules
+produce a format-6 copy without moving old notes. Navigation preserves the draft;
+native close cancellation restores focus and keeps it; confirmed New setup clears
+only the draft. Restart retains a bridge-created form, filing rules, folders and
+eight completed delivery jobs; a second launch focuses the existing window.
+Desktop/minimum-width screenshots match [DESIGN](DESIGN.md).
+
+Only the capture-source API and native file-picker result were replaced with
+synthetic inputs for those flows; production app files were unchanged. Without
+the capture fixture, the private session lacks screen access and returns a
+recoverable error with both windows restored. No real screen capture, account,
+keyring, cloud client, installed Debian package or other OS was tested. Real
+capture quality/marker/DPI, OS pickers and the remaining release gates stay open.
+All test processes were closed. No application change or version bump is needed.
+
 5 November 2026, 0.7.7 OneNote cancellation repair: late HTTP 401 responses for
 page/resource downloads or POST/PATCH uploads could clear a newer session's
 in-memory access token. Four synthetic regressions reproduce that behavior.

@@ -73,6 +73,18 @@ browser bridge does not establish native capture, installed launch or actual
 folder/cloud delivery. The Linux archive still needs a correctly installed
 sandbox helper; host user-namespace restrictions were not relaxed.
 
+5 November native verification extends the browser check to the actual 0.7.7
+Electron renderer, preload/IPC, native cropping, SQLite and folder adapters on a
+private Linux display. Synthetic-input flows pass save/append/backup/reopen,
+historical calendar filing, collisions, multiline image notes, changed filing
+rules, draft navigation, native close cancellation and confirmed New setup.
+Desktop/minimum-width views are inspected; restart retains form/rules/folders/jobs
+and a concurrent launch focuses the existing window. Capture and picker inputs
+were simulated, and only a temporary package copy used an existing system
+sandbox helper. These results do not close actual capture, installed-package,
+real cloud/client/keyring or other-OS acceptance; see
+[the evidence and remaining checks](RELEASE.md#native-linux-verification-5-november-2026).
+
 ## Required before claiming the goal complete
 
 - Verify the final package and checksum, clean extraction, absence of private
