@@ -1,5 +1,17 @@
 # TradeFrame context
 
+5 November 2026, release documentation preparation: source-reviewed
+[privacy](PRIVACY_DRAFT.md), [terms](TERMS_DRAFT.md) and
+[provider](PROVIDER_DRAFT.md) drafts now describe the 0.7.5 preview and explicitly
+mark missing owner/legal decisions. [DATA](DATA.md) documents profile items,
+unencrypted working-copy retention, safe offline backups/restoration, updates,
+disconnect versus revocation and separate local/cloud deletion. No actual user
+profile, journal, credential or account was accessed; native restoration and
+cross-platform path acceptance remain unverified. Packaging includes these
+guides/drafts; there is no runtime, persistence, dependency or version change.
+No final license, support contact, publisher identity or legal clearance is
+claimed. Public-release gates remain open in [RELEASE](RELEASE.md).
+
 2 November 2026, 0.7.5 destination preview: the owner requires every destination,
 including Local journal, to be optional. Four controlled checkboxes send explicit
 validated flags through Save/Append. The initial choice is local-only; choices

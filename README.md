@@ -163,3 +163,8 @@ OAuth, automatic updates, broker and AI features are not implemented. No source
 license has been selected. The owner performs pushes and public release uploads.
 
 [First use, filing rules and OneNote connection](docs/GETTING_STARTED.md).
+
+[Backup, updates and data removal](docs/DATA.md) ·
+[Legal documents and outstanding publisher decisions](docs/RELEASE.md#current-evidence-and-documents-to-prepare).
+Privacy, terms and provider texts are review drafts; no final legal notice or
+project license has been approved.

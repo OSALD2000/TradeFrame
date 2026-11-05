@@ -97,6 +97,13 @@ The goal remains active until the required workflows are demonstrated. Missing
 native access, account configuration and other-OS evidence are open acceptance
 work, not completed features merely because mocked tests pass.
 
+5 November release preparation adds [privacy](PRIVACY_DRAFT.md),
+[terms](TERMS_DRAFT.md) and [provider](PROVIDER_DRAFT.md) review drafts, plus
+[backup/update/removal instructions](DATA.md). Owner identity, licensing,
+processing-role/legal review, public hosting and support/security contacts remain
+required decisions. These documents do not close the legal or native acceptance
+gates, and their presence in preview packages does not make them effective terms.
+
 ## Later, only when justified
 
 Saved-setup browsing/search, outcome/R review, two-way merges, direct Dropbox API

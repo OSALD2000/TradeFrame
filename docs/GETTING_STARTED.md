@@ -91,3 +91,7 @@ discarding the draft. File/folder selection remains an operating-system dialog.
 Notes with configured filing snapshots use format 6 and need TradeFrame 0.7.0 or later.
 Old notes remain readable and are not rewritten merely by opening them. More
 details: [JOURNAL](JOURNAL.md), [filing decision](adr/0007-snapshot-filing-rules-for-new-setups.md).
+
+Before updating or uninstalling, see [backup, restoration and data removal](DATA.md).
+Unchecking Local journal still retains private working copies; uninstalling or
+disconnecting does not remove all local/cloud copies.

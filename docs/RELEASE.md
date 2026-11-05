@@ -155,24 +155,29 @@ the legal-document, account-eligibility or independent-account checks below.
 
 ### Current evidence and documents to prepare
 
-The source review found no project `LICENSE`, privacy statement, terms of use,
-provider notice or `SECURITY.md`. Existing public technical guides and the package
-notice generation are a useful starting point, not substitutes for these texts.
+The 5 November 2026 preparation step adds app-specific review drafts for privacy,
+terms and provider information, plus a factual data-maintenance guide. They are
+bundled as clearly labeled drafts so relative links also work in new packages;
+they are not effective legal notices or approved Microsoft legal URLs. No project
+`LICENSE` or `SECURITY.md` has been adopted. No publisher identity, address,
+legal basis or support promise has been invented. The original legal research
+date above is unchanged; the new drafts identify their own checked sources/date.
 
 | Document or evidence                        | Purpose and release treatment                                                                                                                         | Current state                                                                                                                      |
 | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Project `LICENSE`                           | Define allowed use, modification and redistribution for source and binaries; keep the README and package metadata consistent                          | Owner decision required; no license selected                                                                                       |
 | Third-party notices                         | Preserve each bundled component's copyright/license obligations independently of TradeFrame's own license                                             | Package script includes Electron/Chromium notices and React/React DOM/Scheduler licenses; full dependency and asset review remains |
-| Public privacy statement                    | Describe actual local storage, optional services, support/hosting data, recipients, retention and rights; make it reachable before connecting OneNote | Not written or published                                                                                                           |
-| Public terms of use                         | Explain provider, journal-only purpose, permitted use, third-party connections, support and legally valid liability provisions                        | Not written; coordinate with the selected license                                                                                  |
-| Provider information / Impressum assessment | Determine applicable German identification duties and publish the necessary reachable information                                                     | Applicability and approved publisher details unresolved                                                                            |
+| Public privacy statement                    | Describe actual local storage, optional services, support/hosting data, recipients, retention and rights; make it reachable before connecting OneNote | [Review draft](PRIVACY_DRAFT.md); identity, processing roles/grounds, support retention, transfers and publication unresolved      |
+| Public terms of use                         | Explain provider, journal-only purpose, permitted use, third-party connections, support and legally valid liability provisions                        | [Review draft](TERMS_DRAFT.md); license, provider, contractual model and liability review unresolved                               |
+| Provider information / Impressum assessment | Determine applicable German identification duties and publish the necessary reachable information                                                     | [Preparation draft](PROVIDER_DRAFT.md); applicability, approved details and public URLs unresolved                                 |
 | Security policy / contact                   | Provide a private vulnerability-reporting route, supported-version policy and incident handling                                                       | Recommended project document; Microsoft API security obligations also need a process                                               |
-| User and release guides                     | Installation/uninstall/update, backup/export, compatibility, known limitations and supported OS evidence                                              | README DE/EN, GETTING_STARTED, JOURNAL, SYNC and release notes exist; final package acceptance remains open                        |
+| User and release guides                     | Installation/uninstall/update, backup/export, compatibility, known limitations and supported OS evidence                                              | [Backup/update/removal guide](DATA.md) added to existing guides; native restoration and final package acceptance remain open       |
 
-Suggested filenames such as `LICENSE`, `PRIVACY.md`, `TERMS.md` and `SECURITY.md`
-above are a proposed document set, not files created or terms accepted by this
-research. Do not invent a legal name, postal address, email, retention period,
-hosting URL or promised support lifetime. The owner must supply/approve them.
+`PRIVACY_DRAFT.md`, `TERMS_DRAFT.md` and `PROVIDER_DRAFT.md` under `docs/` are the
+authoritative preparation texts, not parallel final policies. `LICENSE` and
+`SECURITY.md` remain proposed files. The owner must supply/approve the missing
+identity, contact, licensing and operating decisions before the drafts can be
+finalized. Their **Pending** sections deliberately keep these decisions open.
 
 ### License decision: commercial restrictions are not Apache 2.0
 
@@ -387,7 +392,7 @@ research itself does not complete them.
       no private plans, account credentials, real journals or screenshots are uploaded.
 
 Recommended next decisions: first settle the license restriction, then the
-publisher/contact and legal-hosting details, then draft the actual privacy and
-terms texts from the verified data flows. A legal professional should review the
+publisher/contact and legal-hosting details, then complete/review the linked
+privacy, terms and provider drafts against the actual publisher operations. A legal professional should review the
 nonstandard licensing/usage boundary and unresolved German/EU applicability
 before the owner treats this as a legally cleared public offer.

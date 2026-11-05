@@ -176,3 +176,8 @@ Eine Quellcode-Lizenz ist noch nicht gewaehlt. Push und oeffentliche Release-Upl
 fuehrt der Nutzer selbst aus.
 
 [Ersteinrichtung, Ablageregeln und OneNote-Verbindung](docs/GETTING_STARTED.md).
+
+[Backup, Updates und Daten entfernen](docs/DATA.md) ·
+[Rechtliche Dokumente und offene Anbieterentscheidungen](docs/RELEASE.md#current-evidence-and-documents-to-prepare).
+Datenschutz, Nutzungsbedingungen und Anbieterangaben liegen als Pruefentwuerfe vor;
+endgueltige Rechtstexte und Projektlizenz sind noch nicht freigegeben.
