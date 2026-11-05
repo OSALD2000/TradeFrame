@@ -15,6 +15,13 @@ npm ci
 npm run package
 ```
 
+The project postinstall hook explicitly invokes the installed, pinned
+`install-electron` command. The Electron npm package alone does not provision its
+runtime executable in the clean installation tested here. Initial provisioning
+needs the official runtime download or its verified cache. If using
+`npm ci --ignore-scripts`, run `npm exec -- install-electron` explicitly before
+starting/packaging. No global npm script policy or OS security setting is changed.
+
 This runs the build and tests, bundles the installed, pinned Electron runtime,
 writes a native package and SHA-256 checksum in `release/`, then executes that
 package's embedded Node runtime to check its platform/architecture, compiled code
@@ -33,7 +40,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.6.3`. The tag must match
+only, or when the owner pushes a version tag such as `v0.7.6`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -51,8 +58,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.6.3
-git push origin v0.6.3
+git tag v0.7.6
+git push origin v0.7.6
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.
@@ -139,14 +146,69 @@ Resolve trusted signing/notarization and installer requirements for a stable rel
 Automatic updates, publisher account registration and public upload are not
 performed by the package script.
 
+## Runtime maintenance, 0.7.6
+
+Preview 0.7.6 pins the existing Electron 45 runtime to **45.2.2**, with Chromium
+**156.0.8078.80** and Node **24.22.2**. The
+[upstream release](https://releases.electronjs.org/release/v45.2.2) includes a
+Wayland hidden-parent crash fix and newer engine builds; preceding
+[45.2.1](https://releases.electronjs.org/release/v45.2.1) and
+[45.2.0](https://releases.electronjs.org/release/v45.2.0) include upstream engine
+fixes. This follows Electron's advice to
+[keep the bundled framework current](https://www.electronjs.org/docs/latest/tutorial/security).
+It is not an upgrade to Electron 46 or an app API migration.
+
+Lock changes are limited to the app version/root Electron pin, the root install
+script marker and Electron's version/URL/integrity entry. Its declared
+dependencies and all other resolved dependencies are
+unchanged. Existing source/native window protections, journal/config/credential
+formats and capture/delivery code are unchanged. No private data is involved in
+the upgrade or its tests. Back up before installing and retain the normal
+profile as described in [DATA](DATA.md); actual keyring/token acceptance after
+this runtime change still needs the selected OS/account.
+
+The official Linux artifact was first downloaded into an isolated candidate
+directory using the installer's bundled checksums. It reports the expected
+Electron/Chromium/Node versions and opens the form store in in-memory SQLite.
+Formatting, both TypeScript projects, production build and all 202 tests pass
+on Linux after the update. The full 202-test suite also passes in Electron's
+embedded Node mode. Registry npm audit reports zero known vulnerabilities.
+
+The packaged-runtime verifier now compares the executable's actual
+`process.versions.electron` with `package.json`, rather than trusting only the
+runtime's text version file and platform/architecture. A synthetic package with
+a copied plain Node executable passed the previous verifier; the focused
+regression now requires rejection with the version-mismatch error. No window,
+account, real journal or existing profile is opened by that check.
+
+A clean temporary `npm ci` initially succeeded without creating an Electron
+executable. The explicit root postinstall fixes that provisioning gap and keeps
+the current CI commands usable from a clean checkout. A repeated clean install
+now runs the pinned installer and produces the expected 45.2.2 executable.
+The full clean-source `npm ci` → `npm run check` chain also passes all 202 tests
+on Linux. This uses the verified runtime cache, not a second independent download.
+
+These results do not prove native renderer/window/capture/permission/keyring
+behavior. Re-run desktop/narrow, real capture, focus/full-screen, existing
+encrypted-sign-in retention and selected-account flows on every claimed OS.
+Windows/macOS artifacts and native acceptance remain open. Linux archive
+sandbox-helper ownership requirements are unchanged; no global security setting
+or app sandbox was weakened. The source license, publisher/legal documents and
+owner publication gates also remain open. A clean npm audit is not a full
+Chromium/Node/Electron security clearance.
+A fresh 0.7.6 archive launch on an isolated headless Wayland display aborts at the
+sandbox-helper ownership/mode check. That result does not establish an installed
+Debian-package launch or UI acceptance; those remain required on the target OS.
+
 ## Dependency review, 5 November 2026
 
 The npm registry audit of the committed 0.7.5 lockfile identified one affected
 direct development dependency: Vite 6.4.2, with seven advisory entries and an
 aggregate high severity. Vite is now pinned to **6.4.5**, the same-series patch
-recommended by that audit. Only the root Vite pin and Vite's version, registry
-URL and integrity entry changed; all other lock entries, including Electron
-45.0.0, remain unchanged. No dependency or install-time script was added.
+recommended by that audit. During that Vite-only step, only the root Vite pin and
+Vite's version, registry URL and integrity entry changed; other lock entries,
+including Electron 45.0.0, stayed unchanged. The later runtime update is documented
+above. No dependency or install-time script was added by the Vite patch.
 
 A focused regression reproduces
 [GHSA-rq7h-c2jc-7f22](https://github.com/vitejs/vite/security/advisories/GHSA-rq7h-c2jc-7f22)
@@ -172,12 +234,10 @@ and passes the copied security regression; it does not exercise Electron's nativ
 download/install script. The four production renderer files remain byte-identical
 to the previous build. This patch does not establish fresh native/other-OS QA.
 
-The separate Electron runtime review remains open. Upstream
-[45.2.2](https://releases.electronjs.org/release/v45.2.2) includes newer Chromium/Node
-and a Wayland hidden-parent crash fix. It was not installed or validated by this
-Vite patch; assess it before public distribution rather than treating a clean npm
-audit as Electron security clearance. Private vulnerability contact, supported
-versions, incident process and the other release gates below remain unresolved.
+The subsequent [runtime maintenance step](#runtime-maintenance-076) updates and
+checks Electron separately. Private vulnerability contact, supported versions,
+incident process, full runtime security assessment and the other release gates
+below remain unresolved.
 
 ## Release documentation and legal readiness
 

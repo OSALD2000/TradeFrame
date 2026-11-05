@@ -105,6 +105,12 @@ The goal remains active until the required workflows are demonstrated. Missing
 native access, account configuration and other-OS evidence are open acceptance
 work, not completed features merely because mocked tests pass.
 
+0.7.6 updates the existing Electron 45 runtime to 45.2.2 and verifies the actual
+packaged version against the pin. A wrong-runtime regression and all 202 tests
+pass on Linux, including the full suite under the updated embedded Node. This
+does not close native capture/window/keyring/credential or other-OS acceptance.
+See [runtime verification](RELEASE.md#runtime-maintenance-076).
+
 5 November release preparation adds [privacy](PRIVACY_DRAFT.md),
 [terms](TERMS_DRAFT.md) and [provider](PROVIDER_DRAFT.md) review drafts, plus
 [backup/update/removal instructions](DATA.md). Owner identity, licensing,

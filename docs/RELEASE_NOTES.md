@@ -1,3 +1,27 @@
+# TradeFrame 0.7.6 runtime maintenance preview
+
+The desktop runtime is pinned to Electron 45.2.2, including Chromium
+156.0.8078.80 and Node 24.22.2. The same-major update includes upstream engine
+fixes and a Wayland hidden-parent crash fix. No app API, journal/credential
+format, capture algorithm or destination behavior is changed by TradeFrame.
+Back up before updating; keep the normal app profile and existing Microsoft ID.
+
+Package verification now checks the executable's actual Electron version against
+the source pin. A regression proves that a plain Node executable cannot pass as
+the packaged Electron runtime. Both the normal Linux checks and all 202 tests
+under the updated embedded Node runtime pass with synthetic data; no account or
+real journal was accessed. Registry npm audit reports no known vulnerabilities.
+Clean source installs now explicitly provision the pinned executable through the
+project postinstall; the npm package alone previously left it absent. Existing
+scripts-disabled installs can run `npm exec -- install-electron` explicitly.
+A clean temporary source install followed by the full check passes all 202 tests.
+
+The runtime's Node-only tests are not native desktop acceptance. Capture,
+window/focus behavior, OS permission/keyring and existing credential acceptance,
+plus Windows/macOS packages, still require testing on those systems. The Linux
+archive needs a correctly installed sandbox helper as before. Nothing was
+installed system-wide or published; publisher/license/legal gates remain open.
+
 # TradeFrame 0.7.5 destination selection preview
 
 Every destination now has its own checkbox: Local journal, Obsidian, Dropbox and

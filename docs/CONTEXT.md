@@ -1,5 +1,32 @@
 # TradeFrame context
 
+5 November 2026, 0.7.6 runtime maintenance preview: Electron is pinned to 45.2.2
+(Chromium 156.0.8078.80, Node 24.22.2), after an isolated candidate download and
+embedded SQLite/test checks. The npm package and official Linux artifact are
+integrity-checked by the existing installer. Lock changes affect Electron's
+entry, the root pin/app version and the root install-script marker; no dependency, app API, capture algorithm,
+journal/config/credential format or migration is added. Sandboxed/context-isolated
+windows and disabled renderer Node integration remain explicit.
+
+The package smoke check now asserts `process.versions.electron` equals the exact
+manifest pin. A synthetic package using plain Node passed the old verifier and
+is rejected by the new check. Formatting, both TypeScript projects, production
+build and all 202 tests pass; all 202 also pass under the actual embedded Node
+runtime on Linux. The npm registry audit reports zero known vulnerabilities.
+No user profile, journal or account was accessed. These are Node-only/native-API
+double checks, not actual desktop/capture/keyring acceptance. Windows/macOS and
+real credential/permission/desktop behavior remain open; see
+[runtime verification](RELEASE.md#runtime-maintenance-076).
+Clean `npm ci` initially omitted the runtime executable; the root postinstall now
+explicitly invokes the existing pinned `install-electron` command. A repeated
+clean temporary installation provisions and runs Electron 45.2.2. No global npm
+policy or OS security setting changes.
+The complete clean-source `npm ci` → `npm run check` chain also passes all 202
+tests. A fresh native launch of the unmodified 0.7.6 archive on a private
+headless Wayland display still aborts because the sandbox helper lacks required
+root ownership/mode. No user's desktop or profile was used and no protection
+was disabled; an installed/native desktop check remains required.
+
 5 November 2026, dependency security preparation: npm audit identified Vite
 6.4.2 as the one affected direct dependency (seven advisory entries, aggregate
 high severity). The exact development pin is now 6.4.5. Only Vite's root/package

@@ -32,7 +32,7 @@ Changing/resetting a connection does not move or delete previously saved files.
 
 ## OneNote
 
-The packaged 0.7.2 preview includes TradeFrame's public application ID. Start with
+Packaged previews from 0.7.2 include TradeFrame's public application ID. Start with
 **Connect OneNote** and the sign-in steps below; no app registration or ID entry
 is needed. The Microsoft application ID controls remain available as advanced
 settings. Keep an existing custom ID to preserve its connection across updates.

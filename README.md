@@ -42,6 +42,10 @@ npm run check
 npm start
 ```
 
+`npm ci` also provisions the pinned Electron runtime through the project's
+postinstall hook. If you deliberately disable install scripts, run
+`npm exec -- install-electron` explicitly before starting or packaging the app.
+
 `npm run dev` previews the renderer in a browser. `npm run package` runs all checks
 and packages the installed Electron runtime into ignored `release/` output. No
 Node/npm is needed on the computer running an extracted package. Linux packaging
@@ -54,7 +58,7 @@ and [code style and formatting](docs/CODE_STYLE.md).
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.6.3`.
+The top-right toolbar shows the installed app version, for example `v0.7.6`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup

@@ -69,3 +69,61 @@ for (const platform of ['linux', 'win32', 'darwin'])
       if (platform === 'win32') await fs.stat(path.join(root, 'TradeFrame_wer.dll'));
     }
   });
+
+test('package verification rejects a Node executable masquerading as the pinned Electron runtime', async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tradeframe-wrong-runtime-'));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const directory = path.join(
+    root,
+    'release',
+    `TradeFrame-0.0.0-${process.platform}-${process.arch}`,
+  );
+  const application =
+    process.platform === 'darwin'
+      ? path.join(directory, 'TradeFrame.app', 'Contents', 'Resources', 'app')
+      : path.join(directory, 'resources', 'app');
+  const executable =
+    process.platform === 'darwin'
+      ? path.join(directory, 'TradeFrame.app', 'Contents', 'MacOS', 'Electron')
+      : path.join(directory, process.platform === 'win32' ? 'TradeFrame.exe' : 'tradeframe');
+  await fs.mkdir(path.dirname(executable), { recursive: true });
+  await fs.copyFile(process.execPath, executable);
+  await fs.chmod(executable, 0o755);
+  await fs.mkdir(path.join(application, 'dist'), { recursive: true });
+  await fs.writeFile(path.join(application, 'dist', 'index.html'), 'Synthetic renderer');
+  await fs.cp(
+    path.resolve(__dirname, '../dist-electron'),
+    path.join(application, 'dist-electron'),
+    {
+      recursive: true,
+    },
+  );
+  await fs.writeFile(
+    path.join(application, 'dist-electron', 'integrations.json'),
+    JSON.stringify({ microsoftClientId: '' }),
+  );
+  await fs.mkdir(path.join(root, 'scripts'));
+  const verifier = path.join(root, 'scripts', 'verify-package.mjs');
+  await fs.copyFile(path.resolve(__dirname, '../scripts/verify-package.mjs'), verifier);
+  await fs.writeFile(
+    path.join(root, 'package.json'),
+    JSON.stringify({
+      version: '0.0.0',
+      devDependencies: { electron: '99.0.0' },
+    }),
+  );
+  const result = await new Promise((resolve, reject) => {
+    const child = require('node:child_process').spawn(process.execPath, [verifier], {
+      env: { ...process.env, TRADEFRAME_MICROSOFT_CLIENT_ID: '' },
+    });
+    let stderr = '';
+    child.stdout.resume();
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (status) => resolve({ status, stderr }));
+  });
+  assert.notEqual(result.status, 0, 'A plain Node runtime must not pass Electron verification');
+  assert.match(result.stderr, /Packaged Electron version does not match package.json/);
+});

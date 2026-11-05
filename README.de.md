@@ -43,6 +43,10 @@ npm run check
 npm start
 ```
 
+`npm ci` installiert ueber den Postinstall-Schritt des Projekts auch die fest
+versionierte Electron-Laufzeit. Bei bewusst deaktivierten Installationsskripten
+vor App-Start oder Paketbau ausdruecklich `npm exec -- install-electron` ausfuehren.
+
 `npm run dev` zeigt die Oberflaeche im Browser. `npm run package` prueft alles und
 packt die installierte Electron-Runtime in den ignorierten Ordner `release/`.
 Auf dem Zielrechner sind Node/npm nicht erforderlich. Fuer das Debian-Paket
@@ -55,7 +59,7 @@ und [Codestil und Formatierung](docs/CODE_STYLE.md).
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.6.3`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.6`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →

@@ -25,6 +25,7 @@ const script = [
   '(async () => {',
   "const assert = require('node:assert/strict'); const path = require('node:path');",
   `assert.equal(process.platform, ${JSON.stringify(process.platform)}); assert.equal(process.arch, ${JSON.stringify(process.arch)});`,
+  `assert.equal(process.versions.electron, ${JSON.stringify(manifest.devDependencies.electron)}, 'Packaged Electron version does not match package.json');`,
   `const { SchemaStore } = require(path.join(${JSON.stringify(application)}, 'dist-electron', 'schema-store.js'));`,
   "const store = new SchemaStore(':memory:'); assert.ok(store.list().some(form => form.id === 'journal')); store.close();",
   `assert.equal(typeof require(path.join(${JSON.stringify(application)}, 'dist-electron', 'journal.js')).writeSetup, 'function');`,
