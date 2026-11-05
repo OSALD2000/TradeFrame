@@ -83,6 +83,14 @@ No account password, access token, refresh token or private device code is sent
 to the renderer. **Disconnect** cancels pending OneNote deliveries and removes
 the local credentials; it does not delete cloud pages or revoke consent at Microsoft.
 
+Since 0.7.7, late page/image-download and upload responses from an earlier
+session are rejected before handling authentication errors, so an old HTTP 401
+cannot clear the current session's access token. Cancellation remains checked
+after asynchronous response handling too. Active-session authentication failures
+are still reported normally. Cancellation does not undo writes already accepted
+by Microsoft or delete existing pages; account/cloud acceptance remains separate
+from the synthetic regression checks.
+
 The optional advanced Microsoft application settings remain available after configuration and after
 failed sign-in. **Save application ID** replaces a custom ID; **Remove custom ID**
 removes it and disconnects the local OneNote session, including encrypted saved

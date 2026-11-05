@@ -643,6 +643,7 @@ export class OneNoteClient {
         signal: AbortSignal.timeout(60_000),
         redirect: 'error',
       });
+      if (generation !== this.generation) throw new OneNoteError('OneNote was disconnected.');
       await this.checkResponse(
         response,
         create ? 'create the setup page' : 'add the remaining screenshots',

@@ -105,6 +105,11 @@ The goal remains active until the required workflows are demonstrated. Missing
 native access, account configuration and other-OS evidence are open acceptance
 work, not completed features merely because mocked tests pass.
 
+0.7.7 fixes reproduced stale-response token invalidation in OneNote downloads
+and uploads, preserving the existing cancellation guards. All 208 tests pass
+on Linux and in the embedded Node runtime; actual account/native/platform
+acceptance remains open. See [SYNC](SYNC.md#onenote).
+
 0.7.6 updates the existing Electron 45 runtime to 45.2.2 and verifies the actual
 packaged version against the pin. A wrong-runtime regression and all 202 tests
 pass on Linux, including the full suite under the updated embedded Node. This

@@ -40,7 +40,7 @@ React is already bundled by Vite; Electron is copied from the installed runtime.
 This follows Electron's documented [manual packaging](https://www.electronjs.org/docs/latest/tutorial/application-distribution).
 
 The **Download packages** GitHub Actions workflow can run manually for artifacts
-only, or when the owner pushes a version tag such as `v0.7.6`. The tag must match
+only, or when the owner pushes a version tag such as `v0.7.7`. The tag must match
 `package.json`. Four native jobs build Windows x64, Linux x64, macOS Apple Silicon
 arm64 and macOS Intel x64. Every job runs the tests and packaged-runtime check.
 The macOS bundle and helper identifiers are branded before ad-hoc signing; package
@@ -58,8 +58,8 @@ After reviewing the local result, the owner can push the prepared commit and tag
 
 ```sh
 git push origin main
-git tag v0.7.6
-git push origin v0.7.6
+git tag v0.7.7
+git push origin v0.7.7
 ```
 
 Review **Actions → Download packages**, then the combined draft under **Releases**.
@@ -145,6 +145,25 @@ Choose a project license before presenting the source as reusable open source.
 Resolve trusted signing/notarization and installer requirements for a stable release.
 Automatic updates, publisher account registration and public upload are not
 performed by the package script.
+
+## OneNote cancellation repair, 0.7.7
+
+Preview 0.7.7 retains Electron 45.2.2 and the same dependency/format/native
+protection contracts. Session-generation guards now run before authentication
+error handling for the shared page/resource reader and upload completion.
+Existing post-await cancellation checks remain. This prevents a late HTTP 401
+from an earlier session from clearing the current in-memory access token.
+
+Four synthetic regressions reproduce the old failure; two additional scenarios
+cover account changes during successful response checks. Formatting, both
+TypeScript projects, production build and all 208 tests pass on Linux. The same
+208 tests also pass under the embedded Node runtime. No real journal, credential
+or Microsoft account was used. See [OneNote behavior](SYNC.md#onenote).
+
+This does not establish native/cloud or Windows/macOS acceptance, and does not
+close the license, provider, legal or owner publication gates below. The 0.7.6
+runtime checks and installation behavior remain relevant to the unchanged engine;
+the sandbox-helper limitation remains open for actual desktop launch here.
 
 ## Runtime maintenance, 0.7.6
 

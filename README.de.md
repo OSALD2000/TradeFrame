@@ -59,7 +59,7 @@ und [Codestil und Formatierung](docs/CODE_STYLE.md).
 
 ## Journal bedienen
 
-Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.6`.
+Oben rechts in der Kopfleiste steht die installierte App-Version, etwa `v0.7.7`.
 
 Die Seitenleiste trennt **Create setup**, **Open setup** und **Connections**.
 Beim Wechsel bleibt dein Entwurf im Speicher. Der Ablauf lautet Aufnehmen →

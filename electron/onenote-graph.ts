@@ -99,6 +99,8 @@ export class OneNoteGraph {
   }
 
   private async bytes(response: Response, limit: number, generation: number) {
+    if (generation !== this.session.generation())
+      throw new OneNoteError('OneNote was disconnected.');
     await this.checkResponse(response, 'download setup content');
     const reader = response.body?.getReader();
     if (!reader) throw new OneNoteError('Microsoft returned no setup content.');

@@ -1,5 +1,17 @@
 # TradeFrame context
 
+5 November 2026, 0.7.7 OneNote cancellation repair: late HTTP 401 responses for
+page/resource downloads or POST/PATCH uploads could clear a newer session's
+in-memory access token. Four synthetic regressions reproduce that behavior.
+The existing session-generation guard now runs before response error handling
+in the shared download reader and upload completion. Existing post-await checks
+remain; two additional tests preserve cancellation during successful response
+checking. No app API, dependency, credential/config/document format or migration
+changes. Formatting, both TypeScript projects, build and all 208 tests pass on
+Linux; all 208 also pass under Electron 45.2.2's embedded Node. No real account,
+journal or credential was accessed. Native/cloud/platform acceptance remains
+open. User-visible behavior: [SYNC](SYNC.md#onenote).
+
 5 November 2026, 0.7.6 runtime maintenance preview: Electron is pinned to 45.2.2
 (Chromium 156.0.8078.80, Node 24.22.2), after an isolated candidate download and
 embedded SQLite/test checks. The npm package and official Linux artifact are

@@ -429,3 +429,53 @@ test('disconnecting during a cloud image download cannot restore a stale account
   await assert.rejects(pending, /disconnected/);
   assert.equal((await f.client.getState()).notebook, null);
 });
+
+for (const stage of ['POST', 'PATCH'])
+  test(`a late upload ${stage} rejection cannot invalidate the new account token`, async (t) => {
+    const f = await fixture(t, stage === 'PATCH' ? 6 : 1);
+    const request = f.client.request;
+    let finish;
+    let started;
+    const waiting = new Promise((resolve) => {
+      started = resolve;
+    });
+    f.client.request = (url, options) => {
+      if (options.method !== stage) return request(url, options);
+      return new Promise((resolve) => {
+        finish = resolve;
+        started();
+      });
+    };
+    const pending = f.client.deliver(f.file, 'TradeFrame', randomUUID(), 'book');
+    await waiting;
+    f.client.generation++;
+    f.client.accessToken = 'new-account-token';
+    finish(json({ error: { code: 'InvalidAuthenticationToken' } }, 401));
+    await assert.rejects(pending, (error) => {
+      assert.equal(f.client.accessToken, 'new-account-token');
+      assert.ok(error instanceof OneNoteError);
+      assert.equal(error.message, 'OneNote was disconnected.');
+      return true;
+    });
+    assert.equal(f.state.creates, stage === 'POST' ? 0 : 1);
+  });
+
+for (const stage of ['create the setup page', 'add the remaining screenshots'])
+  test(`account changes during checking ${stage} still cancel the completed upload`, async (t) => {
+    const f = await fixture(t, stage === 'create the setup page' ? 1 : 6);
+    const check = f.client.checkResponse.bind(f.client);
+    f.client.checkResponse = (response, action) => {
+      const result = check(response, action);
+      if (action === stage)
+        queueMicrotask(() => {
+          f.client.generation++;
+          f.client.accessToken = 'new-account-token';
+        });
+      return result;
+    };
+    await assert.rejects(f.client.deliver(f.file, 'TradeFrame', randomUUID(), 'book'), {
+      name: 'Error',
+      message: 'OneNote was disconnected.',
+    });
+    assert.equal(f.client.accessToken, 'new-account-token');
+  });

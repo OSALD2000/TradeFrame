@@ -1,3 +1,19 @@
+# TradeFrame 0.7.7 OneNote cancellation preview
+
+Late HTTP 401 responses from an earlier OneNote session no longer clear a newer
+session's in-memory access token. The correction covers page/image downloads,
+page creation and follow-up upload batches. Existing cancellation checks after
+asynchronous work remain in place; current-session errors still work normally.
+It does not revoke consent, delete cloud pages or undo an already accepted write.
+
+Four failing synthetic regressions reproduce the old token loss; two more cover
+cancellation while successful upload responses are checked. Formatting,
+TypeScript/build and all 208 tests pass on Linux, including all 208 under the
+embedded Node runtime. No real account, journal or credential was accessed.
+Electron 45.2.2, dependencies, native protections and saved formats are unchanged.
+Real cloud/native acceptance, other OS builds and legal/publication gates remain
+open; this is a local preview preparation, not a published release.
+
 # TradeFrame 0.7.6 runtime maintenance preview
 
 The desktop runtime is pinned to Electron 45.2.2, including Chromium

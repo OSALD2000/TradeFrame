@@ -94,6 +94,42 @@ test('a stale collection response is rejected before reading errors or invalidat
   assert.equal(client.accessToken, 'synthetic');
 });
 
+for (const operation of ['content', 'resource'])
+  test(`a stale ${operation} download cannot invalidate the new account token`, async () => {
+    let finish;
+    let errorReads = 0;
+    const response = new Promise((resolve) => {
+      finish = resolve;
+    });
+    const client = new OneNoteClient('', {}, '', () => response);
+    const pending =
+      operation === 'content'
+        ? client.content('page', {}, 0)
+        : client.resource(
+            'https://graph.microsoft.com/v1.0/me/onenote/resources/asset/content',
+            {},
+            0,
+            100,
+          );
+    client.generation++;
+    client.accessToken = 'new-account-token';
+    finish({
+      ok: false,
+      status: 401,
+      json: async () => {
+        errorReads++;
+        return { error: { code: 'InvalidAuthenticationToken' } };
+      },
+    });
+    await assert.rejects(pending, (error) => {
+      assert.equal(client.accessToken, 'new-account-token');
+      assert.equal(errorReads, 0);
+      assert.ok(error instanceof OneNoteError);
+      assert.equal(error.message, 'OneNote was disconnected.');
+      return true;
+    });
+  });
+
 test('a collection changing accounts while reading JSON cannot publish its rows', async () => {
   const client = new OneNoteClient('', {}, '', async () => ({
     ok: true,

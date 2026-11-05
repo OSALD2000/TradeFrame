@@ -58,7 +58,7 @@ and [code style and formatting](docs/CODE_STYLE.md).
 
 ## Journal workflow
 
-The top-right toolbar shows the installed app version, for example `v0.7.6`.
+The top-right toolbar shows the installed app version, for example `v0.7.7`.
 
 Use the sidebar to switch between **Create setup**, **Open setup** and
 **Connections**. Your draft stays in memory when switching pages. Create setup
