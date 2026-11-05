@@ -15,9 +15,15 @@ and restores the preceding window state.
 The app used an isolated synthetic profile and a temporary package copy with an
 existing system sandbox helper; capture-source and file-picker inputs were
 simulated. This extends the browser evidence to real Electron rendering, IPC and
-window lifecycle. Actual OS capture/pickers, physical display scaling, screen
+window lifecycle. Interactive OS pickers, physical display scaling, screen
 readers, other platforms and the unmodified/installed package remain open; see
 [release verification](RELEASE.md#native-linux-verification-5-november-2026).
+
+The subsequent [real portal check](CAPTURE.md#native-portal-verification-5-november-2026)
+also verifies pointer/keyboard selection, Escape from a Connections-initiated
+capture, full-screen restoration and journal/bar restoration after source denial
+on the private 1x output. This does not establish assistive-technology or physical
+display acceptance.
 
 ## Browser verification, 5 November 2026
 

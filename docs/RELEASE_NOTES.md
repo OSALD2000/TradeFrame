@@ -14,13 +14,26 @@ Electron 45.2.2, dependencies, native protections and saved formats are unchange
 Real cloud/native acceptance, other OS builds and legal/publication gates remain
 open; this is a local preview preparation, not a published release.
 
-Native Linux follow-up verifies the real Electron renderer/IPC, pixel-exact
+Initial native Linux follow-up verifies the real Electron renderer/IPC, pixel-exact
 cropping, save/append/backup/reopen, temporary folder delivery, draft-close
 protection, restart persistence and single-window launch. Desktop and narrow
 views are inspected. Capture and file-picker inputs were synthetic; only a test
-copy used an existing system sandbox helper. Actual screen capture, installed
+copy used an existing system sandbox helper. Physical display capture, installed
 launch, cloud accounts and other platforms remain open. See the precise
 [verification scope](RELEASE.md#native-linux-verification-5-november-2026).
+
+Additional native checks recover exact append contents after actual process kills
+at three write boundaries, preserve external edits and reject live writers.
+Unavailable-folder retry and external-file conflicts also pass through the UI
+across restart, using synthetic local folders without cloud clients. Power-loss
+and other-platform behavior remain unverified.
+
+Real screen capture also passes on a private 1x Linux headless output through an
+isolated D-Bus/PipeWire/wlr portal. Source/automatic/pointer/keyboard exports match
+every expected pixel; Escape, portal denial, window restoration and capture retry
+preserve existing data. No capture results are replaced. Physical/scaled displays,
+interactive permission/source choice and the owner's earlier marker/quality
+report remain open; see [capture verification](CAPTURE.md#native-portal-verification-5-november-2026).
 
 # TradeFrame 0.7.6 runtime maintenance preview
 

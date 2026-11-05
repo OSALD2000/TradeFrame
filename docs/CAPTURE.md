@@ -145,6 +145,36 @@ reported marker, physical DPI or real chart accuracy. Those checks below remain
 required. Sandbox setup and input boundaries are recorded in
 [RELEASE](RELEASE.md#native-linux-verification-5-november-2026).
 
+## Native portal verification, 5 November 2026
+
+A subsequent isolated session runs actual desktop capture through private D-Bus,
+PipeWire, WirePlumber's policy-only profile and the wlr portal, with one explicitly
+selected synthetic HEADLESS-1 output. A 1600x1000 deterministic PNG is displayed
+by swaybg. The real `desktopCapturer.getSources` result is observed without
+replacing its images, sources or promise result. The full portal source equals
+every expected pixel, excluding the journal/bar; native UI save/append exports
+the expected 1440x920 Auto chart, 501x251 pointer crop and 11x11 keyboard crop with
+zero differing channels. The keyboard check uses both single-pixel and Shift
+movement plus two Enter presses; no selection cursor enters the saved PNG.
+
+Area selection started from Connections returns to Create. Escape keeps existing
+screenshots and restores the previous full-screen state. A private portal chooser
+that declines the source produces a recoverable error, preserves all three saved
+images/timeframes and exact Markdown bytes, and restores the journal/bar. After
+restoring that backend, the existing capture bar successfully captures again.
+
+All services, sockets, permissions-store data and configurations are temporary;
+system-bus access points at a nonexistent private socket, and no hardware monitors
+are loaded. The user's desktop, profile, journals, accounts and global settings
+are untouched. Test processes are closed afterward. Portal configuration follows
+the installed manual and [upstream wlr documentation](https://github.com/emersion/xdg-desktop-portal-wlr).
+
+This verifies a real Linux headless portal at scale 1, using the temporary package
+copy's sandbox-helper setup documented in [RELEASE](RELEASE.md#native-linux-verification-5-november-2026).
+It does not establish physical/scaled display quality, stacking/drag placement,
+interactive permission/source-picker behavior, actual trading-chart detection,
+Windows/macOS or elimination of the owner's previously reported marker.
+
 ## Manual acceptance checks
 
 Use a synthetic chart/test window without personal or employer data.

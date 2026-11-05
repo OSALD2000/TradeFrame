@@ -83,6 +83,15 @@ An interruption before publishing an intent may leave an unreferenced staging
 directory, but does not change the existing setup. Unsaved drafts are still
 memory-only and are not recovered by this mechanism.
 
+Native Linux verification on 5 November 2026 terminates actual packaged Electron
+writers at prepared, partial and completed append boundaries, then reopens through
+the UI in a fresh process. Exact bytes, original images, backups, distinct
+timeframes and unrelated calendar notes are preserved; repeated open does not
+duplicate images. Live-writer and external-edit protection also pass. Only
+synthetic files and deterministic in-memory pause points are used; this does not
+establish power-loss durability or other-OS behavior. See
+[release verification](RELEASE.md#native-linux-verification-5-november-2026).
+
 Main-process validation is authoritative. The renderer cannot choose write
 paths or submit screenshot bytes: folders/files come from native pickers and
 images from the native in-memory image cache. Capture, save, and open operations are mutually

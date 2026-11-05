@@ -85,6 +85,21 @@ sandbox helper. These results do not close actual capture, installed-package,
 real cloud/client/keyring or other-OS acceptance; see
 [the evidence and remaining checks](RELEASE.md#native-linux-verification-5-november-2026).
 
+Native Linux follow-up verifies interrupted appends at three real process-kill
+boundaries, live-writer protection, unrelated-note access, exact recovery without
+duplicates and preserved external edits. Folder failure/retry and conflict
+preservation also pass through the UI, including a persisted failed job after
+restart. Filesystem pauses, capture input and picker results are instrumented only
+in isolated test processes; power-loss, other-OS and actual cloud-client acceptance
+remain open. Details share the release-verification section linked above.
+
+The subsequent [native portal check](CAPTURE.md#native-portal-verification-5-november-2026)
+adds actual screen capture at 1x through private D-Bus/PipeWire/wlr services.
+Full-source/Auto chart/pointer/keyboard crops are pixel-exact; UI save/append,
+Escape, source denial, window restoration and capture retry pass without replacing
+capture results. Physical/scaled displays, interactive OS source choice and the
+owner's marker/quality acceptance remain open independently.
+
 ## Required before claiming the goal complete
 
 - Verify the final package and checksum, clean extraction, absence of private

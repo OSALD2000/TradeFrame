@@ -20,13 +20,39 @@ only the draft. Restart retains a bridge-created form, filing rules, folders and
 eight completed delivery jobs; a second launch focuses the existing window.
 Desktop/minimum-width screenshots match [DESIGN](DESIGN.md).
 
-Only the capture-source API and native file-picker result were replaced with
-synthetic inputs for those flows; production app files were unchanged. Without
-the capture fixture, the private session lacks screen access and returns a
-recoverable error with both windows restored. No real screen capture, account,
-keyring, cloud client, installed Debian package or other OS was tested. Real
-capture quality/marker/DPI, OS pickers and the remaining release gates stay open.
+The initial flows replaced only capture-source input and the native file-picker
+result; production app files were unchanged. Without that capture fixture, the
+initial private session lacked a portal and returned a recoverable error with both
+windows restored. No account, keyring, cloud client, installed Debian package or
+other OS was tested. Physical capture quality/marker/DPI, interactive OS pickers
+and the remaining release gates stay open.
 All test processes were closed. No application change or version bump is needed.
+
+A native follow-up terminates actual Electron writers with SIGKILL after intent
+publication, a partial suffix and a complete suffix before cleanup. Deterministic
+in-memory filesystem pauses expose those boundaries without changing app files.
+Restart and UI reopening recover exact expected bytes and two timeframes without
+duplicates; backups, original images and unrelated notes remain intact. Live
+writers are rejected, and external edits stop recovery while preserving the
+record/staging files. Native folder checks also verify unavailable-Obsidian
+failure with successful local/Dropbox saves, UI retry after restoration, successful
+Obsidian follow-up delivery and preserved external Dropbox edits through repeated
+retry/restart. Only synthetic local folders are used. This is process-interruption
+evidence on Linux, not power-loss or real cloud-client acceptance.
+
+A subsequent private Sway session adds its own D-Bus, PipeWire, policy-only
+WirePlumber and wlr portal, with the sole HEADLESS-1 output explicitly selected.
+Actual desktop capture now passes without replacing image/source results. Every
+pixel of the 1600x1000 source, 1440x920 Auto chart, 501x251 pointer area and 11x11
+keyboard area matches independent synthetic expectations. Native UI save/append
+retains three timeframes. Starting selection from Connections returns to Create;
+Escape preserves the draft and restores the preceding full-screen state. Portal
+rejection preserves all screenshots/saved bytes and restores both windows; a
+capture-bar retry succeeds. Test services use private sockets/data/configuration,
+never the user's desktop/buses or camera/audio/Bluetooth monitors, and are closed
+afterward. This is actual 1x capture on a synthetic headless Linux output; physical
+displays, interactive permission choice and the owner's reported artifact remain
+open. Details: [CAPTURE](CAPTURE.md#native-portal-verification-5-november-2026).
 
 5 November 2026, 0.7.7 OneNote cancellation repair: late HTTP 401 responses for
 page/resource downloads or POST/PATCH uploads could clear a newer session's

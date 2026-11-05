@@ -176,17 +176,43 @@ with a synthetic saved-note path. Production app files were unchanged.
 | Draft lifecycle     | Navigation retains fields; native close defaults to Keep editing; Escape preserves images and restores focus; confirmed New setup preserves saved files               |
 | Restart/concurrency | Bridge-created form, rules, folders and jobs persist; cleared draft stays empty; second launch exits successfully and focuses one existing journal window             |
 
+Follow-up native fault checks pause only the test process's filesystem calls at
+intent publication, partial Markdown append and completed append before cleanup,
+then terminate the actual Electron writer with SIGKILL. A fresh app process opens
+the note through the real UI/IPC and recovers exact expected Markdown/PNG bytes,
+two timeframes and multiline notes. Reopening again introduces no duplicates;
+the backup remains exact and recovery files are cleaned. A live writer is left
+alone, another calendar note remains usable, and divergent external text stops
+recovery without changing the note, images, backup or recovery record/staging.
+This verifies process termination on the local hard-link-capable filesystem;
+power-loss durability and cross-device writers are not established.
+
+Further native UI checks remove only a synthetic Obsidian root before Save:
+local/Dropbox copies succeed, the failed job is visible, and Retry sync succeeds
+after restoring that folder. A later external Dropbox edit survives follow-up
+delivery and repeated UI retry, including after restart; Obsidian still receives
+the new image. Every retry is observed to persist its completed job result.
+These are real local folder adapters, with no Obsidian/Dropbox cloud client.
+
 The capture fixture and picker override disappear on process restart. Without the
-capture fixture, the private session has no working screen portal: capture shows
-an actionable error, clears busy state and restores both windows. No real
-desktop, journal, Microsoft account, cloud client or keyring was accessed. All QA
+capture fixture, the initial private session had no working screen portal: capture showed
+an actionable error, cleared busy state and restored both windows. No real
+user desktop, journal, Microsoft account, cloud client or keyring was accessed. All QA
 app/compositor processes were closed afterward. Synthetic screenshots and reports
 are retained locally under ignored `release/qa-0.7.7-native/`, outside packages.
 
+Actual portal follow-up uses a separate private D-Bus/PipeWire/wlr session and
+WirePlumber's policy-only profile, without hardware monitors or host system-bus
+access. The portal is configured for the sole synthetic headless output, rather
+than an interactive picker. No capture/source/image result is replaced. All pixels
+of the actual 1600x1000 source and saved Auto chart, pointer and keyboard crops
+match independent expectations. UI save/append, Escape preservation, full-screen
+restoration, real portal denial and a successful capture-bar retry pass. See
+[capture evidence and its limits](CAPTURE.md#native-portal-verification-5-november-2026).
+
 Remaining checks: unmodified archive/installed Debian launch on a supported host;
-actual portal/OS picker and repeated capture, marker/quality/DPI/stacking;
-keyboard area selection and assistive technology; interrupted append recovery in
-a real native process; unavailable-target retry and conflicts through the UI;
+interactive OS/source picker, physical repeated capture, marker/quality/DPI/stacking;
+assistive technology;
 OneNote and actual Obsidian/Dropbox client/account flows; Windows/macOS. The
 license, provider, legal, signing and owner publication decisions below also
 remain open. Use synthetic data and an explicitly authorized account for the next
